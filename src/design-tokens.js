@@ -42,6 +42,9 @@ export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid gree
 export const ON_TRACK_FILL = "#edf6f1"; // a very pale PROGRESS_GREEN: the fill of an on-track module tile
 export const REVIEWED_FILL = "#f4f2ec"; // muted: a reviewed module tile with something still to act on
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
+// WARNING as text or a meaningful icon: WARNING is 2.93:1 on white, this is
+// 4.22:1 on white, 3.94:1 on CREAM (large figures and icons need 3:1).
+export const WARNING_TEXT = "#b9661a";
 export const CRITICAL = "#c0392b"; // "action needed" / error state
 export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons
 export const NOTIFY_RED = "#FF3B30"; // the "something new" badge only (NewBadge.jsx), bright like a phone's

@@ -11,7 +11,7 @@ import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING, CTA_BLUE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK } from "../../design-tokens.js";
 import posthog from "posthog-js";
 import { undoSacrifice, recordTopUps, removeTopUp } from "../../lib/taxTrapRecord.js";
 import { CHOICE_IDS, choiceFor } from "../../lib/opportunityChoices.js";
@@ -22,6 +22,7 @@ import { PayToDateLinks, shortDate } from "../PaydayCheck.jsx";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { PlanPicker, CTA_WASH } from "./SubscribeButtons.jsx";
 import CardStack from "../CardStack.jsx";
+import useDialogFocus from "../useDialogFocus.js";
 
 // £100k tax trap (taxTrap.js), in the order the answer runs:
 //  1. What the trap costs them a year: the tax on the allowance lost and
@@ -49,7 +50,7 @@ const pct = r => `${Math.round(r * 1000) / 10}%`;
 const pence = r => `${Math.round(r * 1000) / 10}p`;
 const signed = n => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
 const tile = { background:WHITE, borderRadius:"16px", boxShadow:"0 2px 10px rgba(22,47,36,0.06)", padding:"16px 18px", marginBottom:"16px" };
-const tileTitle = { fontSize:"15px", fontWeight:700, color:TEXT };
+const tileTitle = { fontSize:"15px", fontWeight:700, color:TEXT, margin:0 };
 // A figure's cell: red for what it costs, green for what it brings.
 const TONE = {
   cost: { bg: "rgba(192,57,43,0.08)", fg: "#8e2a1f" },
@@ -222,7 +223,7 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
   return (
     <section aria-label={`Plan ahead for the ${K} trap`} style={{position:"relative",background:WHITE,border:`2px solid ${CTA_BLUE}`,borderRadius:"20px",overflow:"hidden",boxShadow:"0 8px 24px rgba(0,113,227,0.14)"}}>
       <div style={{background:CTA_WASH,padding:"20px 20px 18px"}}>
-        <button type="button" onClick={onClose} aria-label="Close"
+        <button type="button" onClick={onClose} aria-label="Close" className="tap44"
           style={{position:"absolute",top:"12px",right:"12px",display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
           <X size={15} aria-hidden="true"/>
         </button>
@@ -327,13 +328,9 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
   // Switched on, the knob slides across, then it's recorded and the tile goes.
   const [switched, setSwitched] = useState(false);
   const reduceMotion = useReducedMotion();
-  // While walking through: the tile into view, Escape to skip.
+  // While walking through: the tile into view; it's a dialog then (WalkFocus).
   useEffect(() => {
-    if (!walking) return;
-    tileRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-    const onKey = e => { if (e.key === "Escape") finishRef.current(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    if (walking) tileRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
   }, [walking, reduceMotion]);
   const setUp = () => {
     if (switched) return;
@@ -347,19 +344,20 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
   const kids = t.childcareLost > 0;
   // No student loan answer at all (not "none"): it may be costing them more.
   const loanUnknown = employed && !d.studentLoan && !d.slPlanAnswer;
-  const pill = on => ({ border:"none",borderRadius:"100px",padding:"6px 12px",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:on ? G : CDARK,color:on ? WHITE : MUT });
+  const pill = on => ({ border:"none",borderRadius:"100px",padding:"6px 12px",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:on ? G : CDARK,color:on ? WHITE : MUT_ON_CDARK });
   return (
-    <section ref={tileRef} style={{...tile,position:"relative",zIndex:walking ? WALK_Z + 1 : "auto",boxShadow:walking ? "0 12px 40px rgba(10,20,15,0.25)" : tile.boxShadow,transition:"box-shadow 0.25s"}}>
+    <section ref={tileRef} {...(walking ? { role: "dialog", "aria-modal": true, "aria-labelledby": "taxtrap-walk-title", tabIndex: -1 } : {})} style={{...tile,position:"relative",zIndex:walking ? WALK_Z + 1 : "auto",boxShadow:walking ? "0 12px 40px rgba(10,20,15,0.25)" : tile.boxShadow,transition:"box-shadow 0.25s"}}>
       {typeof document !== "undefined" && createPortal(
         <AnimatePresence>
           {walking && <motion.div key="walk-backdrop" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.25 }}
             style={{position:"fixed",inset:0,zIndex:WALK_Z,background:"rgba(244,241,234,0.35)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)"}}/>}
         </AnimatePresence>, document.body)}
+      {walking && <WalkFocus boxRef={tileRef} onEscape={() => finishRef.current()}/>}
       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-        <div style={tileTitle}>{sacrifice ? "Salary sacrifice" : "Pension contributions"}</div>
+        <h2 id="taxtrap-walk-title" style={tileTitle}>{sacrifice ? "Salary sacrifice" : "Pension contributions"}</h2>
         {step === WALK_STEPS
           ? <button type="button" onClick={() => setStep(0)} aria-label={`How ${sacrifice ? "salary sacrifice" : "pension contributions"} work${sacrifice ? "s" : ""}`}
-              style={{display:"inline-flex",background:"none",border:"none",padding:"2px",cursor:"pointer",color:MUT}}><CircleHelp size={17} aria-hidden="true"/></button>
+              className="tap44" style={{display:"inline-flex",background:"none",border:"none",padding:"2px",cursor:"pointer",color:MUT}}><CircleHelp size={17} aria-hidden="true"/></button>
           : <button type="button" onClick={finish} style={{marginLeft:"auto",background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Skip to the numbers</button>}
       </div>
       {walking ? (
@@ -726,7 +724,7 @@ function TopUps({ d, m, ups, onRemove }) {
           <div key={u.group || u.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
             <span style={{flex:1,fontSize:"13px",color:TEXT,lineHeight:1.4}}>{label}</span>
             <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{fmt(sum)}</span>
-            <button type="button" onClick={() => onRemove(u.group || u.id)} aria-label={`Remove the ${fmt(sum)} top-up`}
+            <button type="button" onClick={() => onRemove(u.group || u.id)} aria-label={`Remove the ${fmt(sum)} top-up`} className="tap44"
               style={{display:"inline-flex",background:"none",border:"none",padding:"4px",cursor:"pointer",color:MUT}}>
               <X size={16} aria-hidden="true"/>
             </button>
@@ -775,7 +773,7 @@ function RateTile({ d, m, t }) {
   );
   return (
     <section style={tile}>
-      <div style={tileTitle}>Marginal tax rate by income</div>
+      <h2 style={tileTitle}>Marginal tax rate by income</h2>
       <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"4px"}}>
         <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
         <span style={{fontSize:"12.5px",color:TEXT,lineHeight:1.4}}>
@@ -819,15 +817,15 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
   return (
     <section style={tile}>
       {onToggle ? (
-        <button type="button" onClick={onToggle} aria-expanded={open}
+        <h2 style={{margin:0,fontSize:"inherit",fontWeight:"inherit"}}><button type="button" onClick={onToggle} aria-expanded={open}
           style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:0,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
           <span style={{flex:1}}>
             <span style={{...tileTitle,display:"block"}}>{title}</span>
             {!open && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ticked}</span>}
           </span>
           <ChevronDown size={18} color={MUT} aria-label={open ? "Minimise" : "Expand"} style={{flexShrink:0,marginTop:"1px",transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-        </button>
-      ) : <div style={tileTitle}>{title}</div>}
+        </button></h2>
+      ) : <h2 style={tileTitle}>{title}</h2>}
       {open && <>
       <CheckRow state="on" topic="Tax-free allowance" line={t.over ? `${fmt(t.allowance.lost)} of your ${fmt(PERSONAL_ALLOWANCE)} lost` : `50p lost for every £1 over ${K}`}
         value={t.over ? fmt(t.allowance.tax) : `${lostRate / 2}p per £1`}/>
@@ -840,7 +838,7 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Either parent over £100,000 stops this childcare support for both of you.</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
             {[["no", "No"], ["yes", "Yes"], ["single", "I don't have a partner"]].map(([v, label]) => (
-              <button key={v} type="button" onClick={() => answer(v)}
+              <button key={v} type="button" onClick={() => answer(v)} className="tap44"
                 style={{border:"1px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"6px 12px",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:WHITE,color:TEXT}}>{label}</button>
             ))}
           </div>
@@ -868,7 +866,7 @@ function CheckRow({ state, topic, line, value }) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:"10px",borderTop:"1px solid rgba(22,47,36,0.08)",marginTop:"10px",paddingTop:"10px"}}>
       {state === "on" ? <span role="img" aria-label="Applies to you" style={{...box,background:G}}><Check size={12} strokeWidth={3.2} color={WHITE}/></span>
-        : state === "warn" ? <TriangleAlert size={18} strokeWidth={2.2} color={WARNING} role="img" aria-label="Would apply" style={{flexShrink:0}}/>
+        : state === "warn" ? <TriangleAlert size={18} strokeWidth={2.2} color={WARNING_TEXT} role="img" aria-label="Would apply" style={{flexShrink:0}}/>
         : <span role="img" aria-label="Doesn't apply" style={{...box,border:"1.5px solid rgba(22,47,36,0.3)"}}/>}
       <span style={{flex:1,minWidth:0}}>
         <span style={{display:"block",fontSize:"14px",fontWeight:700,color:state === "off" ? MUT : TEXT}}>{topic}</span>
@@ -903,14 +901,14 @@ function Options({ t, plan }) {
   }));
   return (
     <section style={tile}>
-      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
+      <h2 style={{margin:0,fontSize:"inherit",fontWeight:"inherit"}}><button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
         style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:0,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
         <span style={{flex:1}}>
           <span style={{...tileTitle,display:"block"}}>Other options</span>
           <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Common ways to bring your income back to {K}, and what each would mean for you a year.</span>
         </span>
         <ChevronDown size={18} color={MUT} aria-label={open ? "Minimise" : "Expand"} style={{flexShrink:0,marginTop:"1px",transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-      </button>
+      </button></h2>
       {open && <div style={{marginTop:"12px"}}><CardStack light cards={cards} peek={40} turnLabels={["Show the previous option", "Show the next option"]}/></div>}
     </section>
   );
@@ -1000,4 +998,12 @@ function RateChart({ points, you, at, onAt, width }) {
       ))}
     </svg>
   );
+}
+
+// While the walkthrough runs: focus into the tile, kept there, Escape skips
+// it, and focus goes back where it was after. Mounted only while walking, as
+// useDialogFocus acts on mount and unmount.
+function WalkFocus({ boxRef, onEscape }) {
+  useDialogFocus(boxRef, { onEscape });
+  return null;
 }

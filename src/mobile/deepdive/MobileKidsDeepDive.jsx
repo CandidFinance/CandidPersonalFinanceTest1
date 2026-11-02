@@ -78,7 +78,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
 
       {cc && (
         <section style={{marginBottom:"18px"}}>
-          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>{cc.planning ? "Childcare support once your child arrives" : "Your childcare support"}, {NATION_NAME[cc.nation]}</div>
+          <h2 style={{margin:0,fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>{cc.planning ? "Childcare support once your child arrives" : "Your childcare support"}, {NATION_NAME[cc.nation]}</h2>
           <div style={row}>
             <div>
               <div style={rowLabel}>Tax-Free Childcare</div>
@@ -111,7 +111,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
 
       {cb && cb.charge > 0 && (
         <section style={{marginBottom:"18px"}}>
-          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Child Benefit</div>
+          <h2 style={{margin:0,fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Child Benefit</h2>
           <div style={row}>
             <div>
               <div style={rowLabel}>Paid back in tax</div>

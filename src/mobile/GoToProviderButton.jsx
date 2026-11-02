@@ -58,9 +58,11 @@ export default function GoToProviderButton({ storageKey, defaultLabel }) {
   return (
     <div>
       <button onClick={() => openInvestmentProvider(saved)} style={pillStyle}>Go to {saved.name}</button>
-      <div style={{position:"relative",width:"fit-content",margin:"6px auto 0"}}>
+      <div style={{position:"relative",width:"fit-content",margin:"10px auto 0"}}>
         <span aria-hidden="true" style={{display:"block",color:MUT,fontSize:FONT_SIZE.LABEL,fontWeight:600,textDecoration:"underline",textAlign:"center"}}>Change provider</span>
-        <select value="" onChange={e => pick(e.target.value)} aria-label="Change provider" style={selectOverlay}>
+        {/* The select reaches past the label: a 44px tap area, clear of the button above. */}
+        <select value="" onChange={e => pick(e.target.value)} aria-label="Change provider"
+          style={{...selectOverlay,inset:"-10px -8px -18px",width:"auto",height:"auto"}}>
           <option value="" disabled>Change provider</option>
           {INVESTMENT_PROVIDERS.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
         </select>

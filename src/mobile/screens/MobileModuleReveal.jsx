@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CircleAlert, Check, LoaderCircle, Sparkles } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING_TEXT, HERO_TILE_BG } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { ShellTopRow, PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
 import CountUpFigure from "../CountUpFigure.jsx";
@@ -181,7 +181,7 @@ function Working({ checks, shown, ticked, reduceMotion }) {
 
 // One step in the large layout: its rows as big figures, a line above each
 // and a note below; a step without rows as a large statement.
-const TONE = { repay: SUCCESS, good: SUCCESS, warn: WARNING, cost: CRITICAL };
+const TONE = { repay: SUCCESS, good: SUCCESS, warn: WARNING_TEXT, cost: CRITICAL };
 const SIZE = { xl: "clamp(56px, 17vw, 78px)", l: "clamp(40px, 12vw, 54px)", m: "clamp(28px, 8vw, 36px)" };
 function LargeStep({ step, counting = false }) {
   const rows = step.rows || (step.figure ? [{ figure: step.figure, size: "xl", note: step.title, tone: step.tone }] : null);
@@ -197,7 +197,7 @@ function LargeStep({ step, counting = false }) {
           {r.note && <div style={{fontSize:"16px",color:MUT,lineHeight:1.45}}>{r.note}</div>}
           {r.alert && (
             <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"14px",color:TEXT,lineHeight:1.4,marginTop:"8px"}}>
-              <CircleAlert size={16} color={WARNING} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{r.alert}
+              <CircleAlert size={16} color={WARNING_TEXT} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{r.alert}
             </div>
           )}
         </div>

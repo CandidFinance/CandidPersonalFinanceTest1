@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { retirementAgeFor } from "../../lib/metrics.js";
 import { fmt } from "../../lib/format.js";
 import { getModuleProducts } from "../moduleProducts.js";
 import MobileWinTile from "../MobileWinTile.jsx";
@@ -8,7 +9,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, CDARK, SUCCESS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, CDARK, SUCCESS, GOLD_TEXT, MUT_ON_CDARK } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
@@ -44,7 +45,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   if (unwrappedVal > 0) surplusSources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
   const showMoveMsg = m.isaHeadroom > 0 && surplusSources.length > 0;
 
-  const retirementAge = 67;
+  const retirementAge = retirementAgeFor(d);
   const currentAge = +d.age || 30;
   const growthYears = Math.max(1, retirementAge - currentAge);
   const isaProjectedValue = m.isaHeadroom * Math.pow(1 + GROWTH_NOMINAL_PCT / 100, growthYears);
@@ -88,7 +89,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         // when there is some, otherwise the unused ISA allowance.
         totalOpp > 0 ? (
           <OpportunityTile figures={[{ value: fmt(totalOpp), label: "Capital gains tax you could avoid this year" }]}
-            chips={[m.isaHeadroom > 0 && `+ ${fmt(m.isaHeadroom)} unused ISA allowance`]}/>
+            chips={[m.isaHeadroom > 0 && `${fmt(m.isaHeadroom)} of ISA allowance unused`]}/>
         ) : (
           <OpportunityTile figures={[{ value: fmt(m.isaHeadroom), label: "Of this year's ISA allowance unused" }]}
             chips={["Growth inside it is tax-free"]} note="Not a guaranteed gain."/>
@@ -129,9 +130,9 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                     <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
                   </div>
                   <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
-                    <div style={{fontSize:"9.5px",fontWeight:700,color:"#8a6a24",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax years</div>
+                    <div style={{fontSize:"9.5px",fontWeight:700,color:GOLD_TEXT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax years</div>
                     <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>{fmt(0)}</div>
-                    <div style={{fontSize:"10.5px",color:"#8a6a24",fontWeight:600,marginTop:"2px"}}>Saves {fmt(instantSellTax)}</div>
+                    <div style={{fontSize:"10.5px",color:GOLD_TEXT,fontWeight:600,marginTop:"2px"}}>Saves {fmt(instantSellTax)} across them</div>
                   </div>
                 </div>
                 <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Spread plan: {spreadTimingLabel}.</p>
@@ -145,12 +146,12 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
             {onRecordCrystallisedGain && (
               <div style={{marginTop:"10px"}}>
                 {!loggingGain ? (
-                  <button onClick={openGainLogger} style={{background:"transparent",border:"none",color:MUT,fontSize:"12px",fontWeight:600,textDecoration:"underline",cursor:"pointer",padding:0}}>
+                  <button type="button" onClick={openGainLogger} className="tap44" style={{background:"transparent",border:"none",color:MUT,fontSize:"12px",fontWeight:600,textDecoration:"underline",cursor:"pointer",padding:0}}>
                     I've sold some — update my figures
                   </button>
                 ) : (
                   <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px"}}>
-                    <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
+                    <div style={{fontSize:"11px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
                     <div style={{display:"flex",gap:"8px"}}>
                       <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
                       <PillMoneyInput label="Gain crystallised" value={gainInput} onChange={setGainInput}/>
@@ -170,11 +171,11 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
             <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD}}>Buying back in (bed and breakfasting)</span>
+                  <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD_TEXT}}>Buying back in (bed and breakfasting)</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
                 </div>
                 {openInfo === "bnb" && (
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
+                  <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
                     HMRC's "30-day rule" cancels the gain if you repurchase the same shares within 30 days. Buying back inside an ISA or pension sidesteps this — outside a wrapper, wait 30 days or buy a similarly-exposed fund instead.
                   </p>
                 )}
@@ -185,7 +186,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                   <InfoButton onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} open={openInfo==="useit"}/>
                 </div>
                 {openInfo === "useit" && (
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
+                  <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
                     The £3,000 exemption doesn't carry over — whatever's unused is gone on April 5th.
                   </p>
                 )}
@@ -225,7 +226,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div style={{marginBottom:"12px"}}>
                 {showMoveMsg && (
                   <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"12px",marginBottom:"10px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Money that could use it</div>
+                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD_TEXT,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Money that could use it</div>
                     <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
                       You have {surplusSources.join(" and ")}, and {fmt(m.isaHeadroom)} of this year's ISA allowance could shelter it from tax.
                     </p>

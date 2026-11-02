@@ -9,7 +9,7 @@ import { G, MUT } from "../design-tokens.js";
 export function ExplainLink({ onClick, color = G }) {
   if (!onClick) return null;
   return (
-    <button type="button" onClick={onClick} style={{background:"none",border:"none",padding:0,color,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
+    <button type="button" onClick={onClick} className="tap44" style={{background:"none",border:"none",padding:0,color,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
       Explain this
     </button>
   );
@@ -18,7 +18,7 @@ export function ExplainLink({ onClick, color = G }) {
 // `hint` names what's inside while it's closed.
 export function ExploreToggle({ open, onToggle, hint }) {
   return (
-    <button type="button" onClick={onToggle} aria-expanded={open} style={{
+    <button type="button" onClick={onToggle} aria-expanded={open} className="tap44" style={{
       display:"flex", alignItems:"center", gap:"6px", background:"none", border:"none", padding:"4px 0", margin:"4px 0 14px",
       color:G, fontSize:"13.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
     }}>

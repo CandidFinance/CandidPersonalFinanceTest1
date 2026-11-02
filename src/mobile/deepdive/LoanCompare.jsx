@@ -8,7 +8,7 @@ import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, GOLD_TEXT } from "../../design-tokens.js";
 
 // The student loan page's "Where £X does most" (lib/loanCompare.js): the
 // lump sum being tried above (`amount`; a stand-in until one's picked),
@@ -33,7 +33,7 @@ const ROWS = {
 // How sure each figure is: one icon each, with a key above the tiles.
 const SURE = {
   true:  { Icon: ShieldCheck, color: SUCCESS, label: "Certain" },
-  false: { Icon: TrendingUp, color: GOLD, label: "If growth holds" },
+  false: { Icon: TrendingUp, color: GOLD_TEXT, label: "If growth holds" },
 };
 
 // Until a lump sum is picked above: £5,000, or the balance if it's less.
@@ -76,10 +76,10 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null }
 
   return (
     <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>Where {usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most</div>
+      <h2 style={{margin:0,fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>Where {usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most</h2>
       {open && plan && planEvents(plan.run).length > 0 && (
         <div style={{marginBottom:"8px"}}>
-          <PillSlider compact value={usePlan ? "plan" : "lump"} onChange={setMode} options={[{ value:"lump", label:"Lump sum" }, { value:"plan", label:plan.name }]}/>
+          <PillSlider compact label="Compare a lump sum or a plan" value={usePlan ? "plan" : "lump"} onChange={setMode} options={[{ value:"lump", label:"Lump sum" }, { value:"plan", label:plan.name }]}/>
         </div>
       )}
       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>

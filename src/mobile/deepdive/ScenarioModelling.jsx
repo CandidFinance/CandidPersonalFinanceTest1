@@ -9,7 +9,7 @@ import { PillSlider } from "../PillSlider.jsx";
 import SubscribeButtons from "./SubscribeButtons.jsx";
 import { SubscriberCrown } from "../Premium.jsx";
 import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
 
 // "Scenario modelling" at the top of the student loan page's figures to
 // try: a collapsed tile, marked as a subscriber feature for everyone, that
@@ -97,7 +97,7 @@ function affordability(m, it, before = 0) {
   if (amount > left * 0.8) return { level: "close", text: `Close to all of the ${fmt(left)} a month you have left after your spending.` };
   return null;
 }
-const FLAG = { over: CRITICAL, close: GOLD, unknown: MUT };
+const FLAG = { over: CRITICAL, close: GOLD_TEXT, unknown: MUT };
 const Flag = ({ check }) => check && (
   <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:check.level === "unknown" ? MUT : TEXT,marginTop:"4px"}}>
     <CircleAlert size={13} color={FLAG[check.level]} style={{flexShrink:0,marginTop:"1px"}}/>{check.text}
@@ -156,7 +156,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
   const draftCheck = draft.amount > 0 ? affordability(m, { kind: adding, amount: draft.amount }) : null;
 
   const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
-  const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD}`, borderRadius:"100px", padding:"7px 12px", color:GOLD, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
+  const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD_TEXT}`, borderRadius:"100px", padding:"7px 12px", color:GOLD_TEXT, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
   const solid = on => ({ flex:1, background:on ? G : "rgba(22,47,36,0.2)", color:WHITE, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:on ? "pointer" : "not-allowed" });
   const outline = { flex:1, background:WHITE, color:G, border:"1.3px solid rgba(22,47,36,0.2)", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
   const iconBtn = { background:"none", border:"none", padding:"4px", cursor:"pointer", color:MUT, display:"flex" };
@@ -180,7 +180,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
       <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
         {plans.length > 0 && (
           <div style={{flex:1,minWidth:0}}>
-            <PillSlider compact value={d.slPlanShown || ""} onChange={v => { set("slPlanShown", v); close(); setNaming(false); }}
+            <PillSlider compact label="Your plans" value={d.slPlanShown || ""} onChange={v => { set("slPlanShown", v); close(); setNaming(false); }}
               options={[{ value:"", label:"None" }, ...plans.map(p => ({ value:p.id, label:p.name }))]}/>
           </div>
         )}
@@ -200,7 +200,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
           ) : (
             <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
               <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{plan.name}</span>
-              <button type="button" aria-label={`Rename ${plan.name}`} onClick={() => setNaming(true)} style={iconBtn}><Pencil size={13}/></button>
+              <button type="button" aria-label={`Rename ${plan.name}`} onClick={() => setNaming(true)} className="tap44" style={iconBtn}><Pencil size={13}/></button>
             </div>
           )}
 
@@ -209,8 +209,8 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
             <div key={it.id} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:editing === it.id ? 0.45 : 1}}>
               <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
                 <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{describe(it)}</span>
-                <button type="button" aria-label={`Change ${describe(it)}`} onClick={() => openForm(it.kind, it)} style={iconBtn}><Pencil size={14}/></button>
-                <button type="button" aria-label={`Remove ${describe(it)}`} onClick={() => { savePlan({ ...plan, items: plan.items.filter(x => x.id !== it.id) }); if (editing === it.id) close(); }} style={iconBtn}><X size={15}/></button>
+                <button type="button" aria-label={`Change ${describe(it)}`} onClick={() => openForm(it.kind, it)} className="tap44" style={iconBtn}><Pencil size={14}/></button>
+                <button type="button" aria-label={`Remove ${describe(it)}`} onClick={() => { savePlan({ ...plan, items: plan.items.filter(x => x.id !== it.id) }); if (editing === it.id) close(); }} className="tap44" style={iconBtn}><X size={15}/></button>
               </div>
               <Flag check={checkOf(it)}/>
             </div>
@@ -293,7 +293,7 @@ function PayByYear({ d, m, sl, set }) {
     setForm(null);
   };
   const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
-  const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD}`, borderRadius:"100px", padding:"7px 12px", color:GOLD, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
+  const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD_TEXT}`, borderRadius:"100px", padding:"7px 12px", color:GOLD_TEXT, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
   const iconBtn = { background:"none", border:"none", padding:"4px", cursor:"pointer", color:MUT, display:"flex" };
   const canSave = form && form.salary > 0 && +form.year > taxYear;
   return (
@@ -308,8 +308,8 @@ function PayByYear({ d, m, sl, set }) {
       {rows.map(r => (
         <div key={r.id} style={{display:"flex",alignItems:"center",gap:"4px",padding:"7px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:form?.id === r.id ? 0.45 : 1}}>
           <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{fmt(+r.salary)} from April {r.year}</span>
-          <button type="button" aria-label={`Change pay from April ${r.year}`} onClick={() => setForm({ id: r.id, year: r.year, salary: +r.salary })} style={iconBtn}><Pencil size={14}/></button>
-          <button type="button" aria-label={`Remove pay from April ${r.year}`} onClick={() => set("payByYear", rows.filter(x => x.id !== r.id))} style={iconBtn}><X size={15}/></button>
+          <button type="button" aria-label={`Change pay from April ${r.year}`} onClick={() => setForm({ id: r.id, year: r.year, salary: +r.salary })} className="tap44" style={iconBtn}><Pencil size={14}/></button>
+          <button type="button" aria-label={`Remove pay from April ${r.year}`} onClick={() => set("payByYear", rows.filter(x => x.id !== r.id))} className="tap44" style={iconBtn}><X size={15}/></button>
         </div>
       ))}
       {form ? (

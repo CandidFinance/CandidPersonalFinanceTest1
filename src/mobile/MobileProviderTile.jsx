@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Landmark, Unlock, ExternalLink, ChevronRight } from "lucide-react";
-import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT } from "../design-tokens.js";
 
 // Static "where to actually do this" provider list for Investments/Pension —
 // unlike Cash's MobileProductListTile, there's no live-rate data source for
@@ -28,13 +28,14 @@ export default function MobileProviderTile({ heading, products, disclaimer, embe
   return (
     <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
       {!embedded && (
-        <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
-          <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
-          <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-        </div>
+        <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{background:"none",border:"none",padding:0,width:"100%",textAlign:"left",font:"inherit",color:"inherit",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
+          <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</span>
+          <ChevronRight size={14} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+        </button>
       )}
 
-      <div style={{position:"relative",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
+      {/* Tabbing to a link hidden under the fade opens the list. */}
+      <div onFocus={e => { if (!open && keyboardFocus(e.target)) setOpen(true); }} style={{position:"relative",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
         <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
           {products.map((p, i) => {
             const Icon = p.appIcon || Landmark;
@@ -50,14 +51,14 @@ export default function MobileProviderTile({ heading, products, disclaimer, embe
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
                       <span style={{fontSize:"13.5px",fontWeight:600,color:TEXT}}>{p.name}</span>
-                      {p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>}
+                      {p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD_TEXT,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>}
                     </div>
                     <div style={{fontSize:"11.5px",color:MUT,marginTop:"1px"}}>{p.type}</div>
                   </div>
                   {p.rate && <div style={{fontFamily:SERIF,fontSize:"14px",fontWeight:700,color:G,flexShrink:0,whiteSpace:"nowrap"}}>{p.rate}</div>}
                 </div>
                 {p.feature && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0}}>{p.feature}</p>}
-                <div style={{marginTop:"8px",fontSize:"11px",fontWeight:isLink?700:400,color:isLink?GOLD:"rgba(22,47,36,0.4)",fontStyle:isLink?"normal":"italic",display:"flex",alignItems:"center",gap:"4px"}}>
+                <div style={{marginTop:"8px",fontSize:"11px",fontWeight:isLink?700:400,color:isLink?GOLD_TEXT:MUT,fontStyle:isLink?"normal":"italic",display:"flex",alignItems:"center",gap:"4px"}}>
                   {isLink ? <>{p.cta}<ExternalLink size={11}/></> : <><Unlock size={10}/>{p.cta} · demo</>}
                 </div>
               </Wrapper>
@@ -67,9 +68,9 @@ export default function MobileProviderTile({ heading, products, disclaimer, embe
         {!open && products.length > 1 && (
           <>
             <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, ${PROVIDER_TILE_FADE_CLEAR} 0%, ${PROVIDER_TILE_FADE_CLEAR} 55%, ${fadeTo} 100%)`,pointerEvents:"none"}}/>
-            <div onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:"10px",textAlign:"center",cursor:"pointer"}}>
-              <span style={{fontSize:"12px",fontWeight:600,color:GOLD}}>See all {products.length} options</span>
-            </div>
+            <button type="button" onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:0,background:"none",border:"none",padding:"14px 0 10px",font:"inherit",textAlign:"center",cursor:"pointer"}}>
+              <span style={{fontSize:"12px",fontWeight:600,color:G}}>See all {products.length} options</span>
+            </button>
           </>
         )}
       </div>
@@ -79,4 +80,9 @@ export default function MobileProviderTile({ heading, products, disclaimer, embe
       )}
     </div>
   );
+}
+
+// Focus that came from the keyboard; older Safari has no :focus-visible.
+function keyboardFocus(el) {
+  try { return el.matches(":focus-visible"); } catch { return true; }
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { G, GOLD, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
+import { G, GOLD, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, GOLD_TEXT } from "../design-tokens.js";
 import MobileReminderAction, { ActionButton } from "./MobileReminderAction.jsx";
 import NewBadge from "./NewBadge.jsx";
 
@@ -14,15 +14,17 @@ import NewBadge from "./NewBadge.jsx";
 // `provider`: the provider lists' surface (pale grey gradient and border),
 // same size and layout as every other tile on the page (the plain tile has a
 // transparent border, so the provider border adds no height).
+// `level`: the heading level of its title (2, or 3 for a tile inside a tile).
 // `open` and `onOpenChange`, together, let the page open it (a link
 // elsewhere on the page that leads to it).
 // `badge` ({ count, label }): a red count bubble on its top right corner for
 // something new in it (NewBadge.jsx).
 // `action` ({ label, onClick }): a CTA-blue button at the bottom of the
 // expanded tile, sharing the row half and half with the reminder pill.
-export default function MobileWinTile({ title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, action, provider = false, open: openProp, onOpenChange, badge, children }) {
+export default function MobileWinTile({ title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, action, provider = false, level = 2, open: openProp, onOpenChange, badge, children }) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
+  const Heading = `h${level}`;
   const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
   const surface = provider
     ? { background:PROVIDER_TILE_BG, border:PROVIDER_TILE_BORDER, boxShadow:PROVIDER_TILE_SHADOW }
@@ -30,12 +32,13 @@ export default function MobileWinTile({ title, headline, tagLabel, tagColor = GO
   return (
     <div style={{position:"relative",marginBottom:"12px"}}>
     <div style={{...surface,borderRadius:RADIUS_CARD,overflow:"hidden"}}>
+      <Heading style={{margin:0,fontSize:"inherit",fontWeight:"inherit"}}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",width:"100%",padding:"16px 16px 13px",background:"none",border:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
         <span style={{display:"block",flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
             <span style={{fontSize:"15px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</span>
             {tagLabel && (
-              <span style={{fontSize:"9.5px",fontWeight:700,color:tagColor,background:`${tagColor}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap",flexShrink:0}}>{tagLabel}</span>
+              <span style={{fontSize:"9.5px",fontWeight:700,color:tagColor === GOLD ? GOLD_TEXT : tagColor,background:`${tagColor}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap",flexShrink:0}}>{tagLabel}</span>
             )}
           </span>
           {headline && <span style={{display:"block",fontSize:"13.5px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>{headline}</span>}
@@ -44,6 +47,7 @@ export default function MobileWinTile({ title, headline, tagLabel, tagColor = GO
           <ChevronRight size={14} color={MUT} aria-hidden="true" style={{transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
         </span>
       </button>
+      </Heading>
       {open && (
         <div style={{padding:"0 16px 16px"}}>
           {children}

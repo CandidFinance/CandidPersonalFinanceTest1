@@ -6,7 +6,7 @@ import { premiumBondsRow } from "../lib/savingsRates.js";
 import { bankChange } from "../lib/moduleStatus.js";
 import { loanOverpaidAfter } from "../lib/progressTracker.js";
 import PillMoneyInput from "./PillMoneyInput.jsx";
-import { G, WHITE, MUT, TEXT, CDARK } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, CDARK, MUT_ON_CDARK } from "../design-tokens.js";
 
 // Updating the student loan balance, the same on the module's page and in
 // Edit inputs: the new figure, then, if it's lower, where the difference
@@ -45,18 +45,18 @@ export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = n
   const solid = off => ({ flex:1, background:off ? "rgba(22,47,36,0.25)" : G, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, color:WHITE, cursor:off ? "not-allowed" : "pointer", fontFamily:"inherit" });
   return (
     <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
-      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
+      <div style={{fontSize:"11px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
       {step === 1 ? (
         <>
           <PillMoneyInput label="New balance" value={input} onChange={v => setInput(v ?? 0)}/>
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+          <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
             Your online student loan account shows it. From here, Candid adds the interest and takes off your repayment each payday.
           </p>
         </>
       ) : (
         <>
           <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,lineHeight:1.4}}>Where did the {fmt(delta)} come from?</div>
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>Pick any. It comes off the lowest-rate one first, so it isn't counted twice.</p>
+          <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.5,margin:"4px 0 10px"}}>Pick any. It comes off the lowest-rate one first, so it isn't counted twice.</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
             {sources.map(s => {
               const on = picks.includes(s.key);

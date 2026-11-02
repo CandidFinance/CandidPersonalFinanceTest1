@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GROWTH_NOMINAL_PCT, INFLATION_PCT } from "../../lib/growth.js";
 import { pensionReveal } from "../../lib/moduleReveal.js";
 import { childcareSupport } from "../../lib/childcare.js";
 import { pensionOutlook, cliffEdge, retirementAdequacy } from "../../lib/crossModule.js";
@@ -29,7 +30,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CDARK, SUCCESS, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
 
@@ -51,9 +52,9 @@ function YearToggle({ value, onChange }) {
   return (
     <div style={{display:"flex",gap:"6px"}}>
       {[{v:true,label:"Had a scheme"},{v:false,label:"No scheme"}].map(opt => (
-        <button key={String(opt.v)} onClick={() => onChange(opt.v)} style={{
+        <button key={String(opt.v)} type="button" aria-pressed={value===opt.v} onClick={() => onChange(opt.v)} className="tap44" style={{
           border:"none",borderRadius:"100px",padding:"6px 12px",fontSize:"11.5px",fontWeight:600,cursor:"pointer",
-          background:value===opt.v?G:CDARK,color:value===opt.v?WHITE:MUT,
+          background:value===opt.v?G:CDARK,color:value===opt.v?WHITE:MUT_ON_CDARK,
         }}>{opt.label}</button>
       ))}
     </div>
@@ -301,7 +302,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
     <div>
       {opportunityCols.length > 0 && (
         <OpportunityTile figures={opportunityCols}
-          chips={[bonusSacrifice.beyondTaper > 0 && !bonusChoice && `+ up to ${fmt(bonusSacrifice.beyondTaper)} from bonus sacrifice`]}/>
+          chips={[bonusSacrifice.beyondTaper > 0 && !bonusChoice && `Up to ${fmt(bonusSacrifice.beyondTaper)} more from sacrificing a bonus`]}/>
       )}
 
       {/* The hero: how the pot could grow to retirement. */}
@@ -438,12 +439,12 @@ function GrowthChart({ showExplore, d, m, showTrajInfo, setShowTrajInfo, extraPc
         return (
           <div style={{background:WHITE,borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"16px",marginBottom:"12px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:showTrajInfo ? "8px" : "14px"}}>
-              <div style={{fontSize:"15px",fontWeight:700,color:G}}>Pension growth trajectory</div>
+              <h3 style={{margin:0,fontSize:"15px",fontWeight:700,color:G}}>Pension growth trajectory</h3>
               <InfoButton onClick={() => setShowTrajInfo(o => !o)} open={showTrajInfo}/>
             </div>
             {showTrajInfo && (
               <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.6,margin:"0 0 14px"}}>
-                In today's money: growth of 6% a year, less 2% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
+                In today's money: growth of {GROWTH_NOMINAL_PCT}% a year, less {INFLATION_PCT}% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
               </p>
             )}
             <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
@@ -495,7 +496,7 @@ function GrowthChart({ showExplore, d, m, showTrajInfo, setShowTrajInfo, extraPc
                 it stands and nothing in it looks stuck. */}
             <div style={{marginTop:"16px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
               <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
-              <PillSlider compact value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
+              <PillSlider compact label="What if you contributed more?" value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
               <PayInMore traj={traj} tr={m.tr || 0}/>
             </div>
 
@@ -666,7 +667,7 @@ function BonusTile({ hasStatedBonus, bonusSacrifice, d, set, sacrificePct, setSa
           <div style={{marginBottom:"14px"}}>
             <label style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>How much to sacrifice</label>
             <div style={{display:"grid",gridTemplateColumns:"1fr 92px",gap:"8px",marginTop:"8px",alignItems:"stretch"}}>
-              <PillSlider value={sacrificePct} onChange={setSacrificePct} options={SACRIFICE_OPTIONS}/>
+              <PillSlider label="How much to sacrifice" value={sacrificePct} onChange={setSacrificePct} options={SACRIFICE_OPTIONS}/>
               <PillMoneyInput label="Bonus" value={bonusInput} onChange={setBonusInput}/>
             </div>
           </div>
@@ -708,8 +709,8 @@ function BonusTile({ hasStatedBonus, bonusSacrifice, d, set, sacrificePct, setSa
             <InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>
           </div>
           {showFVInfo && (
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:CDARK,borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
-              Assumes this amount is left untouched in your pension until retirement, growing 6% a year less 2% inflation, so it's in today's money.
+            <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,background:CDARK,borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
+              Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
               {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
                 ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
                 : m.willClear

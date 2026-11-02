@@ -6,7 +6,6 @@ import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS, PROGRESS_GREEN } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
 import { MODULE_META, isOnTrack, reviewedDone } from "../../lib/moduleStatus.js";
-import ReviewedMark from "../ReviewedMark.jsx";
 import { moduleLimits } from "../../lib/moduleLimits.js";
 import { statusLine } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
@@ -69,7 +68,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
-            {isComplete && <span style={{display:"inline-flex",animation:celebrating ? "reviewedIn 0.6s ease-out" : "none"}}><ReviewedMark/></span>}
+            {/* Reviewed shows once, on the button below. */}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"3px"}}>
             <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
@@ -96,7 +95,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
               <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out ${REVIEW_COIN_STAGGER_S}s forwards`}}><Coins size={20} color={GOLD}/></span>
             </div>
           )}
-          <button onClick={handleReviewed} style={{
+          <button type="button" onClick={handleReviewed} style={{
             width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
             color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",

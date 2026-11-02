@@ -13,7 +13,7 @@ import { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, CDARK, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, CDARK, CRITICAL, GOLD_TEXT, MUT_ON_CDARK } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
@@ -54,8 +54,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const openSavings = open => { setSavingsOpen(open); if (open) markCashSeen(); };
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
-  const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase" };
-  const stepCaption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, marginTop:"6px", background:CDARK, borderRadius:"8px", padding:"8px 10px" };
+  const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD_TEXT, letterSpacing:"0.05em", textTransform:"uppercase" };
+  const stepCaption = { fontSize:"11.5px", color:MUT_ON_CDARK, lineHeight:1.5, marginTop:"6px", background:CDARK, borderRadius:"8px", padding:"8px 10px" };
   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
   const {
@@ -91,7 +91,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
   const runwayPctRaw = runwayTarget > 0 ? (runwayCurrent / runwayTarget) * 100 : 0;
-  const runwayTierColor = runwayPctRaw >= 100 ? SUCCESS : runwayPctRaw >= 33 ? GOLD : CRITICAL;
   const runwayLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
   const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
   // A fund at its target can be closed; it comes back, and can be closed
@@ -115,11 +114,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px",paddingRight:funded && set ? "26px" : 0}}>
           <span style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Emergency fund</span>
           <span style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:600,color:G}}>
-            <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>{runwayLabel}
+            {runwayLabel}
           </span>
         </div>
         {funded && set && (
-          <button type="button" aria-label="Close" onClick={() => set("emergencyCardDismissed", true)}
+          <button type="button" aria-label="Close" className="tap44" onClick={() => set("emergencyCardDismissed", true)}
             style={{position:"absolute",top:"8px",right:"8px",background:"none",border:"none",padding:"6px",color:MUT,cursor:"pointer",display:"flex"}}><X size={18}/></button>
         )}
         <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",flexWrap:"wrap",margin:"8px 0 10px"}}>
@@ -147,7 +146,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             : `A ${fmt(m.emergencyShortfall)} gap to your ${m.bufferMonths}-month target`}
           tagLabel="Priority" tagColor={CRITICAL}>
           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-            You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target — a {fmt(m.emergencyShortfall)} gap.
+            {m.bufferMonths > 0
+              ? `The target is ${m.bufferMonths} months of your spending, at ${fmt(Math.round(m.emergencyBuffer / m.bufferMonths))} a month.`
+              : `You hold ${fmt(m.totalLiquid)} against a ${fmt(m.emergencyBuffer)} target.`}
           </p>
         </MobileWinTile>
       )}
@@ -263,12 +264,12 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
       {(hasIsaList || hasSavingsList) && (
         <MobileWinTile provider title="Explore providers" headline="Today's highest rates, Cash ISAs and savings accounts" tagLabel="Providers">
           {hasIsaList && (
-            <MobileWinTile title={products.heading} headline={mobileIsaSubheading(m)}>
+            <MobileWinTile level={3} title={products.heading} headline={mobileIsaSubheading(m)}>
               <MobileProductListTile embedded products={products.products} disclaimer={products.disclaimer}/>
             </MobileWinTile>
           )}
           {hasSavingsList && (
-            <MobileWinTile title={products.nonIsaHeading} headline={mobilePsaSubheading()}>
+            <MobileWinTile level={3} title={products.nonIsaHeading} headline={mobilePsaSubheading()}>
               <MobileProductListTile embedded products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
             </MobileWinTile>
           )}

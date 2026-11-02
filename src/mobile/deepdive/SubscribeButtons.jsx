@@ -60,7 +60,7 @@ export default function SubscribeButtons({ d, module, from }) {
     <>
       <div style={{display:"flex",gap:"8px"}}>
         {["monthly", "yearly"].map(p => (
-          <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} style={{background:p === "yearly" ? CTA_BLUE : WHITE,color:p === "yearly" ? WHITE : CTA_BLUE,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
+          <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} className="tap44" style={{background:p === "yearly" ? CTA_BLUE : WHITE,color:p === "yearly" ? WHITE : CTA_BLUE,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
             {PLANS[p].price} {PLANS[p].per}
           </button>
         ))}

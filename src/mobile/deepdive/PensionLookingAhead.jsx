@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { useNavigate } from "react-router-dom";
 import { FAST_GROWTH_YEARS } from "../../lib/crossModule.js";
 import { salaryGrowthOf, payPathOf } from "../../lib/metrics.js";
@@ -179,7 +180,7 @@ export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
         </div>
       </>)}
       <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"12px 0 0"}}>
-        An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing 6% a year, and today's tax rules.
+        An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing {GROWTH_NOMINAL_PCT}% a year, and today's tax rules.
       </p>
     </MobileWinTile>
   );

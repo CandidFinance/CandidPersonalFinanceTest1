@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { fmt } from "../../lib/format.js";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE, MUT_ON_CDARK } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
+import InfoButton from "../InfoButton.jsx";
 import { calcDrawdown, bestDrawdown, defaultDrawdownYears, drawdownYearOptions, phaseChange, pensionIhtLine } from "../../lib/drawdown.js";
 import { GROWTH_REAL_PCT } from "../../lib/growth.js";
 import { MONEY_PURCHASE_ANNUAL_ALLOWANCE } from "../../lib/pension.js";
@@ -32,16 +33,6 @@ const pct = r => `${Math.round(r * 100)}%`;
 const label = { fontSize:"9.5px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:"6px" };
 const strategyLine = (toAge, t) => `Drawdown to ${toAge}, ${t === "phased" ? "25% tax-free each withdrawal" : "lump sum in Year 1"}`;
 
-// The grey "?" beside a toggle option. A span, since it sits inside the
-// option's button.
-function OptionHelp({ onClick, open, label }) {
-  const act = e => { e.stopPropagation(); onClick(); };
-  return (
-    <span role="button" tabIndex={0} aria-label={label} aria-expanded={open} onClick={act}
-      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(e); } }}
-      style={{display:"inline-block",background:MUT,color:WHITE,borderRadius:"50%",width:"15px",height:"15px",fontSize:"10px",fontWeight:700,lineHeight:"15px",textAlign:"center",marginLeft:"6px",flexShrink:0,cursor:"pointer"}}>?</span>
-  );
-}
 
 export function Pill({ value, caption, info }) {
   return (
@@ -62,7 +53,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
   // Null until the user picks: then whichever leaves more for the years.
   const [chosenTaxFree, setChosenTaxFree] = useState(null);
   const [showAssumptions, setShowAssumptions] = useState(false);
-  const [explainer, setExplainer] = useState(null);
+  const [explainer, setExplainer] = useState(false);
   const best = bestDrawdown(d, m, years);
   if (!best) return null;
   const taxFree = chosenTaxFree ?? best.plan.taxFree;
@@ -104,23 +95,26 @@ export default function MobileDrawdown({ d, m, bare = false }) {
       )}
 
       <div style={{...label,marginTop:"16px"}}>Drawdown years</div>
-      <PillSlider value={years} onChange={setYears} options={drawdownYearOptions(d).map(y => ({ value: y, label: `${y}` }))}/>
-      <div style={{...label,marginTop:"12px"}}>Tax-free cash</div>
-      <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px",height:PILL_HEIGHT,boxSizing:"border-box"}}>
+      <PillSlider label="Drawdown years" value={years} onChange={setYears} options={drawdownYearOptions(d).map(y => ({ value: y, label: `${y}` }))}/>
+      {/* One "?" for both options: a button can't sit inside each option's button. */}
+      <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px",marginBottom:"6px"}}>
+        <span id="drawdown-tax-free" style={{...label,marginBottom:0}}>Tax-free cash</span>
+        <InfoButton open={explainer} onClick={() => setExplainer(e => !e)}/>
+      </div>
+      <div role="group" aria-labelledby="drawdown-tax-free" style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px",height:PILL_HEIGHT,boxSizing:"border-box"}}>
         {TAX_FREE_OPTIONS.map(o => (
-          <button key={o.value} type="button" onClick={() => setChosenTaxFree(o.value)} style={{
+          <button key={o.value} type="button" aria-pressed={taxFree === o.value} onClick={() => setChosenTaxFree(o.value)} style={{
             flex:1, display:"flex", alignItems:"center", justifyContent:"center", border:"none", borderRadius:RADIUS_PILL, padding:"0 6px", height:"100%", whiteSpace:"nowrap",
-            background: taxFree === o.value ? G : "transparent", color: taxFree === o.value ? WHITE : MUT,
+            background: taxFree === o.value ? G : "transparent", color: taxFree === o.value ? WHITE : MUT_ON_CDARK,
             fontSize:FONT_SIZE.BODY, fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
           }}>
             {o.label}
-            <OptionHelp label={`What's ${o.term}?`} open={explainer === o.value} onClick={() => setExplainer(e => e === o.value ? null : o.value)}/>
           </button>
         ))}
       </div>
       {explainer && (
         <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginTop:"4px",fontSize:"11.5px",color:TEXT,lineHeight:1.55}}>
-          {TAX_FREE_OPTIONS.find(o => o.value === explainer).explain}
+          {TAX_FREE_OPTIONS.map(o => <p key={o.value} style={{margin:0,marginTop:o.value === "phased" ? 0 : "8px"}}><strong>{o.label} ({o.term}).</strong> {o.explain}</p>)}
         </div>
       )}
 
