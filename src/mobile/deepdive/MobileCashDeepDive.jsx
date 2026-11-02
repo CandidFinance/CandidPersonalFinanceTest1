@@ -80,9 +80,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
 
   const showEmergencyWin = m.emergencyShortfall > 0;
   const monthsToCloseGap = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
-  let winCounter = 0;
-  const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
-  const optimiseWinNumber = ++winCounter;
   const hasIsaList = !!products.products?.length, hasSavingsList = !!products.nonIsaProducts?.length;
 
   // The Opportunity tile is the yearly loss alone; the emergency fund, a gap
@@ -110,7 +107,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         <OpportunityTile tour="figure" figures={opportunityCols}/>
       )}
 
-      {/* The emergency fund, above the numbered tiles: £ held of the
+      {/* The emergency fund, above the tiles: £ held of the
           target, and months of spending covered. `data-tour`: lit up by the
           Cash tour (CashTour.jsx), as are the tiles either side. */}
       {!fundHidden && (
@@ -144,7 +141,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
       )}
 
       {showEmergencyWin && (
-        <MobileWinTile number={emergencyWinNumber} title="Build your emergency fund"
+        <MobileWinTile title="Your emergency fund gap"
           headline={monthsToCloseGap
             ? `Your spare ${fmt(Math.round(m.monthlySurplus))} a month would close the gap in about ${monthsToCloseGap} month${monthsToCloseGap===1?"":"s"}`
             : `A ${fmt(m.emergencyShortfall)} gap to your ${m.bufferMonths}-month target`}
@@ -156,7 +153,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
       )}
 
       <div data-tour="working">
-      <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
+      <MobileWinTile title="Rates on your savings"
         headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today" open={savingsOpen} onOpenChange={openSavings}
         badge={news ? { count: news.count, label: rateUpdatesLabel(news.count) } : null}

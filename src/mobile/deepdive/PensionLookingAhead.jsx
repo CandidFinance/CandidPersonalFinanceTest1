@@ -104,7 +104,7 @@ export function CliffEdge({ cliff, onSeeMore }) {
 // later, in plain English with its £, then the alternatives, side by side
 // and not ranked (no directive advice), each with what it involves.
 const pct = r => `${Math.round(r * 100)}%`;
-export function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) {
+export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
   const navigate = useNavigate();
   const by = key => outlook.flags.find(f => f.key === key);
   const trap = by("taxTrap"), lumpSum = by("lumpSum"), later = by("retirementRate");
@@ -158,7 +158,7 @@ export function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) 
   ] : [];
 
   return (
-    <MobileWinTile number={number} title="Looking ahead" tagLabel="Tax later" headline={headline} open={open} onOpenChange={onOpenChange}>
+    <MobileWinTile title="Looking ahead" tagLabel="Tax later" headline={headline} open={open} onOpenChange={onOpenChange}>
       <div style={section}>What it means</div>
       {means.map((el, i) => <div key={i} style={i ? item : first}>{el}</div>)}
       {alternatives.length > 0 && (<>

@@ -198,23 +198,16 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   // Not for someone retired with no earnings.
   const showExplore = !(retired && !(m.salary > 0));
 
-  let winCounter = 0;
-  const win1Num = showMatchWin ? ++winCounter : null;
-  const win2Num = null;
-  const drawdownNum = drawdownBest ? ++winCounter : null;
-  const exploreNum = showExplore ? ++winCounter : null;
   // Looking ahead: what the pension's path, with salary growth, means for
   // tax later on (src/lib/crossModule.js), leading on to Investments.
   const outlook = pensionOutlook(d, m);
-  const aheadNum = outlook?.flags.length ? ++winCounter : null;
+  const showAhead = !!outlook?.flags.length;
   // The pot passing the tax-free cash limit, flagged under the chart.
   const cliff = cliffEdge(outlook, m);
-  const providersNum = products.products?.length ? ++winCounter : null;
-  // Inside the what-ifs tile, unnumbered.
-  const win3Num = null, win4Num = null;
+  const showProviders = !!products.products?.length;
 
   const sacrificeTile = (
-    <MobileWinTile number={win2Num}
+    <MobileWinTile
       title="Salary sacrifice and your tax"
       headline={taper.recoverable
         ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
@@ -329,7 +322,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
         </div>
       )}
 
-      <EmployerMatchTile showMatchWin={showMatchWin} win1Num={win1Num} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
+      <EmployerMatchTile showMatchWin={showMatchWin} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
 
       {/* Over £100,000: the £100k tax trap module has the figures now
           (taxTrap.js), so this links to it rather than repeating them. */}
@@ -352,7 +345,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
           <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
             Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
             {cf.showCarryForward
-              ? "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below."
+              ? "Unused allowance from the last 3 tax years can be carried forward, so more can go in without a charge. The calculator below works it out."
               : "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — check your provider's statements or HMRC account for an exact figure."}
           </p>
         </div>
@@ -363,7 +356,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
       {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && taxFreeCashBlock}
 
       {drawdownBest && (
-        <MobileWinTile number={drawdownNum} title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
+        <MobileWinTile title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
           headline="Choose how many years to draw it over, and how to take the tax-free cash">
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
             <Pill value={compact(taxFreeCash.pot)} caption="Pension pot"/>
@@ -391,24 +384,24 @@ export default function MobilePensionDeepDive({ d, m, set }) {
       {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
           growth to retirement) don't apply. */}
       {showExplore && (
-        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if" defaultOpen={toCarryForward}
+        <MobileWinTile title="Explore what-ifs" tagLabel="What if" defaultOpen={toCarryForward}
           headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}
 
-      <div id="carry-forward" style={{scrollMarginTop:"80px"}}><CarryForwardTile cf={cf} win3Num={win3Num} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa} open={toCarryForward}/></div>
+      <div id="carry-forward" style={{scrollMarginTop:"80px"}}><CarryForwardTile cf={cf} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa} open={toCarryForward}/></div>
 
-      <BonusTile hasStatedBonus={hasStatedBonus} win4Num={win4Num} bonusSacrifice={bonusSacrifice} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
+      <BonusTile hasStatedBonus={hasStatedBonus} bonusSacrifice={bonusSacrifice} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
 
 
         </MobileWinTile>
       )}
 
-      {aheadNum && <div id="looking-ahead" style={{scrollMarginTop:"80px"}}><LookingAhead d={d} outlook={outlook} cliff={cliff} number={aheadNum} open={aheadOpen} onOpenChange={setAheadOpen}/></div>}
+      {showAhead && <div id="looking-ahead" style={{scrollMarginTop:"80px"}}><LookingAhead d={d} outlook={outlook} cliff={cliff} open={aheadOpen} onOpenChange={setAheadOpen}/></div>}
 
       {/* Where to do it: a numbered tile like the others, the providers
           inside it once opened. */}
-      {providersNum && (
-        <MobileWinTile provider number={providersNum} title="Pension providers to compare" tagLabel="Providers"
+      {showProviders && (
+        <MobileWinTile provider title="Pension providers to compare" tagLabel="Providers"
           headline={`${products.products.length} providers, listed alphabetically`}>
           <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
         </MobileWinTile>
@@ -520,7 +513,7 @@ function GrowthChart({ showExplore, d, m, showTrajInfo, setShowTrajInfo, extraPc
 
 // The employer match tile: what's being left unclaimed, or, without a
 // pension yet, what starting one would cost after tax relief.
-function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, rowStyle, set, taxFreeCash }) {
+function EmployerMatchTile({ showMatchWin, m, d, trPct, contributing, rowStyle, set, taxFreeCash }) {
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
   // Not paying in: "Start" only when there's no pension yet.
@@ -537,7 +530,7 @@ function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, r
   return (
     <>
       {showMatchWin && (
-        <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
+        <MobileWinTile title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
           reminder={{
             id: "pension-employer-match",
             title: empCapPct > 0 ? buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match") : "Candid: Pension employer match",
@@ -547,10 +540,10 @@ function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, r
             // Shown even when the employer cap is unknown (empCapPct 0) — the
             // HR email is exactly how they'd find it out.
             description: empCapPct === 0
-              ? `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. You didn't know your employer's match cap when you set up - it's worth finding out, as it could be free money on top of your ${trPct}% tax relief.\n\nDrop HR or Payroll an email to ask what the match is and how to set it up.`
+              ? `${firstName(d) ? firstName(d)+", y" : "Y"}our employer's pension match cap isn't known yet. Any match is paid on top of your ${trPct}% tax relief.\n\nHR or Payroll can say what the match is and how it's set up.`
               : contributing
-              ? `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr.\n\nDrop HR or Payroll an email to ask how to update your contribution rate - it will likely take effect from next month.`
-              : `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match — worth ${fmt(m.missedMatch)}/yr, on top of ${trPct}% tax relief.\n\nDrop HR or Payroll an email to ask how to set this up - it will likely take effect from next month.`,
+              ? `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr in employer match.\n\nTo capture it, the change needs actioning with HR or Payroll. It usually takes effect from the next month.`
+              : `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match, worth ${fmt(m.missedMatch)}/yr on top of ${trPct}% tax relief.\n\nTo capture it, this needs actioning with HR or Payroll. It usually takes effect from the next month.`,
             email: pensionMatchDraft({ name: d.name, contributing, myPct }),
           }}>
           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:"10px"}}>
@@ -585,11 +578,11 @@ function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, r
 }
 
 // "Pay in more using past years' allowance": carry forward, year by year.
-function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa, open = false }) {
+function CarryForwardTile({ cf, setCfYears, rowStyle, aa, open = false }) {
   return (
     <>
       {cf.showCarryForward && (
-        <MobileWinTile number={win3Num} title="Pay in more using past years' allowance" defaultOpen={open}
+        <MobileWinTile title="Pay in more using past years' allowance" defaultOpen={open}
           headline={cf.cfTotalUnused > 0
             ? `Up to ${fmt(cf.cfMaxContributable)} could go into your pension this tax year using carry forward`
             : "Fill in your last 3 tax years below to see how much you could inject in one go"}
@@ -640,7 +633,7 @@ function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa, open = false 
 
 // "Your bonus and your pension": what sacrificing some of a stated bonus
 // keeps, or, with no bonus stated, how to add one.
-function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
+function BonusTile({ hasStatedBonus, bonusSacrifice, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
   const bonusPotential = bonusSacrifice.standalone;
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
   // What the slider's choice keeps from tax, NI and student loan: what
@@ -649,7 +642,7 @@ function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, set, sacrificeP
   return (
     <>
       {hasStatedBonus ? (
-        <MobileWinTile number={win4Num} title="Your bonus and your pension"
+        <MobileWinTile title="Your bonus and your pension"
           headline={bonusSacrifice.room <= 0
             ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
             : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
@@ -662,12 +655,12 @@ function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, set, sacrificeP
             // Informational, not directive — states the figures and the action
             // needed (an email to HR/Payroll) rather than instructing the
             // person to sacrifice their bonus, avoiding reading as advice.
-            description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable by sacrificing it.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
+            description: `${firstName(d) ? firstName(d)+", y" : "Y"}our bonus may be able to go into your pension by salary sacrifice. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable this way.\n\nTo capture it, this needs actioning with HR or Payroll before the bonus is paid, as it usually can't be done retrospectively.`,
             email: bonusSacrificeDraft({ name: d.name }),
           } : null}>
           {set && bonusPotential > 0 && <OpportunityChoice id={CHOICE_IDS.bonus} d={d} set={set} bank={{ moduleKey: "pension", perYear: sliderSaving }}/>}
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>
-            Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
+            A bonus sacrificed before it hits your payslip avoids tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
           </p>
 
           <div style={{marginBottom:"14px"}}>

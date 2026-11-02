@@ -18,7 +18,7 @@ import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TI
 // any future entry with no real destination yet.
 const COLLAPSED_HEIGHT = 190;
 
-// `embedded`: inside a numbered MobileWinTile (with `provider`, so the fade
+// `embedded`: inside a MobileWinTile (with `provider`, so the fade
 // ends in its grey), which gives the heading: no frame or heading of its own.
 export default function MobileProviderTile({ heading, products, disclaimer, embedded = false }) {
   const [open, setOpen] = useState(false);

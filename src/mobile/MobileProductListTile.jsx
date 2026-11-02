@@ -10,7 +10,7 @@ import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, 
 // of plain whitespace below a short fade. Expands to the full list on tap.
 const COLLAPSED_HEIGHT = 98;
 
-// `embedded`: inside a numbered MobileWinTile with `provider`, which gives
+// `embedded`: inside a MobileWinTile with `provider`, which gives
 // the heading and the frame.
 export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false }) {
   const [open, setOpen] = useState(false);

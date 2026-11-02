@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
+import { G, GOLD, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
 import MobileReminderAction, { ActionButton } from "./MobileReminderAction.jsx";
 import NewBadge from "./NewBadge.jsx";
 
-// Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
-// numbered, at mobile density, and reuses the same expand pattern already established in
+// Compact, tap-to-expand "Win" tile for mobile module deep-dive pages, at
+// mobile density. Unnumbered: numbers read as steps to follow, and Candid
+// lists, it doesn't direct. Reuses the expand pattern from
 // MobileModulesScreen (white card, chevron rotate on open). `reminder`
 // (optional {id,title,description,email}) adds a labelled "Remind me" action
 // pill at the bottom of the expanded tile, turning the Win into something
@@ -19,7 +20,7 @@ import NewBadge from "./NewBadge.jsx";
 // something new in it (NewBadge.jsx).
 // `action` ({ label, onClick }): a CTA-blue button at the bottom of the
 // expanded tile, sharing the row half and half with the reminder pill.
-export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, action, provider = false, open: openProp, onOpenChange, badge, children }) {
+export default function MobileWinTile({ title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, action, provider = false, open: openProp, onOpenChange, badge, children }) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
   const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
@@ -29,25 +30,20 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
   return (
     <div style={{position:"relative",marginBottom:"12px"}}>
     <div style={{...surface,borderRadius:RADIUS_CARD,overflow:"hidden"}}>
-      <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"16px 16px 13px",cursor:"pointer"}}>
-        {number != null && (
-          <div style={{width:"24px",height:"24px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-            <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{number}</span>
-          </div>
-        )}
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
-            <div style={{fontSize:"15px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</div>
+      <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",width:"100%",padding:"16px 16px 13px",background:"none",border:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
+        <span style={{display:"block",flex:1,minWidth:0}}>
+          <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
+            <span style={{fontSize:"15px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</span>
             {tagLabel && (
               <span style={{fontSize:"9.5px",fontWeight:700,color:tagColor,background:`${tagColor}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap",flexShrink:0}}>{tagLabel}</span>
             )}
-          </div>
-          <div style={{fontSize:"13.5px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>{headline}</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0,marginTop:"2px"}}>
-          <ChevronRight size={14} color={MUT} style={{transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-        </div>
-      </div>
+          </span>
+          {headline && <span style={{display:"block",fontSize:"13.5px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>{headline}</span>}
+        </span>
+        <span style={{display:"flex",alignItems:"center",flexShrink:0,marginTop:"2px"}}>
+          <ChevronRight size={14} color={MUT} aria-hidden="true" style={{transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+        </span>
+      </button>
       {open && (
         <div style={{padding:"0 16px 16px"}}>
           {children}

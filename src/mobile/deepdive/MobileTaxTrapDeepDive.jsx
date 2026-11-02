@@ -434,10 +434,10 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
           description={`Check payroll have raised your salary sacrifice pension contribution from ${plan.pctNow}% to ${pctTo}% of salary from your ${monthName(first)} pay, for the rest of this tax year.`}
           email={pensionIncreaseDraft({ name: d.name, from: plan.pctNow, to: pctTo, month: monthName(first) })}/>;
         return single
-          ? <MobileReminderAction id="taxtrap-relief" beside={beside} title={`Pay ${fmt(each)} into your pension before 5 April`}
-              description={`Paying ${fmt(each)} into your pension before 5 April brings your income back towards ${K}. Claim the higher-rate relief through Self Assessment.`}/>
-          : <MobileReminderAction id="taxtrap-relief" beside={beside} title={`Pay ${fmt(each)} a month into your pension until April`}
-              description={`${fmt(each)} a month into your pension over the ${n} paydays left, or ${fmt(total)} in one payment before 5 April, brings your income back towards ${K}. Claim the higher-rate relief through Self Assessment.`}/>;
+          ? <MobileReminderAction id="taxtrap-relief" beside={beside} title={`Pension: ${fmt(each)} before 5 April`}
+              description={`Paying ${fmt(each)} into your pension before 5 April brings your income back towards ${K}. The higher-rate relief is claimed through Self Assessment.`}/>
+          : <MobileReminderAction id="taxtrap-relief" beside={beside} title={`Pension: ${fmt(each)} a month until April`}
+              description={`${fmt(each)} a month into your pension over the ${n} paydays left, or ${fmt(total)} in one payment before 5 April, brings your income back towards ${K}. The higher-rate relief is claimed through Self Assessment.`}/>;
       })()}
       {each > 0 && p.avoided > 0 && <p style={{...note,fontSize:"11.5px"}}>Switching on "I've set this up" counts {fmt(p.avoided)} a year as saved, at the amount set above.</p>}
       </>}
@@ -880,14 +880,12 @@ function CheckRow({ state, topic, line, value }) {
 }
 
 // Other options: each way back to £100k a card in a white wallet
-// (CardStack.jsx), in a set order: the pension, a 4-day week, Gift Aid,
-// then other salary sacrifice. Each card's top line is what it brings; in
+// (CardStack.jsx), largest worth first as taxTrap.js sorts them. Each card's top line is what it brings; in
 // front, what it takes, then what it brings (green) and what it costs (red).
 // The tile minimises to its title.
-const ORDER = ["pension", "fourDay", "giftAid", "sacrifice"];
 function Options({ t, plan }) {
   const [open, setOpen] = useState(true);
-  const ways = ORDER.map(k => t.options.find(o => o.key === k)).filter(Boolean).map(o => ({ ...o, ...WAY[o.key](o, t, plan) }));
+  const ways = t.options.filter(o => WAY[o.key]).map(o => ({ ...o, ...WAY[o.key](o, t, plan) }));
   const cards = ways.map(w => ({
     key: w.key, label: w.option, amount: w.top,
     body: () => (
@@ -931,28 +929,28 @@ const WAY = {
   pension: (o, t, plan) => ({
     option: o.route === "sacrifice" ? "Salary sacrifice" : "Pension contributions",
     top: `+${fmt(o.pension)}`,
-    needed: `Add ${fmt(o.amount)} to your pension by ${o.route === "sacrifice" ? "salary sacrifice" : "relief at source"}${plan.n === 0 ? " before 5 April"
+    needed: `You could add ${fmt(o.amount)} to your pension by ${o.route === "sacrifice" ? "salary sacrifice" : "relief at source"}${plan.n === 0 ? " before 5 April"
       : o.route === "sacrifice" ? `: ${plan.pctNow}% to ${plan.pctTo}% of salary over ${paydaysLeft(plan)}` : `: ${fmt(plan.monthly)} a month over ${paydaysLeft(plan)}, or in one payment before 5 April`}${o.fits ? "" : `, more than the ${fmt(t.aaRoom)} allowance left this year`}.`,
     outcome: [{ label: "Into your pension", value: o.pension }, ...childcareChip(o), takeHome(o)],
   }),
   fourDay: o => ({
     option: "Reduced hours",
     top: `+${o.daysOff} days off`,
-    needed: `Work a 4-day week: ${fmt(o.gross)} less salary${o.under ? "" : `, still over ${K}`}.`,
+    needed: `You could work a 4-day week: ${fmt(o.gross)} less salary${o.under ? "" : `, still over ${K}`}.`,
     outcome: [{ label: "Days off a year", value: o.daysOff, text: `+${o.daysOff}` }, ...childcareChip(o), takeHome(o)],
   }),
   giftAid: o => ({
     option: "Charitable donations",
     top: `+${fmt(o.charity)}`,
-    needed: `Give ${fmt(o.given)} with Gift Aid: the charity gets ${fmt(o.charity)}.`,
+    needed: `You could give ${fmt(o.given)} with Gift Aid: the charity gets ${fmt(o.charity)}.`,
     outcome: [{ label: "Charity gets", value: o.charity }, ...childcareChip(o), takeHome(o, "Cost to you")],
   }),
   sacrifice: (o, t, plan) => ({
     option: "Other salary sacrifice",
     top: "Car or bike",
     needed: plan.n > 0
-      ? `Swap ${fmt(plan.monthly)} a month of salary (${Math.round((plan.pctTo - plan.pctNow) * 10) / 10}% of it) over ${paydaysLeft(plan)} for an electric car or cycle to work.`
-      : `Swap ${fmt(o.amount)} of salary for an electric car or cycle to work.`,
+      ? `You could swap ${fmt(plan.monthly)} a month of salary (${Math.round((plan.pctTo - plan.pctNow) * 10) / 10}% of it) over ${paydaysLeft(plan)} for an electric car or cycle to work.`
+      : `You could swap ${fmt(o.amount)} of salary for an electric car or cycle to work.`,
     outcome: [{ label: "You get", text: "Car or bike", tone: "gain" }, ...childcareChip(o), takeHome(o)],
   }),
 };

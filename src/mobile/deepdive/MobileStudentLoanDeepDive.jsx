@@ -543,7 +543,7 @@ function LockedOpportunity({ d }) {
         <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 1px 12px rgba(0,0,0,0.12)",borderRadius:"12px",padding:"14px 16px 4px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}><Clock size={14} color={OPPORTUNITY_TILE_FIGURE}/>Is paying it off early worth it?</div>
           <p style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
-            You're most of the way there. Adding a few more details will help you understand the trade-offs and determine if paying off early is right for you.
+            A few more details show the full trade-offs of paying off early.
           </p>
           {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash & savings")}
           {hasEmployerMatch(d) && step(loanPensionChecked(d), "/app/module/pension?from=studentLoan", "Pension")}
@@ -584,9 +584,9 @@ function SpareCheck({ d, m, sl, amount }) {
   if (hasEmployerMatch(d)) {
     const checked = loanPensionChecked(d);
     items.push(!checked
-      ? { topic: "Pension match", ok: "critical", text: "Not checked yet", long: "Your employer may match what you pay into your pension. Paying in up to the match beats overpaying, so check it before deciding.", add: "Add your pension" }
+      ? { topic: "Pension match", ok: "critical", text: "Not checked yet", long: "Your employer may match what you pay into your pension. Paying in up to the match beats overpaying.", add: "Add your pension" }
       : d.pensionStatus === "no"
-        ? { topic: "Pension match", ok: "critical", text: "Not paying into a pension", long: "Most employers pay into your pension when you do, which beats overpaying. Check what yours offers before deciding.", add: "See your full pension answer" }
+        ? { topic: "Pension match", ok: "critical", text: "Not paying into a pension", long: "Most employers pay into your pension when you do, which beats overpaying.", add: "See your full pension answer" }
         : m.missedMatch > 0
           ? { topic: "Pension match", ok: "critical", text: `${k(m.missedMatch)}/yr unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.`, add: "See your full pension answer" }
           : { topic: "Pension match", ok: true, text: "Full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
@@ -769,22 +769,22 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
               </p>
             </div>
           )}
-          <div style={rowStyle}><span>Step 1 — Outstanding balance at {sl.slRatePct}%</span><span style={{fontWeight:700,color:G}}>{fmt(m.loanBal)}</span></div>
+          <div style={rowStyle}><span>Outstanding balance at {sl.slRatePct}%</span><span style={{fontWeight:700,color:G}}>{fmt(m.loanBal)}</span></div>
           {surplusCash > 0 ? (
-            <div style={rowStyle}><span>Step 2 — Spare cash above your buffer</span><span style={{fontWeight:700,color:G}}>{fmt(surplusCash)}</span></div>
+            <div style={rowStyle}><span>Spare cash above your buffer</span><span style={{fontWeight:700,color:G}}>{fmt(surplusCash)}</span></div>
           ) : (
-            <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
+            <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
           <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0 ? SUCCESS : sl.effectiveBenefit === 0 ? MUT : CRITICAL}}>
-            <span>Step 3 — {sl.lifeRatePct}% loan (average over its life) vs {sl.cashRate}% highest savings</span>
+            <span>{sl.lifeRatePct}% loan (average over its life) vs {sl.cashRate}% highest savings</span>
             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : sl.effectiveBenefit === 0 ? "Level" : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
           <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:GOLD}}>
-            <span>Step 4 — {sl.lifeRatePct}% loan (average over its life) vs {sl.pensionGrowthPct}% assumed pension growth</span>
+            <span>{sl.lifeRatePct}% loan (average over its life) vs {sl.pensionGrowthPct}% assumed pension growth</span>
             <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension ahead by ${Math.abs(sl.pensionGap)}%, if growth holds`}</span>
           </div>
           <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-            Tax relief isn't part of step 4: overpaying clears the loan sooner, and the money that frees up gets the same relief when it goes into your pension then.
+            Tax relief isn't part of the pension comparison: overpaying clears the loan sooner, and the money that frees up gets the same relief when it goes into your pension then.
           </p>
         </MobileWinTile>
       )}

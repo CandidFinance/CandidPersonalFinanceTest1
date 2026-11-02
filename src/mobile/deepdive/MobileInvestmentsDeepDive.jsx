@@ -96,7 +96,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       )}
 
       {showGains && (
-      <MobileWinTile number={1} title="Tax-free gains this year"
+      <MobileWinTile title="Tax-free gains this year"
         headline={m.crystallisable > 0
           ? (m.remainingCgtAllowance >= 3000
               ? "Your full £3,000 tax-free gains allowance is available this year."
@@ -109,7 +109,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
           // Informational, not directive — states the figures and points to
           // your platform/adviser for the "how", rather than instructing a
           // specific trade (avoids reading as financial advice).
-          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year, against ~${fmt(totalGains)} of unrealised gain.${instantSellTax > 0 ? ` Selling it all today would cost ${fmt(instantSellTax)} in tax — spreading it over ${spreadYears.length} tax years (${spreadTimingLabel}) avoids that entirely.` : ` Crystallising ${fmt(m.crystallisable)} of it now costs £0 in tax.`}\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
+          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year, against ~${fmt(totalGains)} of unrealised gain.${instantSellTax > 0 ? ` Selling it all today would cost ${fmt(instantSellTax)} in tax — spreading it over ${spreadYears.length} tax years (${spreadTimingLabel}) avoids that entirely.` : ` Crystallising ${fmt(m.crystallisable)} of it now costs £0 in tax.`}\n\nTo use this year's allowance, this needs actioning before 5 April. Your platform, or a financial adviser, can say how it works for your holdings.`,
         } : null}>
         {m.crystallisable > 0 ? (
           <div>
@@ -202,7 +202,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       </MobileWinTile>
       )}
 
-      <MobileWinTile number={showGains ? 2 : 1} title="Your ISA allowance"
+      <MobileWinTile title="Your ISA allowance"
         headline={m.isaHeadroom > 0
           ? `${fmt(m.isaHeadroom)} remaining.`
           : "You've used your full £20,000 ISA allowance this tax year."}
@@ -210,7 +210,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         reminder={m.isaHeadroom > 0 ? {
           id: "investments-isa-allowance",
           title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),
-          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your ISA allowance before the tax year ends. You have ${fmt(m.isaHeadroom)} of it unused — investing it shelters future growth from tax, permanently.\n\nUnused allowance doesn't carry over: it's gone after April 5th and a fresh £20,000 opens on April 6th - worth a quick check with your platform or adviser on where to put it.`,
+          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.isaHeadroom)} of your ISA allowance unused this tax year. Money invested in it grows free of tax, permanently.\n\nUnused allowance doesn't carry over: to capture it, this needs actioning before 5 April, when a fresh £20,000 opens.`,
         } : null}>
         {m.isaHeadroom > 0 ? (
           <div>
@@ -247,7 +247,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       </MobileWinTile>
 
       {products.products?.length > 0 && (
-        <MobileWinTile provider number={showGains ? 3 : 2} title="Stocks and Shares ISA providers to compare" tagLabel="Providers"
+        <MobileWinTile provider title="Stocks and Shares ISA providers to compare" tagLabel="Providers"
           headline={`${products.products.length} providers, listed alphabetically`}>
           <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
         </MobileWinTile>
