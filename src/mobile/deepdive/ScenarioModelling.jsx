@@ -9,6 +9,7 @@ import { PillSlider } from "../PillSlider.jsx";
 import SubscribeButtons from "./SubscribeButtons.jsx";
 import { SubscriberCrown } from "../Premium.jsx";
 import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.js";
+import { TileRow, ROW, withIcon, Nested } from "../MobileTile.jsx";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
 
 // "Scenario modelling" at the top of the student loan page's figures to
@@ -39,14 +40,41 @@ const CSS = `
 .sm-tile.sm-open::after { display: none; }
 `;
 
-export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved }) {
-  const [expanded, setExpanded] = useState(false);
+// `row`: a row of the page's What ifs tile instead (MobileTile.jsx), its
+// icon in a box and the Subscribers pill beside its label, the builder
+// opening under it; `expanded` and `onToggle` then come from the page, which
+// keeps one what-if open at a time.
+export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved, row = false, expanded: shown, onToggle }) {
+  const [ownExpanded, setExpanded] = useState(false);
+  const expanded = row ? shown : ownExpanded;
   const [used] = useState(() => featureUsed(d, "scenarioModelling"));
   const toggle = () => {
     if (!expanded && open && hasAccess() && !featureUsed(d, "scenarioModelling")) set("subscriberFeaturesUsed", withFeatureUsed(d, "scenarioModelling"));
-    setExpanded(e => !e);
+    if (row) onToggle(); else setExpanded(e => !e);
   };
   const ink = used ? G : CTA_BLUE;
+  const pill = used ? <SubscriberCrown/> : (
+    <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+      {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
+    </span>
+  );
+  if (row) return (
+    <>
+      <TileRow onClick={toggle} expanded={expanded}>
+        {withIcon(Layers, <>
+          <div style={{...ROW.label,fontWeight:600,display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>Scenario modelling{pill}</div>
+          <div style={ROW.note}>Your pay year by year, and plans of lump sums and monthly overpayments</div>
+        </>, false, used ? STUDENT_PURPLE : CTA_BLUE)}
+      </TileRow>
+      {expanded && (
+        <Nested>
+          <TileRow>
+            {open ? <><PayByYear d={d} m={m} sl={sl} set={set}/><PlanBuilder d={d} m={m} sl={sl} set={set} run={run} onSaved={onPlanSaved}/></> : <Locked d={d}/>}
+          </TileRow>
+        </Nested>
+      )}
+    </>
+  );
   return (
     <div className={used ? undefined : expanded ? "sm-tile sm-open" : "sm-tile"} style={used
       ? {background:WHITE,border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 1px 3px rgba(22,47,36,0.06)"}
@@ -57,9 +85,7 @@ export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSave
         <span style={{flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
             <span style={{fontSize:"14px",fontWeight:700,color:ink}}>Scenario modelling</span>
-            {used ? <SubscriberCrown/> : <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
-              {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
-            </span>}
+            {pill}
           </span>
           <span style={{display:"block",fontSize:"12px",color:TEXT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
         </span>

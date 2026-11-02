@@ -17,8 +17,9 @@ import { G, WHITE, MUT, TEXT, CDARK, MUT_ON_CDARK } from "../design-tokens.js";
 // "Gains" on Home (moduleStatus.js bankChange). The overpayment itself counts
 // towards this tax year's on Progress (progressTracker.js loanOverpaidAfter).
 // `initial`: the figure to start from (the page suggests today's balance
-// less any lump sum being modelled).
-export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = null, onClose }) {
+// less any lump sum being modelled). `bare`: in a pop-out card that has
+// its own title (MobileTile.jsx TilePopover): no panel, no title.
+export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = null, onClose, bare = false }) {
   const [input, setInput] = useState(initial ?? Math.round(m.loanBal));
   const [step, setStep] = useState(1);
   const [picks, setPicks] = useState([]);
@@ -44,8 +45,8 @@ export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = n
   const ghost = { flex:1, background:"transparent", border:"1.3px solid rgba(22,47,36,0.2)", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, color:G, cursor:"pointer", fontFamily:"inherit" };
   const solid = off => ({ flex:1, background:off ? "rgba(22,47,36,0.25)" : G, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, color:WHITE, cursor:off ? "not-allowed" : "pointer", fontFamily:"inherit" });
   return (
-    <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
-      <div style={{fontSize:"11px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
+    <div style={bare ? undefined : {background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+      {!bare && <div style={{fontSize:"11px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>}
       {step === 1 ? (
         <>
           <PillMoneyInput label="New balance" value={input} onChange={v => setInput(v ?? 0)}/>

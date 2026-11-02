@@ -36,6 +36,13 @@ const CSS = `
   .opp-split { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 32px; align-items: center; }
   .opp-split .opp-side { border-left: 1px solid rgba(216,208,187,0.3); padding-left: 30px; }
   .opp-split .opp-side > :first-child { margin-top: 0 !important; }
+  /* One figure beside its side: the overline pinned in the corner, out of
+     the flow, and the figure padded clear of it equally above and below,
+     so it sits on the tile's middle line without extra space under a
+     tall side. */
+  .opp-solo .opp-fig { padding: 22px 0; }
+  .opp-tile.opp-solo > .opp-over { position: absolute; top: 24px; left: 32px; }
+  .opp-solo .opp-fig > div { margin-top: 0 !important; }
 }
 `;
 
@@ -65,7 +72,7 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
     </>
   );
   return (
-    <div data-tour={tour} className={`opp-tile${multi ? " opp-multi" : ""}`}
+    <div data-tour={tour} className={`opp-tile${multi ? " opp-multi" : ""}${!multi && !alert && !stacked ? " opp-solo" : ""}`}
       style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,marginBottom:"16px",...style}}>
       <style>{CSS}</style>
       {alert ? (
@@ -87,13 +94,18 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
           {extras}
         </>
       ) : (
-        <div className={stacked ? undefined : "opp-split"}>
-          <div><div style={over}>{overline}</div><Figure f={figures[0]}/></div>
-          <div className="opp-side" style={{minWidth:0}}>
-            {figures[0].label && <div className="opp-label" style={label}>{figures[0].label}</div>}
-            {extras}
+        // The overline above the split, so it stays in the top left corner
+        // however tall the side beside the figure is.
+        <>
+          <div className="opp-over" style={over}>{overline}</div>
+          <div className={stacked ? undefined : "opp-split"}>
+            <div className="opp-fig"><Figure f={figures[0]}/></div>
+            <div className="opp-side" style={{minWidth:0}}>
+              {figures[0].label && <div className="opp-label" style={label}>{figures[0].label}</div>}
+              {extras}
+            </div>
           </div>
-        </div>
+        </>
       )}
       {children}
     </div>

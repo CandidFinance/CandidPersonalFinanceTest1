@@ -20,7 +20,7 @@ import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow } from "../MobileTile.jsx";
+import MobileTile, { TileRow, RowText } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import MobileDrawdown from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
@@ -357,13 +357,9 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
       {/* The what-ifs: a row each with its figure, its calculator opening
           under it, one at a time. Retired with no earnings, they don't apply. */}
       {showExplore && (
-        <MobileTile id="pension-whatifs" title="What ifs" menu={[editItem]}>
-          <TileRow first style={{paddingTop:0}}><div style={{...rowNote,marginTop:0}}>Calculators, worked out on your figures</div></TileRow>
+        <MobileTile id="pension-whatifs" title="What ifs" subtitle="Calculators, worked out on your figures" menu={[editItem]}>
           <TileRow onClick={() => toggleWhatIf("bonus")} expanded={whatIf === "bonus"}>
-            {withIcon(Gift, <>
-              <div style={line}><span style={{...rowLabel,fontWeight:600}}>{hasStatedBonus ? "Your bonus into your pension" : "A bonus into your pension"}</span>{bonusRow.figure && <span style={{...rowFigure,color:SUCCESS}}>{bonusRow.figure}</span>}</div>
-              <div style={rowNote}>{bonusRow.note}</div>
-            </>)}
+            {withIcon(Gift, <RowText label={hasStatedBonus ? "Your bonus into your pension" : "A bonus into your pension"} note={bonusRow.note} figure={bonusRow.figure} figureStyle={{color:SUCCESS}}/>)}
           </TileRow>
           {whatIf === "bonus" && (
             <Nested><BonusCalc hasStatedBonus={hasStatedBonus} bonusPotential={bonusPotential} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m} onEditInputs={onEditInputs}/></Nested>
@@ -386,20 +382,15 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
 
           {cf.showCarryForward && (
             <TileRow id="carry-forward" onClick={() => toggleWhatIf("carryForward")} expanded={whatIf === "carryForward"}>
-              {withIcon(History, <>
-                <div style={line}><span style={{...rowLabel,fontWeight:600}}>Past years' allowance</span>{cf.cfTotalUnused > 0 && <span style={rowFigure}>{fmt(cf.cfMaxContributable)}</span>}</div>
-                <div style={rowNote}>{cf.cfTotalUnused > 0 ? "Could go into your pension this tax year, using carry forward" : "Fill in your last 3 tax years to see what could go in"}</div>
-              </>)}
+              {withIcon(History, <RowText label="Past years' allowance" figure={cf.cfTotalUnused > 0 && fmt(cf.cfMaxContributable)}
+                note={cf.cfTotalUnused > 0 ? "Could go into your pension this tax year, using carry forward" : "Fill in your last 3 tax years to see what could go in"}/>)}
             </TileRow>
           )}
           {cf.showCarryForward && whatIf === "carryForward" && <Nested><CarryForwardCalc cf={cf} setCfYears={setCfYears} aa={aa}/></Nested>}
 
           {showSacrifice && (
             <TileRow onClick={() => toggleWhatIf("sacrifice")} expanded={whatIf === "sacrifice"}>
-              {withIcon(HandCoins, <>
-                <div style={line}><span style={{...rowLabel,fontWeight:600}}>Salary sacrifice</span><span style={rowFigure}>{fmt(belowTrap)}</span></div>
-                <div style={rowNote}>Below the £100,000 taper</div>
-              </>)}
+              {withIcon(HandCoins, <RowText label="Salary sacrifice" note="Below the £100,000 taper" figure={fmt(belowTrap)}/>)}
             </TileRow>
           )}
           {showSacrifice && whatIf === "sacrifice" && <Nested><SacrificeCalc d={d} m={m} trPct={trPct} extraPct={extraPct} setExtraPct={setExtraPct} chartSlider={showChart}/></Nested>}
@@ -410,8 +401,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
 
       {/* Places to look, not steps: a row per provider. */}
       {showProviders && (
-        <MobileTile id="pension-providers" title="Pension providers" menu={[howItem("providers", "About this list"), editItem]}>
-          <TileRow first style={{paddingTop:0}}><div style={{...rowNote,marginTop:0}}>Yearly charges, listed alphabetically</div></TileRow>
+        <MobileTile id="pension-providers" title="Pension providers" subtitle="Yearly charges, listed alphabetically" menu={[howItem("providers", "About this list"), editItem]}>
           <MobileProductListTile embedded flush noun="providers" products={products.products}/>
           {notes.providers && products.disclaimer && (
             <TileRow><p style={{...rowNote,marginTop:0}}>{products.disclaimer}</p></TileRow>

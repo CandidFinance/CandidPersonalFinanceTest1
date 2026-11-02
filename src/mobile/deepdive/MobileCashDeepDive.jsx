@@ -291,8 +291,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         hasIsaList && { id: "cash-isas", title: "Cash ISAs", sub: mobileIsaSubheading(m), list: products.products },
         hasSavingsList && { id: "cash-savings", title: "Savings accounts", sub: mobilePsaSubheading(), list: products.nonIsaProducts },
       ].filter(Boolean).map(t => (
-        <MobileTile key={t.id} id={t.id} title={t.title} menu={[howItem(t.id, "About these rates"), editItem]}>
-          <TileRow first style={{paddingTop:0}}><div style={{...rowNote,marginTop:0}}>{t.sub}</div></TileRow>
+        <MobileTile key={t.id} id={t.id} title={t.title} subtitle={t.sub} menu={[howItem(t.id, "About these rates"), editItem]}>
           <MobileProductListTile embedded flush products={t.list}/>
           {notes[t.id] && products.disclaimer && (
             <TileRow><p style={{...rowNote,marginTop:0}}>{products.disclaimer}</p></TileRow>
