@@ -5,7 +5,7 @@ import { isEasyAccess } from "../lib/savingsRates.js";
 export const MIN_LISTED_RATE = 2.5;
 
 // The provider lists on the Cash, Investments and Pension screens, shown by
-// MobileProductListTile (cash rates) and MobileProviderTile (the others).
+// MobileProductListTile.
 export function getModuleProducts(key, d, m, savingsRates) {
   switch (key) {
     case "cash": {

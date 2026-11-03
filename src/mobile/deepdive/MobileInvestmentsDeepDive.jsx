@@ -1,35 +1,40 @@
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { Bell, Info, Pencil, Receipt } from "lucide-react";
 import { retirementAgeFor } from "../../lib/metrics.js";
 import { fmt } from "../../lib/format.js";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileWinTile from "../MobileWinTile.jsx";
-import MobileProviderTile from "../MobileProviderTile.jsx";
+import MobileTile, { TileRow, RowText, ROW, TilePopover, anchor } from "../MobileTile.jsx";
+import MobileProductListTile from "../MobileProductListTile.jsx";
 import GoToProviderButton from "../GoToProviderButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
+import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
 import { firstName } from "../copy.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, CDARK, SUCCESS, GOLD_TEXT, MUT_ON_CDARK } from "../../design-tokens.js";
+import { G, WHITE, CRITICAL, SUCCESS } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
-// moduleKey==="investments" — CandidApp.jsx). Keeps both wins (crystallise
-// CGT-exempt gains, use unused ISA allowance) with the same numbers, using
-// tap-to-reveal "?" bubbles for the two explainer asides (Bed & breakfasting,
-// Use it or lose it) instead of desktop's always-visible MiniExpandTiles.
-// Drops the ISA compound-growth line chart and live ISA-provider product
-// cards for this v1 — same trim rationale as Cash/Student Loan (no
-// savingsRates wired into the mobile route yet, and inline charts need
-// mobile-specific redesign, not a direct port).
-// Leads with the answer: the tax-free profit tile only when there's profit to
-// talk about, otherwise the ISA allowance first.
-export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain }) {
-  const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | "isa" | null
+// moduleKey==="investments" — CandidApp.jsx). Three tiles (MobileTile, rows
+// on the tile, actions in its menu): this year's tax-free gains, the ISA
+// allowance, and the ISA providers. Both wins keep desktop's numbers.
+// Explanations pop out from a ? beside their row (TilePopover). Drops the
+// ISA compound-growth line chart for this v1: inline charts need a
+// mobile-specific redesign, not a direct port.
+// Leads with the answer: the tax-free profit figure only when there's profit
+// to talk about, otherwise the ISA allowance first.
+export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain, onEditInputs }) {
+  // The ? open beside a row: "bnb" | "isa" | "move" | null.
+  const [openInfo, setOpenInfo] = useState(null);
+  const toggleInfo = k => setOpenInfo(o => (o === k ? null : k));
+  // Each tile's explanation, from its menu.
+  const [notes, setNotes] = useState({});
+  const toggleNote = k => setNotes(n => ({ ...n, [k]: !n[k] }));
   const [loggingGain, setLoggingGain] = useState(false);
   const [amountSoldInput, setAmountSoldInput] = useState(null);
   const [gainInput, setGainInput] = useState(null);
-  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
 
   const openGainLogger = () => { setAmountSoldInput(null); setGainInput(null); setLoggingGain(true); };
   const closeGainLogger = () => setLoggingGain(false);
@@ -54,9 +59,9 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   const cgtRatePct = Math.round(m.cgtRate * 100);
   // Single source of truth for every £ figure this tile shows — crystallisable
   // (m, from metrics.js) is "what fits under this year's remaining allowance";
-  // everything else here is derived from that one number, so the collapsed
-  // pill, the breakdown, and the two-option comparison can never disagree
-  // with each other the way the old cgtSaving-vs-ad-hoc-taxIfWait split did.
+  // everything else here is derived from that one number, so the rows can
+  // never disagree with each other the way the old cgtSaving-vs-ad-hoc-
+  // taxIfWait split did.
   const taxableSurplus = Math.max(0, totalGains - m.crystallisable);
   const instantSellTax = Math.round(taxableSurplus * m.cgtRate);
   // How many tax years it'd take to shield the whole gain: this year's
@@ -82,6 +87,29 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   const showGains = m.crystallisable > 0 || totalGains > 0;
   const hasOpportunity = m.isaHeadroom > 0 || m.crystallisable > 0;
 
+  const gainsReminder = useReminder({
+    id: "investments-crystallise-gains",
+    title: buildReminderSubject(fmt(m.crystallisable), "Crystallise capital gains"),
+    // Informational, not directive — states the figures and points to
+    // your platform/adviser for the "how", rather than instructing a
+    // specific trade (avoids reading as financial advice).
+    description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year, against ~${fmt(totalGains)} of unrealised gain.${instantSellTax > 0 ? ` Selling it all today would cost ${fmt(instantSellTax)} in tax — spreading it over ${spreadYears.length} tax years (${spreadTimingLabel}) avoids that entirely.` : ` Crystallising ${fmt(m.crystallisable)} of it now costs £0 in tax.`}\n\nTo use this year's allowance, this needs actioning before 5 April. Your platform, or a financial adviser, can say how it works for your holdings.`,
+  });
+  const isaReminder = useReminder({
+    id: "investments-isa-allowance",
+    title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),
+    description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.isaHeadroom)} of your ISA allowance unused this tax year. Money invested in it grows free of tax, permanently.\n\nUnused allowance doesn't carry over: to capture it, this needs actioning before 5 April, when a fresh £20,000 opens.`,
+  });
+
+  const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
+  const howItem = (k, label = "How this is worked out") => ({ icon: Info, label: notes[k] ? "Hide the explanation" : label, onClick: () => toggleNote(k) });
+  // Once set, the pills in the tile say so; the menu has nothing more to do.
+  const remindItem = r => !r.isSet && { icon: Bell, label: "Remind me", onClick: r.setReminder };
+  // A ? beside a row's label, kept within the row's line height.
+  const info = k => <span style={{display:"inline-flex",margin:"-4px 0"}}><InfoButton onClick={() => toggleInfo(k)} open={openInfo === k}/></span>;
+  const pill = { flex:1, borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
+  const isaTitle = `Invested, by age ${retirementAge}`;
+
   return (
     <div>
       {hasOpportunity && (
@@ -97,161 +125,142 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       )}
 
       {showGains && (
-      <MobileWinTile title="Tax-free gains this year"
-        headline={m.crystallisable > 0
-          ? (m.remainingCgtAllowance >= 3000
-              ? "Your full £3,000 tax-free gains allowance is available this year."
-              : `You have ${fmt(m.remainingCgtAllowance)} of your £3,000 tax-free gains allowance left this year.`)
-          : "No profit to take tax-free this tax year."}
-        tagLabel="This tax year" tagColor={GOLD}
-        reminder={m.crystallisable > 0 ? {
-          id: "investments-crystallise-gains",
-          title: buildReminderSubject(fmt(m.crystallisable), "Crystallise capital gains"),
-          // Informational, not directive — states the figures and points to
-          // your platform/adviser for the "how", rather than instructing a
-          // specific trade (avoids reading as financial advice).
-          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year, against ~${fmt(totalGains)} of unrealised gain.${instantSellTax > 0 ? ` Selling it all today would cost ${fmt(instantSellTax)} in tax — spreading it over ${spreadYears.length} tax years (${spreadTimingLabel}) avoids that entirely.` : ` Crystallising ${fmt(m.crystallisable)} of it now costs £0 in tax.`}\n\nTo use this year's allowance, this needs actioning before 5 April. Your platform, or a financial adviser, can say how it works for your holdings.`,
-        } : null}>
-        {m.crystallisable > 0 ? (
-          <div>
-            <div style={{background:"#f8f7f4",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"4px 14px",marginBottom:"12px"}}>
-              <div style={rowStyle}><span>Profit so far</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-              <div style={rowStyle}><span>Less: tax-free allowance left</span><span>−{fmt(m.crystallisable)}</span></div>
-              <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Profit above the allowance</span><span>{fmt(taxableSurplus)}</span></div>
-              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?CRITICAL:G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
-            </div>
-
-            {instantSellTax > 0 ? (
-              <>
-                <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
-                  <div style={{flex:1,background:WHITE,border:"1.5px solid rgba(192,57,43,0.25)",borderRadius:"10px",padding:"10px 12px"}}>
-                    <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Sell it all today</div>
-                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:CRITICAL}}>{fmt(instantSellTax)}</div>
-                    <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
-                  </div>
-                  <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
-                    <div style={{fontSize:"9.5px",fontWeight:700,color:GOLD_TEXT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax years</div>
-                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>{fmt(0)}</div>
-                    <div style={{fontSize:"10.5px",color:GOLD_TEXT,fontWeight:600,marginTop:"2px"}}>Saves {fmt(instantSellTax)} across them</div>
-                  </div>
-                </div>
-                <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Spread plan: {spreadTimingLabel}.</p>
-              </>
-            ) : (
-              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Fully shielded by this year's allowance — no CGT due either way.</p>
-            )}
-
-            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel="Go to my platform"/>
-
-            {onRecordCrystallisedGain && (
-              <div style={{marginTop:"10px"}}>
-                {!loggingGain ? (
-                  <button type="button" onClick={openGainLogger} className="tap44" style={{background:"transparent",border:"none",color:MUT,fontSize:"12px",fontWeight:600,textDecoration:"underline",cursor:"pointer",padding:0}}>
-                    I've sold some — update my figures
+        <MobileTile id="inv-gains" title="Tax-free gains this year"
+          // From the menu: once the menu has closed and handed focus back, so
+          // the pop-out keeps it.
+          menu={[
+            m.crystallisable > 0 && remindItem(gainsReminder),
+            m.crystallisable > 0 && onRecordCrystallisedGain && { icon: Receipt, label: "Record what you sold", onClick: () => setTimeout(openGainLogger, 200) },
+            m.crystallisable > 0 && howItem("gains"),
+            editItem,
+          ]}>
+          {m.crystallisable > 0 ? (
+            <>
+              <TileRow first align>
+                <RowText label="Tax-free allowance left" note="Of £3,000 this tax year. What's unused is gone on 5 April." figure={fmt(m.remainingCgtAllowance)}/>
+              </TileRow>
+              <TileRow align><RowText inline label="Profit so far" figure={fmt(totalGains)}/></TileRow>
+              <TileRow align><RowText inline label="Profit above the allowance" figure={fmt(taxableSurplus)}/></TileRow>
+              <TileRow align>
+                <RowText inline label="Tax if you sold it all today" note={`at ${cgtRatePct}%`} figure={fmt(instantSellTax)} figureStyle={instantSellTax > 0 ? {color:CRITICAL} : undefined}/>
+              </TileRow>
+              {instantSellTax > 0 ? (
+                <TileRow align>
+                  <RowText label={`Tax if spread over ${spreadYears.length} tax years`} note={spreadTimingLabel} figure={fmt(0)} figureStyle={{color:SUCCESS}}/>
+                </TileRow>
+              ) : (
+                <TileRow align><p style={ROW.text}>Fully shielded by this year's allowance: no tax due either way.</p></TileRow>
+              )}
+              <TileRow align style={anchor}>
+                <RowText inline label="Buying back in" note="the 30-day rule" tool={info("bnb")}/>
+                <AnimatePresence>
+                  {openInfo === "bnb" && (
+                    <TilePopover key="bnb" title="Buying back in" onClose={() => setOpenInfo(null)}>
+                      <p style={{...ROW.text,margin:0}}>
+                        HMRC's "30-day rule" cancels the gain if you repurchase the same shares within 30 days. Buying back inside an ISA or pension sidesteps this — outside a wrapper, wait 30 days or buy a similarly-exposed fund instead.
+                      </p>
+                    </TilePopover>
+                  )}
+                </AnimatePresence>
+              </TileRow>
+              {notes.gains && (
+                <TileRow align>
+                  <p style={ROW.text}>Your profit outside an ISA or pension, less what's left of this year's £3,000 allowance. The spread uses this year's allowance first, then a fresh £3,000 each tax year after.</p>
+                </TileRow>
+              )}
+              {onRecordCrystallisedGain && (
+                <TileRow align style={anchor}>
+                  <button type="button" onClick={loggingGain ? closeGainLogger : openGainLogger} aria-haspopup="dialog" aria-expanded={loggingGain}
+                    style={{font:"inherit",...ROW.action,background:"none",border:"none",padding:0,cursor:"pointer"}}>
+                    <Receipt size={18} aria-hidden="true"/>I've sold some: update my figures
                   </button>
-                ) : (
-                  <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px"}}>
-                    <div style={{fontSize:"11px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
-                    <div style={{display:"flex",gap:"8px"}}>
-                      <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
-                      <PillMoneyInput label="Gain crystallised" value={gainInput} onChange={setGainInput}/>
-                    </div>
-                    <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
-                      We'll move this from your investments into cash, and count the gain against this year's CGT allowance.
-                    </p>
-                    <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-                      <button onClick={closeGainLogger} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>
-                      <button onClick={saveGainLog} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Save</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD_TEXT}}>Buying back in (bed and breakfasting)</span>
-                  <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
-                </div>
-                {openInfo === "bnb" && (
-                  <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
-                    HMRC's "30-day rule" cancels the gain if you repurchase the same shares within 30 days. Buying back inside an ISA or pension sidesteps this — outside a wrapper, wait 30 days or buy a similarly-exposed fund instead.
-                  </p>
-                )}
-              </div>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"12.5px",fontWeight:600,color:CRITICAL}}>Use it or lose it</span>
-                  <InfoButton onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} open={openInfo==="useit"}/>
-                </div>
-                {openInfo === "useit" && (
-                  <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
-                    The £3,000 exemption doesn't carry over — whatever's unused is gone on April 5th.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>
-            {m.remainingCgtAllowance === 0
-              ? "You've used your full £3,000 tax-free gains allowance this tax year — further profit outside an ISA or pension will be taxed at your marginal rate."
-              : "No profit recorded outside an ISA or pension this year — nothing to take tax-free. If that changes, come back before April 5th to use your £3,000 allowance."}
-          </p>
-        )}
-      </MobileWinTile>
+                  <AnimatePresence>
+                    {loggingGain && (
+                      <TilePopover key="sold" title="Record what you sold" onClose={closeGainLogger}>
+                        <div style={{display:"grid",gap:"8px"}}>
+                          <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
+                          <PillMoneyInput label="Gain crystallised" value={gainInput} onChange={setGainInput}/>
+                        </div>
+                        <p style={{...ROW.note,marginTop:"10px"}}>
+                          We'll move this from your investments into cash, and count the gain against this year's CGT allowance.
+                        </p>
+                        <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+                          <button type="button" onClick={closeGainLogger} style={{...pill,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",color:G}}>Cancel</button>
+                          <button type="button" onClick={saveGainLog} style={{...pill,background:G,border:"none",color:WHITE}}>Save</button>
+                        </div>
+                      </TilePopover>
+                    )}
+                  </AnimatePresence>
+                </TileRow>
+              )}
+              <TileRow align><GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel="Go to my platform"/></TileRow>
+              <TileRow align><ReminderPills reminder={gainsReminder}/></TileRow>
+            </>
+          ) : (
+            <TileRow first align>
+              <p style={ROW.text}>
+                {m.remainingCgtAllowance === 0
+                  ? "You've used your full £3,000 tax-free gains allowance this tax year — further profit outside an ISA or pension will be taxed at your marginal rate."
+                  : "No profit recorded outside an ISA or pension this year — nothing to take tax-free. If that changes, come back before April 5th to use your £3,000 allowance."}
+              </p>
+            </TileRow>
+          )}
+        </MobileTile>
       )}
 
-      <MobileWinTile title="Your ISA allowance"
-        headline={m.isaHeadroom > 0
-          ? `${fmt(m.isaHeadroom)} remaining.`
-          : "You've used your full £20,000 ISA allowance this tax year."}
-        tagLabel="Future opportunity" tagColor={SUCCESS}
-        reminder={m.isaHeadroom > 0 ? {
-          id: "investments-isa-allowance",
-          title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),
-          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.isaHeadroom)} of your ISA allowance unused this tax year. Money invested in it grows free of tax, permanently.\n\nUnused allowance doesn't carry over: to capture it, this needs actioning before 5 April, when a fresh £20,000 opens.`,
-        } : null}>
+      <MobileTile id="inv-isa" title="Your ISA allowance" menu={[m.isaHeadroom > 0 && remindItem(isaReminder), editItem]}>
         {m.isaHeadroom > 0 ? (
-          <div>
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,marginTop:0,marginBottom:"4px"}}>
-              Over long periods shares have tended to grow faster than cash, though they can fall. Inside an ISA, that growth is free of tax for good.{" "}
-              <InfoButton onClick={() => setOpenInfo(o => o==="isa"?null:"isa")} open={openInfo==="isa"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",verticalAlign:"middle"}}/>
-            </p>
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:0,marginBottom:openInfo==="isa"?"10px":"12px"}}>
-              Invested, that could grow to ~{fmt(Math.round(isaProjectedValue))} tax-free by 67.
-            </p>
-            {openInfo === "isa" && (
-              <div style={{marginBottom:"12px"}}>
-                {showMoveMsg && (
-                  <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"12px",marginBottom:"10px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD_TEXT,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Money that could use it</div>
-                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
-                      You have {surplusSources.join(" and ")}, and {fmt(m.isaHeadroom)} of this year's ISA allowance could shelter it from tax.
+          <>
+            <TileRow first align>
+              <RowText label="Left this tax year" note="Of £20,000. What's unused doesn't carry over: a fresh £20,000 opens on 6 April." figure={fmt(m.isaHeadroom)}/>
+            </TileRow>
+            <TileRow align style={anchor}>
+              <RowText label={isaTitle} tool={info("isa")} note="Tax-free. Shares can fall as well as rise." figure={`~${fmt(Math.round(isaProjectedValue))}`}/>
+              <AnimatePresence>
+                {openInfo === "isa" && (
+                  <TilePopover key="isa" title={isaTitle} onClose={() => setOpenInfo(null)}>
+                    <p style={{...ROW.text,margin:0}}>
+                      Over long periods shares have tended to grow faster than cash, though they can fall. Inside an ISA, that growth is free of tax for good.
                     </p>
-                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:"8px 0 0"}}>
-                      Many people use a Stocks and Shares ISA for money they won't need for five years or more, because over long periods shares have tended to grow faster than cash. They also carry the most risk: they can fall in value, sometimes for years. A Cash ISA uses the same allowance without that risk. Moving investments you already hold into an ISA means selling them first ("Bed and ISA"), which can create a taxable gain.
+                    <p style={{...ROW.note,marginTop:"8px"}}>
+                      Illustrative only — assumes {GROWTH_NOMINAL_PCT}% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
                     </p>
-                  </div>
+                  </TilePopover>
                 )}
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>
-                  Illustrative only — assumes {GROWTH_NOMINAL_PCT}% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
-                </p>
-              </div>
+              </AnimatePresence>
+            </TileRow>
+            {showMoveMsg && (
+              <TileRow align style={anchor}>
+                <RowText label="Money that could use it" tool={info("move")} note={surplusSources.join(" and ")}/>
+                <AnimatePresence>
+                  {openInfo === "move" && (
+                    <TilePopover key="move" title="Money that could use it" onClose={() => setOpenInfo(null)}>
+                      <p style={{...ROW.text,margin:0}}>
+                        Many people use a Stocks and Shares ISA for money they won't need for five years or more, because over long periods shares have tended to grow faster than cash. They also carry the most risk: they can fall in value, sometimes for years. A Cash ISA uses the same allowance without that risk. Moving investments you already hold into an ISA means selling them first ("Bed and ISA"), which can create a taxable gain.
+                      </p>
+                    </TilePopover>
+                  )}
+                </AnimatePresence>
+              </TileRow>
             )}
-            <GoToProviderButton storageKey="candid_isa_provider_pref" defaultLabel="To my ISA"/>
-          </div>
+            <TileRow align><GoToProviderButton storageKey="candid_isa_provider_pref" defaultLabel="To my ISA"/></TileRow>
+            <TileRow align><ReminderPills reminder={isaReminder}/></TileRow>
+          </>
         ) : (
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>
+          <TileRow first align>
+            <p style={ROW.text}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>
+          </TileRow>
         )}
-      </MobileWinTile>
+      </MobileTile>
 
+      {/* Places to look, not steps: a row per provider. */}
       {products.products?.length > 0 && (
-        <MobileWinTile provider title="Stocks and Shares ISA providers to compare" tagLabel="Providers"
-          headline={`${products.products.length} providers, listed alphabetically`}>
-          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
-        </MobileWinTile>
+        <MobileTile id="inv-providers" title="Stocks and Shares ISA providers" subtitle="Yearly charges, listed alphabetically" menu={[howItem("providers", "About this list"), editItem]}>
+          <MobileProductListTile embedded flush noun="providers" products={products.products}/>
+          {notes.providers && products.disclaimer && (
+            <TileRow><p style={{...ROW.note,marginTop:0}}>{products.disclaimer}</p></TileRow>
+          )}
+        </MobileTile>
       )}
     </div>
   );

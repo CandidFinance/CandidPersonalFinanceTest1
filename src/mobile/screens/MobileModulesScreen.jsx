@@ -7,7 +7,7 @@ import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { statusLabel, statusLine, ELSEWHERE } from "../statusLabel.js";
+import { statusLabel, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
 import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
 import ModuleStartRow, { ROW_TITLE, ROW_ICON } from "../ModuleStartRow.jsx";
@@ -34,10 +34,8 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 function moduleInsights(mm, d, m) {
   switch (mm.key) {
     case "cash":
-      return [
-        { label: "Cash ISA gap", value: mm.amount > 0 ? `${fmtCompact(mm.amount)}/yr more` : "Optimised" },
-        { label: "ISA allowance left", value: fmt(m.isaHeadroom) },
-      ];
+      // Not the gap: that's the card's figure.
+      return [{ label: "ISA allowance left", value: fmt(m.isaHeadroom) }];
     case "investments":
       return [
         { label: "ISA headroom", value: fmt(m.isaHeadroom) },
@@ -156,7 +154,6 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
 
   // The wallet's cards: a summary in front, then each live module.
   const moduleCard = mm => {
-    const reviewed = isReviewed(mm);
     const onTrack = isOptimised(mm);
     const hasRec = mm.amount > 0;
     const locked = isLocked(d, mm.key);
@@ -167,15 +164,24 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     const lead = !hasRec && !locked ? mm.lead : null;
     const figure = hasRec ? fmt(mm.amount) : lead ? lead.value : savedLead ? fmt(mm.banked) : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
     const unit = hasRec ? (mm.amountIsLumpSum ? "by 18" : "a year") : lead ? lead.unit : savedLead ? "a year saved" : null;
-    const line = [statusLine({ ...mm, onTrack }), hasRec && mm.banked > 0 && `${fmtCompact(mm.banked)}/yr saved`, reviewed && !onTrack && "Reviewed"].filter(Boolean).join(" · ");
     const ins = locked ? [] : moduleInsights(mm, d, m);
     // Red or amber (the £100k tax trap): the wash and icon behind; in front,
     // the figure in an alert, as Progress's Tax shield has it.
     const warn = !locked && !onTrack ? mm.warn : null;
+    // The status shows once (the tick, the alert, or the figure in words),
+    // so the line under the figure says what the figure is. Not what's been
+    // saved: an allowance back each tax year can show the same £ saved and
+    // at stake, which reads as a contradiction; the summary card has it.
+    // Under the status in words, only its reason.
+    const line = hasRec ? "At stake"
+      : lead ? (warn && mm.alertTitle ? null : statusLabel({ ...mm, onTrack }))
+      : savedLead ? null
+      : mm.elsewhere ? statusLabel(mm)
+      : mm.reason || null;
     const head = (t, words) => (
       <>
         <Figure t={t} value={figure} unit={unit} words={words}/>
-        <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{line}</p>
+        {line && <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{line}</p>}
       </>
     );
     return {
