@@ -109,7 +109,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
             modules (sortGoals). */}
         <Tile title="Goals" tour="progress-goals"
           action={<FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>}>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"20px"}}>
             <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
               onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); if (hasAccess()) set("subscriberFeaturesUsed", withFeatureUsed(d, "addGoal")); setExpanded(null); }}/>
             {sortGoals(goals, sortBy).map(({ vault: v, row }) => {

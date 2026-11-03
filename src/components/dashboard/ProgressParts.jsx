@@ -13,13 +13,15 @@ export const helpText = { fontSize:"12px", color:MUT, lineHeight:1.5, margin:0 }
 
 // A section's tile: white, or `wash` for the headline pair (Home's hero
 // tile treatment), with its title and, on the right, an optional action.
+// The action takes no height in the title's row, so the title sits top left
+// with or without one (Goals' sort button, Your years with none).
 export function Tile({ title, action = null, wash = false, tour, children }) {
   return (
     <section data-tour={tour} style={{display:"flex",flexDirection:"column",minWidth:0,background:wash ? HERO_TILE_BG : WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,
       boxShadow:wash ? "0 4px 18px rgba(22,47,36,0.07)" : "0 2px 10px rgba(22,47,36,0.05)",padding:"16px 14px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px"}}>
         <h2 style={kicker}>{title}</h2>
-        {action}
+        {action && <div style={{height:0,display:"flex",alignItems:"center"}}>{action}</div>}
       </div>
       {children}
     </section>

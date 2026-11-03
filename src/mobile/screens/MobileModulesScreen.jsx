@@ -3,7 +3,7 @@ import { childcareSupport } from "../../lib/childcare.js";
 import { Users, ChevronRight, Lock } from "lucide-react";
 import CardStack, { DARK, StillCard, arrow } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
-import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY, HAIRLINE, SECTION_TITLE, ROW_TILE } from "../../design-tokens.js";
+import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY, HAIRLINE, ROW_TILE } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -12,6 +12,7 @@ import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js"
 import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
 import ModuleStartRow, { ROW_TITLE, ROW_ICON } from "../ModuleStartRow.jsx";
 import FilterMenu from "../FilterMenu.jsx";
+import { kicker } from "../../components/dashboard/ProgressParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews } from "../visitNews.js";
@@ -80,10 +81,11 @@ function moduleInsights(mm, d, m) {
 }
 
 // The tile Still to explore sits in, each module a row inside.
-// The sections under the wallet: each a tile, its Playfair heading inside,
-// then hairline rows.
-const TILE = { ...ROW_TILE, marginTop:"22px" };
-const SECTION = { ...SECTION_TITLE, marginBottom:"8px" };
+// The sections under the wallet: each a tile, its heading inside, then
+// hairline rows. The heading and its padding as on Home's and Progress's
+// tiles (ProgressParts.jsx Tile): small caps label, top left.
+const TILE = { ...ROW_TILE, padding:"16px 14px 4px", marginTop:"22px" };
+const SECTION = { ...kicker, marginBottom:"12px" };
 const ROWS = { display:"flex", flexDirection:"column" };
 const ROW = { display:"flex", alignItems:"flex-start", gap:"14px", width:"100%", textAlign:"left", background:"none", border:"none", borderTop:HAIRLINE, padding:"14px 0", fontFamily:"inherit" };
 // Each card behind shows this much of its top line (Home and Progress: 44).
