@@ -31,27 +31,29 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 // than re-deriving anything — calcStudentLoanScenario is the one exception,
 // needed for its clear-year projection and already the single source of
 // truth for that (shared with computeModuleStatuses).
+// `perYear`: the £ a year a row states, so a row that only repeats the
+// card's figure is left out. `hero`: the row can lead an on-track card with
+// nothing at stake, in place of "On track" in words (the tick says that).
 function moduleInsights(mm, d, m) {
   switch (mm.key) {
     case "cash":
-      // Not the gap: that's the card's figure.
-      return [{ label: "ISA allowance left", value: fmt(m.isaHeadroom) }];
+      return [{ label: "ISA allowance left", value: fmt(m.isaHeadroom), hero: m.isaHeadroom > 0 }];
     case "investments":
       return [
-        { label: "ISA headroom", value: fmt(m.isaHeadroom) },
+        { label: "ISA allowance left", value: fmt(m.isaHeadroom), hero: m.isaHeadroom > 0 },
         { label: "Unwrapped investments", value: fmt(+d.unwrappedValue||0) },
       ];
     case "pension":
       return [
-        { label: "Employer match gap", value: m.missedMatch > 0 ? `${fmtCompact(m.missedMatch)}/yr` : "None" },
-        { label: "Projected pot at retirement", value: fmt(m.projectedPot) },
+        { label: "Employer match gap", value: m.missedMatch > 0 ? `${fmtCompact(m.missedMatch)}/yr` : "None", perYear: m.missedMatch },
+        { label: "Projected pot at retirement", value: fmt(m.projectedPot), hero: m.projectedPot > 0 },
       ];
     case "studentLoan": {
       if (d.studentLoan === "none") return [];
       const sl = calcStudentLoanScenario(d, m);
       return [
-        { label: "Paying off now", value: sl.overpayAnnualBenefit > 0 ? `${fmtCompact(sl.overpayAnnualBenefit)}/yr` : "Not worth it" },
-        { label: "Projected clear year", value: sl.willClear ? String(new Date().getFullYear() + sl.clearYr) : "Written off" },
+        { label: "Paying off now", value: sl.overpayAnnualBenefit > 0 ? `${fmtCompact(sl.overpayAnnualBenefit)}/yr` : "Not worth it", perYear: sl.overpayAnnualBenefit },
+        { label: "Projected clear year", value: sl.willClear ? String(new Date().getFullYear() + sl.clearYr) : "Written off", hero: sl.willClear },
       ];
     }
     case "kids": {
@@ -59,7 +61,7 @@ function moduleInsights(mm, d, m) {
       const cc = childcareSupport(year.d, year.m);
       if (!cc) return [];
       return [
-        { label: "Childcare support", value: `${fmtCompact(cc.atStake)}/yr` },
+        { label: "Childcare support", value: `${fmtCompact(cc.atStake)}/yr`, perYear: cc.atStake, hero: cc.atStake > 0 },
         { label: "£100,000 limit", value: cc.state === "near" || cc.state === "fine" ? `${fmtCompact(cc.headroom)} under` : cc.state === "lost" ? "Over" : cc.state === "partner" ? "Partner over" : "Not working" },
       ];
     }
@@ -162,9 +164,14 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     // `lead`: a figure of its own where there's no £ at stake (the £100k tax
     // trap under £100k: how far from it).
     const lead = !hasRec && !locked ? mm.lead : null;
-    const figure = hasRec ? fmt(mm.amount) : lead ? lead.value : savedLead ? fmt(mm.banked) : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
+    const all = locked ? [] : moduleInsights(mm, d, m);
+    // On track with nothing at stake or saved: its own figure leads, not
+    // "On track" in words.
+    const hero = onTrack && !hasRec && !savedLead && !lead && !mm.elsewhere ? all.find(x => x.hero) : null;
+    // Its rows, less the one leading and any that only repeat the figure.
+    const ins = all.filter(x => x !== hero && !(hasRec && x.perYear > 0 && fmtCompact(x.perYear) === fmtCompact(mm.amount)));
+    const figure = hasRec ? fmt(mm.amount) : lead ? lead.value : savedLead ? fmt(mm.banked) : hero ? hero.value : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
     const unit = hasRec ? (mm.amountIsLumpSum ? "by 18" : "a year") : lead ? lead.unit : savedLead ? "a year saved" : null;
-    const ins = locked ? [] : moduleInsights(mm, d, m);
     // Red or amber (the £100k tax trap): the wash and icon behind; in front,
     // the figure in an alert, as Progress's Tax shield has it.
     const warn = !locked && !onTrack ? mm.warn : null;
@@ -176,6 +183,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     const line = hasRec ? "At stake"
       : lead ? (warn && mm.alertTitle ? null : statusLabel({ ...mm, onTrack }))
       : savedLead ? null
+      : hero ? hero.label
       : mm.elsewhere ? statusLabel(mm)
       : mm.reason || null;
     const head = (t, words) => (
@@ -195,7 +203,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         <>
           {warn && mm.alertTitle
             ? <AlertBox tone={warn} t={t} title={mm.alertTitle}>{head(t, false)}</AlertBox>
-            : head(t, !hasRec && !savedLead && !lead)}
+            : head(t, !hasRec && !savedLead && !lead && !hero)}
           {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
           {locked ? (
             <p style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",color:t.body,lineHeight:1.5,margin:"12px 0 0"}}><Lock size={13}/>Your position is ready. Open it to unlock it.</p>

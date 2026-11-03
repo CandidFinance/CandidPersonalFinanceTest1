@@ -85,7 +85,8 @@
      "status": "attention",
      "impact": 792,
      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
-     "amount": 432
+     "amount": 432,
+     "reason": null
     },
     "pension": {
      "status": "critical",
@@ -3110,7 +3111,8 @@
      "status": "attention",
      "impact": 792,
      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
-     "amount": 432
+     "amount": 432,
+     "reason": null
     },
     "pension": {
      "status": "critical",
@@ -5885,7 +5887,8 @@
      "status": "attention",
      "impact": 144,
      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
-     "amount": 144
+     "amount": 144,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -8536,7 +8539,8 @@
      "status": "attention",
      "impact": 144,
      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
-     "amount": 144
+     "amount": 144,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -11017,7 +11021,8 @@
      "status": "attention",
      "impact": 1128,
      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
-     "amount": 720
+     "amount": 720,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -13733,7 +13738,8 @@
      "status": "attention",
      "impact": 1128,
      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
-     "amount": 720
+     "amount": 720,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -19280,7 +19286,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -19353,7 +19360,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -19495,7 +19502,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -22129,7 +22136,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -22202,7 +22210,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -22344,7 +22352,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -24752,7 +24760,8 @@
      "status": "attention",
      "impact": 720,
      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
-     "amount": 720
+     "amount": 720,
+     "reason": null
     },
     "pension": {
      "status": "attention",
@@ -27413,7 +27422,8 @@
      "status": "attention",
      "impact": 720,
      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
-     "amount": 720
+     "amount": 720,
+     "reason": null
     },
     "pension": {
      "status": "attention",
@@ -29949,7 +29959,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -30021,7 +30032,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -30163,7 +30174,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -32654,7 +32665,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -32726,7 +32738,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -32868,7 +32880,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -35114,7 +35126,8 @@
      "status": "attention",
      "impact": 35,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -35187,7 +35200,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -35329,7 +35342,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -38475,7 +38488,8 @@
      "status": "attention",
      "impact": 35,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -38548,7 +38562,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -38690,7 +38704,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -41667,7 +41681,8 @@
      "status": "ok",
      "impact": 0,
      "impactLabel": null,
-     "amount": 0
+     "amount": 0,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -45409,7 +45424,8 @@
      "status": "ok",
      "impact": 0,
      "impactLabel": null,
-     "amount": 0
+     "amount": 0,
+     "reason": null
     },
     "pension": {
      "status": "ok",
@@ -48990,7 +49006,8 @@
      "status": "attention",
      "impact": 83,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -49063,7 +49080,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -49225,7 +49242,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -51940,7 +51957,8 @@
      "status": "attention",
      "impact": 83,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -52013,7 +52031,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -52175,7 +52193,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -54721,7 +54739,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -54794,7 +54813,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -54936,7 +54955,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -57473,7 +57492,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -57546,7 +57566,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -57688,7 +57708,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -60008,7 +60028,8 @@
      "status": "attention",
      "impact": 180,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -60080,7 +60101,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -60222,7 +60243,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -62705,7 +62726,8 @@
      "status": "attention",
      "impact": 180,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -62777,7 +62799,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -62919,7 +62941,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -65157,7 +65179,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "na",
@@ -65228,7 +65251,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -65370,7 +65393,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -67851,7 +67874,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "na",
@@ -67922,7 +67946,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -68064,7 +68088,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -79287,7 +79311,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -79360,7 +79385,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -79502,7 +79527,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,
@@ -82857,7 +82882,8 @@
      "status": "attention",
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
-     "amount": 0
+     "amount": 0,
+     "reason": "£15,000 of ISA allowance unused"
     },
     "pension": {
      "status": "ok",
@@ -82930,7 +82956,7 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null,
+     "reason": "£15,000 of ISA allowance unused",
      "warn": null,
      "alertTitle": null,
      "lead": null
@@ -83072,7 +83098,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
-      "reason": null,
+      "reason": "£15,000 of ISA allowance unused",
       "warn": null,
       "alertTitle": null,
       "lead": null,

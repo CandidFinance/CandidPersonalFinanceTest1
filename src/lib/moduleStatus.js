@@ -175,7 +175,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const cashReason = cashAmount >= ON_TRACK_FLOOR ? null
     : spendingGap ? "More going out than coming in"
     : livingOffSavings && runway < 12 ? "Living off savings"
-    : m.expensesUnknown ? "Monthly costs not added"
+    : m.expensesUnknown ? COSTS_MISSING
     : tooMuchCash ? "Over twice your emergency fund"
     : emergencyShort ? "Below your emergency fund"
     : null;
@@ -215,6 +215,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           ? `${fmt(m.isaHeadroom)} of this year's ISA allowance unused, lost on 5 April`
           : null,
     amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
+    // Why it's worth a look when there's no £ (under £50) to say so.
+    reason: (m.cgtSaving || 0) < ON_TRACK_FLOOR && isaGap ? `${fmt(m.isaHeadroom)} of ISA allowance unused` : null,
   };
 
   // Pension — missed match + contribution check + Personal Allowance taper are
@@ -575,6 +577,8 @@ export function bankedFor(d, key, now = new Date()) {
 // by another (`elsewhere`) never is. One rule for the Modules tiles, the
 // module page and Home's "On track" line.
 export const ON_TRACK_FLOOR = 50;
+// Cash's reason when its monthly costs aren't in: a figure to find out.
+export const COSTS_MISSING = "Monthly costs not added";
 // The modules on track now, as sorted keys, for comparing with the last
 // time (`d.onTrackLast`): one that's dropped off since has its reviewed
 // tick taken away (CandidApp), so a new gap reads as not yet looked at.
