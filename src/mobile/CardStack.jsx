@@ -12,7 +12,8 @@ import { G, MUT, MUT_ON_CDARK, SR_ONLY, SERIF, SANS, WHITE, CRITICAL, WARNING, S
 // the next card (or the one tapped) comes forward, and after the last the
 // first comes round again. Swiping right or the up arrow goes back one.
 // Swipes are sideways so an up or down drag that starts on the cards still
-// scrolls the page (touch-action pan-y).
+// scrolls the page (touch-action pan-y). The arrows show only where there's
+// a mouse or trackpad; on a touchscreen it's swipes and taps.
 // On desktop, the wheel (or a trackpad flick) with the pointer over the
 // stack turns one card per gesture, and the page doesn't scroll; off it,
 // the page scrolls as usual. With the stack focused, the up and down arrow
@@ -62,6 +63,11 @@ const CSS = `
 .card-stack-dark.on::after { animation: card-stack-sheen 2.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s both; }
 @keyframes card-stack-sheen { from { transform: translateX(-75%); } to { transform: translateX(25%); } }
 @media (prefers-reduced-motion: reduce) { .card-stack-dark.on::after { animation: none; } }
+/* On a touchscreen (phone, tablet) the cards turn by swipe or tap, so the
+   arrows go from view; screen readers still reach them. */
+@media (hover: none) and (pointer: coarse) {
+  .card-stack-arrow { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden; clip: rect(0 0 0 0); border: 0 !important; }
+}
 `;
 
 // The colour schemes a card can wear: dark in front, light behind, or
@@ -217,11 +223,11 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
       {/* Says which card has come to the front as each turn starts. */}
       {n > 1 && <div aria-live="polite" style={SR_ONLY}>{moved.current ? `${cards[target].label}, card ${target + 1} of ${n}` : ""}</div>}
       <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px"}}>
-        <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} className="tap44" style={arrow}><ChevronUp size={15} color={G}/></button>
+        <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} className="tap44 card-stack-arrow" style={arrow}><ChevronUp size={15} color={G}/></button>
         <div style={{display:"flex",gap:"6px"}} aria-hidden="true">
           {cards.map((c, i) => <span key={c.key} style={{width:"7px",height:"7px",borderRadius:"50%",background:i === target ? G : "rgba(22,47,36,0.2)",transform:i === target ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>)}
         </div>
-        <button type="button" onClick={() => turn()} aria-label={turnLabels[1]} className="tap44" style={arrow}><ChevronDown size={15} color={G}/></button>
+        <button type="button" onClick={() => turn()} aria-label={turnLabels[1]} className="tap44 card-stack-arrow" style={arrow}><ChevronDown size={15} color={G}/></button>
         {controls && <div style={{position:"absolute",right:0,top:0}}>{controls}</div>}
       </div>
     </div>
