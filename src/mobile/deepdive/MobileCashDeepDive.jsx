@@ -6,7 +6,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { isLocked } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow } from "../MobileTile.jsx";
+import MobileTile, { TileRow, RowText, ROW } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
@@ -53,12 +53,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   useEffect(() => { if (news && !news.opened) markCashOpened(); }, [news]);
   useEffect(() => () => markCashSeen(), []);
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
-  // A row: its label and note on the left, its figure on the right.
-  const line = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px" };
-  const rowLabel = { fontSize:"14px", color:TEXT, lineHeight:1.4 };
-  const rowNote = { fontSize:"12px", color:MUT, lineHeight:1.45, marginTop:"2px" };
-  const rowFigure = { fontFamily:SERIF, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" };
-  const noteText = { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:0 };
   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
   const {
@@ -160,19 +154,14 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
           </TileRow>
           {showEmergencyWin && (
             <TileRow>
-              <div style={line}>
-                <span style={{...rowLabel,display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-                  Gap to your target
-                  <span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>
-                </span>
-                <span style={rowFigure}>{fmt(m.emergencyShortfall)}</span>
-              </div>
-              {monthsToCloseGap > 0 && <div style={rowNote}>Your spare {fmt(Math.round(m.monthlySurplus))} a month would close it in about {monthsToCloseGap} month{monthsToCloseGap===1?"":"s"}</div>}
+              <RowText label="Gap to your target" figure={fmt(m.emergencyShortfall)}
+                tool={<span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>}
+                note={monthsToCloseGap > 0 && `Your spare ${fmt(Math.round(m.monthlySurplus))} a month would close it in about ${monthsToCloseGap} month${monthsToCloseGap===1?"":"s"}`}/>
             </TileRow>
           )}
           {notes.fund && (
             <TileRow>
-              <p style={noteText}>
+              <p style={ROW.text}>
                 {m.bufferMonths > 0
                   ? `The target is ${m.bufferMonths} months of your spending, at ${fmt(Math.round(m.emergencyBuffer / m.bufferMonths))} a month.`
                   : `You hold ${fmt(m.totalLiquid)} against a ${fmt(m.emergencyBuffer)} target.`}
@@ -192,26 +181,24 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         ]}>
         {totalPot > 0 && opp ? (
           <>
-            {gain <= 50 && <TileRow first align><span style={rowLabel}>Your savings are already on good rates.</span></TileRow>}
+            {gain <= 50 && <TileRow first align><span style={ROW.label}>Your savings are already on good rates.</span></TileRow>}
             <TileRow first={gain > 50} align>
-              <div style={line}><span style={rowLabel}>What your savings earn now, after tax</span><span style={rowFigure}>{fmt(opp.currentKept + opp.bondsPrize)}/yr</span></div>
-              {opp.bondsPrize > 0 && <div style={rowNote}>Including about {fmt(opp.bondsPrize)} in Premium Bond prizes, at the average rate</div>}
+              <RowText label="What your savings earn now, after tax" figure={`${fmt(opp.currentKept + opp.bondsPrize)}/yr`}
+                note={opp.bondsPrize > 0 && `Including about ${fmt(opp.bondsPrize)} in Premium Bond prizes, at the average rate`}/>
             </TileRow>
             {opp.lines.map(l => {
               const o = l.option;
               const fromBonds = (o.from || []).filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
               return (
                 <TileRow key={l.section} onClick={rowTarget(l.section)} align>
-                  <div style={line}>
-                    <span style={rowLabel}>{fmt(o.amount)} in {accountName(o)} at {o.ratePct.toFixed(2)}%{o.pb ? " (an average)" : ""}</span>
-                    <span style={{...rowFigure,color:SUCCESS}}>+{fmt(o.gain)}/yr</span>
-                  </div>
-                  <div style={rowNote}>{l.section}{fromBonds > 0 && `, ${fmt(fromBonds)} of it from your Premium Bonds`}</div>
+                  <RowText label={`${fmt(o.amount)} in ${accountName(o)} at ${o.ratePct.toFixed(2)}%${o.pb ? " (an average)" : ""}`}
+                    figure={`+${fmt(o.gain)}/yr`} figureStyle={{color:SUCCESS}}
+                    note={`${l.section}${fromBonds > 0 ? `, ${fmt(fromBonds)} of it from your Premium Bonds` : ""}`}/>
                 </TileRow>
               );
             })}
             <TileRow align>
-              <div style={line}><span style={{...rowLabel,fontWeight:700}}>Together, after tax</span><span style={{...rowFigure,color:SUCCESS}}>{fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr</span></div>
+              <RowText label={<span style={{fontWeight:700}}>Together, after tax</span>} figure={`${fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr`} figureStyle={{color:SUCCESS}}/>
             </TileRow>
             {gain > 50 && (
               <TileRow onClick={reminder.isSet ? undefined : reminder.setReminder} align>
@@ -223,7 +210,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             )}
             {notes.savings && (
               <TileRow>
-                <p style={noteText}>The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.</p>
+                <p style={ROW.text}>The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.</p>
               </TileRow>
             )}
           </>
@@ -242,7 +229,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
                   <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(step1IsaInterest)}/yr</span></div>
                 )}
                 {notes.savings && (
-                  <p style={{...rowNote,marginTop:"6px"}}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
+                  <p style={{...ROW.note,marginTop:"6px"}}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
                     ? `Spread across the highest-rate easy-access Cash ISAs, each up to its limit, it earns ${isaRateDisplay} on average.`
                     : `${isaRateDisplay} is the top easy-access Cash ISA rate today.`}</p>
                 )}
@@ -257,7 +244,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
                 )}
                 <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?SUCCESS:TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {notes.savings && (
-                  <p style={{...rowNote,marginTop:"6px"}}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's highest non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
+                  <p style={{...ROW.note,marginTop:"6px"}}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's highest non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
                 )}
               </TileRow>
             )}
@@ -280,7 +267,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
           </>
         ) : (
           <TileRow first>
-            <p style={{...noteText,color:MUT}}>Add your cash savings and any Premium Bonds in your details to see where they could earn more.</p>
+            <p style={{...ROW.text,color:MUT}}>Add your cash savings and any Premium Bonds in your details to see where they could earn more.</p>
           </TileRow>
         )}
       </MobileTile>
@@ -294,7 +281,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         <MobileTile key={t.id} id={t.id} title={t.title} subtitle={t.sub} menu={[howItem(t.id, "About these rates"), editItem]}>
           <MobileProductListTile embedded flush products={t.list}/>
           {notes[t.id] && products.disclaimer && (
-            <TileRow><p style={{...rowNote,marginTop:0}}>{products.disclaimer}</p></TileRow>
+            <TileRow><p style={{...ROW.note,marginTop:0}}>{products.disclaimer}</p></TileRow>
           )}
         </MobileTile>
       ))}

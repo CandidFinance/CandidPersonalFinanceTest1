@@ -286,7 +286,7 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
 
 // The lump sum pill for a non-subscriber: £0, not editable, in the pale
 // blue and CTA blue border of the app's other subscriber features, with
-// their sheen (ScenarioModelling.jsx) and a lock.
+// a sheen passing over it and a lock.
 const LOCKED_PILL_CSS = `
 .lump-lock { position: relative; overflow: hidden; }
 .lump-lock > * { position: relative; z-index: 1; }

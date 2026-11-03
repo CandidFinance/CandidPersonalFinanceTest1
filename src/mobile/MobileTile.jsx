@@ -90,7 +90,7 @@ export function RowText({ label, note, figure, inline = false, figureStyle, tool
           <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",columnGap:"6px"}}>{head}{tool}{note && <span style={{...ROW.note,marginTop:0}}>{note}</span>}</div>
         ) : (
           <>
-            <div style={{display:"flex",alignItems:"center",gap:"6px"}}>{head}{tool}</div>
+            <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:"6px"}}>{head}{tool}</div>
             {note && <div style={ROW.note}>{note}</div>}
           </>
         )}

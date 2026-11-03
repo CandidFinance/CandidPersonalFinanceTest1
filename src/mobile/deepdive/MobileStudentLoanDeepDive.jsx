@@ -297,7 +297,7 @@ function WhatIfs({ d, m, sl, set, menu, whatIf, toggleWhatIf, subscriber, planRu
   return (
     <MobileTile id="sl-whatifs" title="What ifs" subtitle="Calculators, worked out on your figures" menu={menu}>
       {plans && (
-        <ScenarioModelling row expanded={whatIf === "plans"} onToggle={() => toggleWhatIf("plans")} d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>
+        <ScenarioModelling expanded={whatIf === "plans"} onToggle={() => toggleWhatIf("plans")} d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>
       )}
       {curve && (
         <>

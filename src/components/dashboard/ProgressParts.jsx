@@ -156,8 +156,8 @@ export function Tag({ children, color }) {
 }
 
 // An action among the goal tiles (Add a goal), a subscriber feature: in the
-// pale blue and CTA blue border of the app's other subscriber features
-// (ScenarioModelling.jsx), with the same sheen passing over it while it's
+// pale blue and CTA blue border of the app's other subscriber features,
+// with a sheen passing over it while it's
 // closed, and a "Subscribers" pill (a lock on it while `locked`). A tap
 // opens its form below, or `lockedBody` (the way to subscribe) while locked.
 // Once a subscriber has `used` it, the app's standard "add" style (a dashed

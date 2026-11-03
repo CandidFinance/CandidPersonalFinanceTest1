@@ -20,7 +20,7 @@ import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow, RowText } from "../MobileTile.jsx";
+import MobileTile, { TileRow, RowText, ROW, withIcon, Nested } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import MobileDrawdown from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
@@ -38,33 +38,9 @@ import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookin
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
 const EXTRA_PCT_OPTIONS = [0,1,2,3,5].map(p => ({ value:p, label:p ? `+${p}%` : "0%" }));
 
-// A row: its label and note on the left, its figure on the right (as Cash).
-const line = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px" };
-const rowLabel = { fontSize:"14px", color:TEXT, lineHeight:1.4 };
-const rowNote = { fontSize:"12px", color:MUT, lineHeight:1.45, marginTop:"2px" };
-const rowFigure = { fontFamily:SERIF, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" };
-const noteText = { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:0 };
 // A breakdown's lines, inside one row.
 const rowStyle = { display:"flex", justifyContent:"space-between", gap:"12px", fontSize:"13px", color:TEXT, padding:"4px 0" };
-const actionText = { display:"flex", alignItems:"center", gap:"10px", fontSize:"14px", fontWeight:600, color:G };
 const priorityTag = <span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>;
-
-// A What ifs row's icon, where a provider's logo sits in a list (ProviderLogo):
-// marks the row as something to open. `muted`: a note's, with no tile behind it.
-function RowIcon({ icon: Icon, muted = false }) {
-  return (
-    <span aria-hidden="true" style={{width:"32px",height:"32px",borderRadius:"8px",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:muted ? "none" : "rgba(22,47,36,0.07)"}}>
-      <Icon size={muted ? 18 : 17} color={muted ? MUT : G} strokeWidth={2}/>
-    </span>
-  );
-}
-// The icon, then the row's own content.
-const withIcon = (icon, children, muted = false) => (
-  <div style={{display:"flex",alignItems:muted ? "flex-start" : "center",gap:"12px"}}><RowIcon icon={icon} muted={muted}/><div style={{flex:1,minWidth:0}}>{children}</div></div>
-);
-// A calculator open under its row: indented past the icon, so its rows'
-// hairlines start under the row's text.
-const Nested = ({ children }) => <div style={{marginLeft:"44px"}}>{children}</div>;
 
 // Full mobile version of desktop's Pension deep dive (ModuleDeepDive,
 // moduleKey==="pension" — CandidApp.jsx), as MobileTiles (rows on the tile,
@@ -127,11 +103,11 @@ function ReminderRows({ reminder, email }) {
     <>
       {email && (
         <TileRow align onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }}>
-          <span style={actionText}>{emailOpened ? <Check size={18} aria-hidden="true"/> : <Mail size={18} aria-hidden="true"/>}{emailOpened ? "Email draft opened" : "Draft an email to HR"}</span>
+          <span style={ROW.action}>{emailOpened ? <Check size={18} aria-hidden="true"/> : <Mail size={18} aria-hidden="true"/>}{emailOpened ? "Email draft opened" : "Draft an email to HR"}</span>
         </TileRow>
       )}
       <TileRow align onClick={reminder.isSet ? undefined : reminder.setReminder}>
-        <span style={actionText}>
+        <span style={ROW.action}>
           {reminder.isSet ? <BellRing size={18} aria-hidden="true"/> : <Bell size={18} aria-hidden="true"/>}
           {reminder.isSet ? `Reminder set for ${reminder.dateLabel}` : `Remind me on ${reminder.dateLabel}`}
         </span>
@@ -173,12 +149,9 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
       <MobileTile title="Your pension" menu={[editItem]}>
         {steps.map((s, i) => (
           <TileRow key={i} first={i === 0} align>
-            <div style={line}>
-              <span style={{...rowLabel,fontWeight:600}}>{s.label}</span>
-              {s.figure && <span style={rowFigure}>{s.figure}</span>}
-            </div>
-            <p style={{...noteText,marginTop:"4px"}}>{s.title}</p>
-            {s.body && <p style={rowNote}>{s.body}</p>}
+            <RowText label={s.label} figure={s.figure}/>
+            <p style={{...ROW.text,marginTop:"4px"}}>{s.title}</p>
+            {s.body && <p style={ROW.note}>{s.body}</p>}
           </TileRow>
         ))}
       </MobileTile>
@@ -245,7 +218,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   // The money purchase annual allowance note: in What ifs, or with drawing
   // the pension when there are no what-ifs.
   const mpaa = d.pensionAccess === "income";
-  const mpaaText = <p style={noteText}>Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.</p>;
+  const mpaaText = <p style={ROW.text}>Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.</p>;
   const mpaaRow = <TileRow align>{mpaaText}</TileRow>;
 
   // Tax-free cash explained, from the menu of the tile it's in.
@@ -258,9 +231,9 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   const taxFreeRows = (first) => (
     <>
       <TileRow first={first} align>
-        <div style={line}><span style={rowLabel}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</span><span style={rowFigure}>{fmt(taxFreeCash.taxFree)}</span></div>
+        <RowText label={`Tax-free cash${taxFreeCash.taken > 0 ? " left" : ""}`} figure={fmt(taxFreeCash.taxFree)}/>
       </TileRow>
-      {notes.taxFree && <TileRow><p style={noteText}>{taxFreeCashText}</p></TileRow>}
+      {notes.taxFree && <TileRow><p style={ROW.text}>{taxFreeCashText}</p></TileRow>}
     </>
   );
 
@@ -290,22 +263,21 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
           {showChart && <GrowthChart traj={traj} d={d} m={m} extraPct={extraPct}/>}
           {showChart && notes.growth && (
             <TileRow>
-              <p style={noteText}>In today's money: growth of {GROWTH_NOMINAL_PCT}% a year, less {INFLATION_PCT}% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.</p>
+              <p style={ROW.text}>In today's money: growth of {GROWTH_NOMINAL_PCT}% a year, less {INFLATION_PCT}% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.</p>
             </TileRow>
           )}
           {showRetirementGap && (
             <>
               <TileRow first={!showChart} align>
-                <div style={line}><span style={rowLabel}>Short of the income you'd like</span><span style={rowFigure}>{fmt(adequacy.gap)}/yr</span></div>
-                <div style={rowNote}>About {fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, against the {fmt(adequacy.target)} you'd like, in today's money</div>
+                <RowText label="Short of the income you'd like" figure={`${fmt(adequacy.gap)}/yr`}
+                  note={`About ${fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, against the ${fmt(adequacy.target)} you'd like, in today's money`}/>
               </TileRow>
               {set && <TileRow align style={{paddingBottom:0}}><OpportunityChoice id={CHOICE_IDS.retirementGap} d={d} set={set}/></TileRow>}
             </>
           )}
           {showChart && +d.niYears > 0 && (
             <TileRow align>
-              <div style={line}><span style={rowLabel}>State Pension estimate</span><span style={rowFigure}>{fmt(m.statePensionAnnual)}/yr</span></div>
-              <div style={rowNote}>From your recorded National Insurance years</div>
+              <RowText label="State Pension estimate" note="From your recorded National Insurance years" figure={`${fmt(m.statePensionAnnual)}/yr`}/>
             </TileRow>
           )}
           {/* Paying in more, as what it costs against what it adds, rather
@@ -341,7 +313,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
       {drawdownBest && (
         <MobileTile id="pension-drawdown" title="Drawing your pension" menu={[howItem("taxFree", "How tax-free cash works"), editItem]}>
           <TileRow first align>
-            <div style={line}><span style={rowLabel}>Pension pot</span><span style={rowFigure}>{fmt(taxFreeCash.pot)}</span></div>
+            <RowText label="Pension pot" figure={fmt(taxFreeCash.pot)}/>
           </TileRow>
           {taxFreeRows(false)}
           <TileRow><MobileDrawdown d={d} m={m} bare/></TileRow>
@@ -368,8 +340,8 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
           {aa.inAATaper && (
             <TileRow align>
               {withIcon(Info, <>
-                <p style={{...noteText,fontWeight:600}}>Your Annual Allowance may be reduced to about {fmt(aa.approxAA)} this tax year, from £60,000.</p>
-                <p style={rowNote}>
+                <p style={{...ROW.text,fontWeight:600}}>Your Annual Allowance may be reduced to about {fmt(aa.approxAA)} this tax year, from £60,000.</p>
+                <p style={ROW.note}>
                   Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
                   {cf.showCarryForward
                     ? "Unused allowance from the last 3 tax years can be carried forward, so more can go in without a charge."
@@ -404,7 +376,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
         <MobileTile id="pension-providers" title="Pension providers" subtitle="Yearly charges, listed alphabetically" menu={[howItem("providers", "About this list"), editItem]}>
           <MobileProductListTile embedded flush noun="providers" products={products.products}/>
           {notes.providers && products.disclaimer && (
-            <TileRow><p style={{...rowNote,marginTop:0}}>{products.disclaimer}</p></TileRow>
+            <TileRow><p style={{...ROW.note,marginTop:0}}>{products.disclaimer}</p></TileRow>
           )}
         </MobileTile>
       )}
@@ -427,11 +399,11 @@ function TrapTile({ trap, ratePct, onOpenModule }) {
           {/* As a What ifs row: the label and its note, the icon in line
               with the label (the size of the cliff-edge row's above it). */}
           <span style={{display:"block",flex:1,minWidth:0}}>
-            <span style={{display:"flex",alignItems:"center",gap:"8px",...rowLabel,fontWeight:600,color:CRITICAL}}>
+            <span style={{display:"flex",alignItems:"center",gap:"8px",...ROW.label,fontWeight:600,color:CRITICAL}}>
               <AlertTriangle size={18} color={CRITICAL} aria-hidden="true" style={{flexShrink:0}}/>
               {trap.aboveTaper ? "Your Personal Allowance is gone" : "You're in the £100k tax trap"}
             </span>
-            <span style={{display:"block",...rowNote}}>
+            <span style={{display:"block",...ROW.note}}>
               {red ? `Over £100k costs you ${fmt(trap.amount)}/yr. ` : ""}Pensions can be used to fix the trap.
             </span>
           </span>
@@ -442,25 +414,22 @@ function TrapTile({ trap, ratePct, onOpenModule }) {
         <>
           {red && (
             <TileRow align>
-              <div style={line}>
-                <span style={{...rowLabel,display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>What it costs you{priorityTag}</span>
-                <span style={{...rowFigure,color:CRITICAL}}>{fmt(trap.amount)}/yr</span>
-              </div>
-              <div style={rowNote}>{fmt(trap.allowance.tax)} of tax-free allowance{trap.childcareLost > 0 ? ` and ${fmt(trap.childcareLost)} of childcare support` : ""}</div>
+              <RowText label="What it costs you" tool={priorityTag} figure={`${fmt(trap.amount)}/yr`} figureStyle={{color:CRITICAL}}
+                note={`${fmt(trap.allowance.tax)} of tax-free allowance${trap.childcareLost > 0 ? ` and ${fmt(trap.childcareLost)} of childcare support` : ""}`}/>
             </TileRow>
           )}
           <TileRow align>
-            <div style={line}><span style={rowLabel}>Taken from your next £1</span><span style={{...rowFigure,color:CRITICAL}}>{ratePct}</span></div>
-            <div style={rowNote}>Tax, NI{trap.rate.sl > 0 ? " and student loan" : ""} together{trap.aboveTaper ? ", above £125,140 with no Personal Allowance left" : ", as the Personal Allowance is taken away between £100,000 and £125,140"}</div>
+            <RowText label="Taken from your next £1" figure={ratePct} figureStyle={{color:CRITICAL}}
+              note={`Tax, NI${trap.rate.sl > 0 ? " and student loan" : ""} together${trap.aboveTaper ? ", above £125,140 with no Personal Allowance left" : ", as the Personal Allowance is taken away between £100,000 and £125,140"}`}/>
           </TileRow>
           <TileRow align>
-            <div style={line}><span style={rowLabel}>Over £100,000 by</span><span style={rowFigure}>{fmt(trap.needed)}</span></div>
-            <div style={rowNote}>{trap.fits ? "Paying that into your pension would fit in the allowance you have left this year" : `More than the ${fmt(trap.aaRoom)} of pension allowance you have left this year`}</div>
+            <RowText label="Over £100,000 by" figure={fmt(trap.needed)}
+              note={trap.fits ? "Paying that into your pension would fit in the allowance you have left this year" : `More than the ${fmt(trap.aaRoom)} of pension allowance you have left this year`}/>
           </TileRow>
         </>
       )}
       <TileRow onClick={onOpenModule}>
-        <span style={actionText}>See the ways back under £100k</span>
+        <span style={ROW.action}>See the ways back under £100k</span>
       </TileRow>
     </section>
   );
@@ -564,15 +533,11 @@ function EmployerMatchTile({ m, d, trPct, contributing, set, taxFreeCash, editIt
       menu={[!reminder.isSet && { icon: Bell, label: "Remind me", onClick: reminder.setReminder }, editItem]}>
       <TileRow first align>
         {contributing ? (
-          <>
-            <div style={line}><span style={rowLabel}>Match you're not getting</span><span style={{...rowFigure,color:SUCCESS}}>+{fmt(m.missedMatch)}/yr</span></div>
-            <div style={rowNote}>At {empCapPct}%, your employer would add the rest, on top of your own {trPct}% tax relief</div>
-          </>
+          <RowText label="Match you're not getting" figure={`+${fmt(m.missedMatch)}/yr`} figureStyle={{color:SUCCESS}}
+            note={`At ${empCapPct}%, your employer would add the rest, on top of your own ${trPct}% tax relief`}/>
         ) : (
-          <>
-            <div style={line}><span style={rowLabel}>Tax relief on what you pay in</span><span style={rowFigure}>{trPct}%</span></div>
-            <div style={rowNote}>Every £{100-trPct} becomes £100{empCapPct > 0 ? `, and your employer matches up to ${empCapPct}% of salary if you pay in at least that much` : ""}</div>
-          </>
+          <RowText label="Tax relief on what you pay in" figure={`${trPct}%`}
+            note={`Every £${100-trPct} becomes £100${empCapPct > 0 ? `, and your employer matches up to ${empCapPct}% of salary if you pay in at least that much` : ""}`}/>
         )}
       </TileRow>
       <TileRow align>
@@ -591,7 +556,7 @@ function EmployerMatchTile({ m, d, trPct, contributing, set, taxFreeCash, editIt
             <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
           </>
         )}
-        <div style={rowNote}>Money in a pension usually can't be taken out until you're 55 (57 from 2028).</div>
+        <div style={ROW.note}>Money in a pension usually can't be taken out until you're 55 (57 from 2028).</div>
       </TileRow>
       {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
       <ReminderRows reminder={reminder} email={email}/>
@@ -606,12 +571,12 @@ function CarryForwardCalc({ cf, setCfYears, aa }) {
   return (
     <>
       <TileRow align>
-        <p style={noteText}>Had a scheme in earlier years but didn't use the full £60,000 allowance? The unused part carries forward for up to 3 years, capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).</p>
+        <p style={ROW.text}>Had a scheme in earlier years but didn't use the full £60,000 allowance? The unused part carries forward for up to 3 years, capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).</p>
       </TileRow>
       {cf.cfBreakdown.map((y, i) => (
         <TileRow key={y.label} align>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-            <span style={{...rowLabel,fontWeight:600}}>{y.label}</span>
+            <span style={{...ROW.label,fontWeight:600}}>{y.label}</span>
             <YearToggle value={y.hadScheme} onChange={v => setYear(i, { hadScheme: v })}/>
           </div>
           {y.hadScheme && (
@@ -638,7 +603,7 @@ function CarryForwardCalc({ cf, setCfYears, aa }) {
       {aa.showVctEis && (
         <TileRow align>
           <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>If pension contributions alone can't fix this</div>
-          <p style={noteText}>
+          <p style={ROW.text}>
             Even with carry forward, pension contributions alone may not bring Threshold Income below £200,000 here. The other routes carry much more risk, and this is a position where people usually take regulated advice. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
           </p>
         </TileRow>
@@ -668,11 +633,11 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
   if (!hasStatedBonus) return (
     <>
       <TileRow align>
-        <p style={noteText}>A bonus paid into your pension through salary sacrifice has no tax or NI taken from it, but it has to be arranged before the bonus is paid. With a bonus in your figures, this works out what it saves.</p>
+        <p style={ROW.text}>A bonus paid into your pension through salary sacrifice has no tax or NI taken from it, but it has to be arranged before the bonus is paid. With a bonus in your figures, this works out what it saves.</p>
       </TileRow>
       {onEditInputs && (
         <TileRow align onClick={onEditInputs}>
-          <span style={actionText}><Pencil size={18} aria-hidden="true"/>Add a bonus to your figures</span>
+          <span style={ROW.action}><Pencil size={18} aria-hidden="true"/>Add a bonus to your figures</span>
         </TileRow>
       )}
     </>
@@ -682,7 +647,7 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
     <>
       <TileRow align>
         {set && bonusPotential > 0 && <OpportunityChoice id={CHOICE_IDS.bonus} d={d} set={set} bank={{ moduleKey: "pension", perYear: sliderSaving }}/>}
-        <p style={{...noteText,marginBottom:"12px"}}>
+        <p style={{...ROW.text,marginBottom:"12px"}}>
           A bonus sacrificed before it reaches your payslip has no tax, NI{bs.bonusSlRate > 0 ? " or student loan repayments" : ""} taken from it. It goes into your pension in full and grows tax-free.
         </p>
         <div style={{...NOTICE_LABEL,marginBottom:"8px"}}>How much to sacrifice</div>
@@ -697,7 +662,7 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
         <TileRow align>
           <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
             <AlertTriangle size={16} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
-            <p style={{...noteText,fontSize:"12.5px"}}>
+            <p style={{...ROW.text,fontSize:"12.5px"}}>
               {bs.crossesTaper && !bs.crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)." : "Your bonus spans the 40% → 60% taper → 45% rate bands."} Sacrificing the part in that zone saves the most.
             </p>
           </div>
@@ -705,30 +670,21 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
       )}
 
       <TileRow align>
-        <div style={line}><span style={rowLabel}>You receive</span><span style={rowFigure}>{fmt(bs.totalReceived)}</span></div>
-        <div style={rowNote}>
-          {[
+        <RowText label="You receive" figure={fmt(bs.totalReceived)}
+          note={[
             bs.sacrificedAmt > 0 && `${fmt(bs.sacrificedAmt)} into your pension`,
             bs.takeHomeCash > 0 && `${fmt(bs.takeHomeCash)} as cash`,
             bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && `${fmt(bs.employerNISave)} employer NI saved*`,
-          ].filter(Boolean).join(" · ")}
-        </div>
+          ].filter(Boolean).join(" · ")}/>
       </TileRow>
       <TileRow align>
-        <div style={line}><span style={rowLabel}>Paid to HMRC{bs.bonusSlRate>0?" and the SLC":""}</span><span style={{...rowFigure,color:TEXT}}>{sacrificePct===100?fmt(0):fmt(bs.totalDeducted)}</span></div>
-        {sacrificePct !== 100 && (
-          <div style={rowNote}>
-            {[bs.taxOnCash>0 && `Tax ${fmt(bs.taxOnCash)}`, bs.niOnCash>0 && `NI ${fmt(bs.niOnCash)}`, bs.slOnCash>0 && `Student loan ${fmt(bs.slOnCash)}`].filter(Boolean).join(" · ")}
-          </div>
-        )}
+        <RowText label={`Paid to HMRC${bs.bonusSlRate>0?" and the SLC":""}`} figure={sacrificePct===100?fmt(0):fmt(bs.totalDeducted)} figureStyle={{color:TEXT}}
+          note={sacrificePct !== 100 && [bs.taxOnCash>0 && `Tax ${fmt(bs.taxOnCash)}`, bs.niOnCash>0 && `NI ${fmt(bs.niOnCash)}`, bs.slOnCash>0 && `Student loan ${fmt(bs.slOnCash)}`].filter(Boolean).join(" · ")}/>
       </TileRow>
       <TileRow align>
-        <div style={line}>
-          <span style={{...rowLabel,display:"flex",alignItems:"center",gap:"6px"}}>At retirement (age {bs.retireAge})<InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/></span>
-          <span style={rowFigure}>{fmtCompact(bs.bonusFVpartial(sacrificePct))}</span>
-        </div>
+        <RowText label={`At retirement (age ${bs.retireAge})`} tool={<InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>} figure={fmtCompact(bs.bonusFVpartial(sacrificePct))}/>
         {showFVInfo && (
-          <p style={{...rowNote,marginTop:"6px"}}>
+          <p style={{...ROW.note,marginTop:"6px"}}>
             Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
             {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
               ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
@@ -764,7 +720,7 @@ function SacrificeCalc({ d, m, trPct, extraPct, setExtraPct, chartSlider }) {
   return (
     <>
       <TileRow align>
-        <p style={noteText}>Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).</p>
+        <p style={ROW.text}>Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).</p>
       </TileRow>
       <TileRow align>
         <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>An extra {sacrificeExtraPct}% of salary</div>
@@ -776,12 +732,12 @@ function SacrificeCalc({ d, m, trPct, extraPct, setExtraPct, chartSlider }) {
         <div style={rowStyle}><span>Comes off your taxable income</span><span>−{fmt(Math.round(extraAmt))}</span></div>
         <div style={rowStyle}><span>Tax{niSavingPct>0?" and NI":""} relief at {totalReliefPct}%</span><span>−{fmt(extraRelief)}</span></div>
         <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(extraNetCost)}</span></div>
-        <div style={rowNote}>
+        <div style={ROW.note}>
           That leaves your taxable income at about {fmt(Math.round(newAdjustedIncome))}{newBandLabel !== m.taxBandLabel ? `, in the ${newBandLabel}-rate band.` : `, still in the ${m.taxBandLabel}-rate band.`}{chartSlider && ` "What if you paid in more?" in Growth to retirement changes the amount.`}
         </div>
       </TileRow>
       <TileRow align>
-        <p style={rowNote}>
+        <p style={ROW.note}>
           Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?": savings interest above that is taxed at your marginal rate":""}. It would recover to £1,000 if sacrifice took you back under £50,270.
         </p>
       </TileRow>

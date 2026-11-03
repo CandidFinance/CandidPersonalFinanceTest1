@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lock, ChevronDown, X, Plus, Layers, Pencil, CircleAlert } from "lucide-react";
+import { Lock, X, Plus, Layers, Pencil, CircleAlert } from "lucide-react";
 import { MAX_PLANS, MONTHS, newPlan, monthsFrom } from "../../lib/loanPlan.js";
 import { payPathOf } from "../../lib/metrics.js";
 import { fmt } from "../../lib/format.js";
@@ -12,16 +12,15 @@ import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.j
 import { TileRow, ROW, withIcon, Nested } from "../MobileTile.jsx";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
 
-// "Scenario modelling" at the top of the student loan page's figures to
-// try: a collapsed tile, marked as a subscriber feature for everyone, that
-// opens to the repayment plan builder (lib/loanPlan.js) for subscribers, or
-// a blurred example and the way to subscribe for anyone else. In the pale
-// blue of Home's "Since your last visit" (SinceLastVisit.jsx), as a
-// subscriber feature, with a sheen passing over it like the Opportunity
-// tile's (OpportunityTile.jsx). Once a subscriber has opened it, a plain
-// white tile, the student loan purple on its icon, and a small crown for the
+// "Scenario modelling", a row of the student loan page's What ifs tile
+// (MobileTile.jsx), marked as a subscriber feature for everyone: its icon in
+// a box and the Subscribers pill beside its label, opening under it to the
+// repayment plan builder (lib/loanPlan.js) for subscribers, or a blurred
+// example and the way to subscribe for anyone else. Once a subscriber has
+// opened it, the student loan purple on its icon and a small crown for the
 // pill (entitlement.js featureUsed); the change shows from their next visit,
-// not under them as they open it.
+// not under them as they open it. `expanded` and `onToggle` come from the
+// page, which keeps one what-if open at a time.
 //
 // Plans are saved with their answers (d.slPlans, up to MAX_PLANS), and the
 // one picked (d.slPlanShown) is drawn on the balance chart beside the lump
@@ -29,36 +28,18 @@ import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, G
 // loan (loanPlan.js runPlan), worked out by the page. `onPlanSaved`: called
 // when a payment is added or changed, so the page can show it on the chart.
 
-const CSS = `
-.sm-tile { position: relative; overflow: hidden; }
-.sm-tile > * { position: relative; z-index: 1; }
-.sm-tile::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
-  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.75) 46%, transparent 60%);
-  will-change: transform; animation: sm-sheen 7s ease-in-out infinite; }
-@keyframes sm-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
-@media (prefers-reduced-motion: reduce) { .sm-tile::after { animation: none; transform: translateX(-30%); } }
-.sm-tile.sm-open::after { display: none; }
-`;
-
-// `row`: a row of the page's What ifs tile instead (MobileTile.jsx), its
-// icon in a box and the Subscribers pill beside its label, the builder
-// opening under it; `expanded` and `onToggle` then come from the page, which
-// keeps one what-if open at a time.
-export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved, row = false, expanded: shown, onToggle }) {
-  const [ownExpanded, setExpanded] = useState(false);
-  const expanded = row ? shown : ownExpanded;
+export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved, expanded, onToggle }) {
   const [used] = useState(() => featureUsed(d, "scenarioModelling"));
   const toggle = () => {
     if (!expanded && open && hasAccess() && !featureUsed(d, "scenarioModelling")) set("subscriberFeaturesUsed", withFeatureUsed(d, "scenarioModelling"));
-    if (row) onToggle(); else setExpanded(e => !e);
+    onToggle();
   };
-  const ink = used ? G : CTA_BLUE;
   const pill = used ? <SubscriberCrown/> : (
     <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
       {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
     </span>
   );
-  if (row) return (
+  return (
     <>
       <TileRow onClick={toggle} expanded={expanded}>
         {withIcon(Layers, <>
@@ -74,29 +55,6 @@ export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSave
         </Nested>
       )}
     </>
-  );
-  return (
-    <div className={used ? undefined : expanded ? "sm-tile sm-open" : "sm-tile"} style={used
-      ? {background:WHITE,border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 1px 3px rgba(22,47,36,0.06)"}
-      : {background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
-      {!used && <style>{CSS}</style>}
-      <button type="button" aria-expanded={expanded} onClick={toggle} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-        <Layers size={17} color={used ? STUDENT_PURPLE : CTA_BLUE} style={{flexShrink:0}}/>
-        <span style={{flex:1,minWidth:0}}>
-          <span style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-            <span style={{fontSize:"14px",fontWeight:700,color:ink}}>Scenario modelling</span>
-            {pill}
-          </span>
-          <span style={{display:"block",fontSize:"12px",color:TEXT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
-        </span>
-        <ChevronDown size={16} color={ink} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
-      </button>
-      {expanded && (
-        <div style={{background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"}}>
-          {open ? <><PayByYear d={d} m={m} sl={sl} set={set}/><PlanBuilder d={d} m={m} sl={sl} set={set} run={run} onSaved={onPlanSaved}/></> : <Locked d={d}/>}
-        </div>
-      )}
-    </div>
   );
 }
 
