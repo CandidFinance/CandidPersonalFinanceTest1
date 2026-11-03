@@ -548,9 +548,12 @@ export function unbankChange(d, key, perYear, on) {
 // null: it carries on. A £100k trap top-up's saving lasts its tax year
 // (taxTrap.js topUpsThisYear), to the 5 April after it; one recorded
 // before `until` was kept (28 Oct 2026) is found by its top-up (the same
-// perYear and day, taxTrapRecord.js recordTopUps).
+// perYear and day, taxTrapRecord.js recordTopUps). Investments' £ is the
+// capital gains tax saved on this tax year's allowance, which reopens each
+// 6 April: a change there lasts its tax year too.
 function changeEnd(d, key, c) {
   if (c.until) return c.until;
+  if (key === "investments") return `${taxYearOf(new Date(c.on + "T12:00:00")) + 1}-04-05`;
   if (key !== "taxTrap") return null;
   const u = (d.trapTopUps || []).find(u => u.perYear === c.perYear && u.on === c.on);
   return u && Number.isInteger(+u.taxYear) ? `${+u.taxYear + 1}-04-05` : null;
@@ -629,7 +632,9 @@ export function bankPatch(d, key, amount, made, on = new Date().toISOString().sl
 // ── Gained so far: each banked change's £ a year, counted by the day from
 // the day it was made (that day included). Banked before changes were
 // dated counts from BANK_LOG_START, the day dating began. An estimate, like
-// the £ it comes from.
+// the £ it comes from. Capital gains tax saved (Investments) is saved for
+// its whole tax year at once, so it counts in full on the day it's banked.
+const IN_FULL = ["investments"];
 export const BANK_LOG_START = "2026-10-14";
 // The first day of the tax year `now` is in, as "YYYY-MM-DD".
 export const taxYearStart = (now = new Date()) => `${taxYearOf(now)}-04-06`;
@@ -652,7 +657,9 @@ export function gainedSoFar(d, now = new Date(), from = null) {
   for (const c of changes) {
     const end = c.until ? Math.min(today, Date.parse(c.until)) : today;
     const days = Math.max(0, Math.round((end - Math.max(Date.parse(c.on), since)) / 86400000) + 1);
-    const gained = c.perYear * days / 365;
+    const gained = IN_FULL.includes(c.key)
+      ? (Date.parse(c.on) >= since && Date.parse(c.on) <= today ? c.perYear : 0)
+      : c.perYear * days / 365;
     const going = !c.until || Date.parse(c.until) >= today ? c.perYear : 0;
     const mod = byModule[c.key] || (byModule[c.key] = { gained: 0, perYear: 0 });
     mod.gained += gained;

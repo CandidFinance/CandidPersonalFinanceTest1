@@ -156,3 +156,20 @@ test("gained so far: each banked change counted by the day since it was made", a
   assert.equal(gainedSoFar(old, start).total, 1);
   assert.equal(gainedSoFar(old, new Date(start.getTime() + 9 * 86400000)).total, 10);
 });
+
+test("gained so far: capital gains tax saved counts in full when banked, and reopens on 6 April", async () => {
+  const { gainedSoFar, bankedFor } = await import("./moduleStatus.js");
+  const d = { moduleBaselines: { investments: { amount: 0, answers: "[]", banked: 1000, changes: [{ perYear: 1000, on: "2027-03-01" }] } } };
+  // Before it was made: nothing. On the day: the whole £1,000.
+  assert.equal(gainedSoFar(d, new Date(2027, 1, 28)).total, 0);
+  const onDay = gainedSoFar(d, new Date(2027, 2, 1));
+  assert.equal(onDay.total, 1000);
+  assert.equal(onDay.perYear, 1000);
+  assert.equal(bankedFor(d, "investments", new Date(2027, 3, 5)), 1000);
+  // The next tax year: still gained, no longer a £ a year or banked.
+  const next = gainedSoFar(d, new Date(2027, 3, 6));
+  assert.equal(next.total, 1000);
+  assert.equal(next.perYear, 0);
+  assert.equal(bankedFor(d, "investments", new Date(2027, 3, 6)), 0);
+  assert.equal(gainedSoFar(d, new Date(2027, 3, 20), "2027-04-06").total, 0);
+});
