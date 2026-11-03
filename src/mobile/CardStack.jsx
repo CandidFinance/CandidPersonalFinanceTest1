@@ -222,13 +222,16 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
       </div>
       {/* Says which card has come to the front as each turn starts. */}
       {n > 1 && <div aria-live="polite" style={SR_ONLY}>{moved.current ? `${cards[target].label}, card ${target + 1} of ${n}` : ""}</div>}
-      <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px"}}>
+      {/* With controls, the row keeps their height even when the arrows go
+          (touchscreens), so the dots sit level with them and nothing below
+          is overlapped. */}
+      <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px",minHeight:controls ? pill.height : undefined}}>
         <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} className="tap44 card-stack-arrow" style={arrow}><ChevronUp size={15} color={G}/></button>
         <div style={{display:"flex",gap:"6px"}} aria-hidden="true">
           {cards.map((c, i) => <span key={c.key} style={{width:"7px",height:"7px",borderRadius:"50%",background:i === target ? G : "rgba(22,47,36,0.2)",transform:i === target ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>)}
         </div>
         <button type="button" onClick={() => turn()} aria-label={turnLabels[1]} className="tap44 card-stack-arrow" style={arrow}><ChevronDown size={15} color={G}/></button>
-        {controls && <div style={{position:"absolute",right:0,top:0}}>{controls}</div>}
+        {controls && <div style={{position:"absolute",right:0,top:0,bottom:0,display:"flex",alignItems:"center"}}>{controls}</div>}
       </div>
     </div>
   );
@@ -253,3 +256,6 @@ export function StillCard({ label, body, ...rest }) {
 // A round 30px button; give it className="tap44" for a 44px tap area
 // (index.html).
 export const arrow = { width:"30px", height:"30px", borderRadius:"50%", border:"1px solid rgba(22,47,36,0.15)", background:WHITE, display:"grid", placeItems:"center", cursor:"pointer", padding:0 };
+// The same, as a short pill (FilterMenu): less height to sit beside the
+// wallet's dots or in a tile's heading.
+export const pill = { ...arrow, width:"38px", height:"24px", borderRadius:"999px" };

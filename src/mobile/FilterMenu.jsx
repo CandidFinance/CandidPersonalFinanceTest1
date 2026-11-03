@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { ListFilter, Check } from "lucide-react";
-import { arrow } from "./CardStack.jsx";
+import { pill } from "./CardStack.jsx";
 import { G, WHITE, MUT, TEXT } from "../design-tokens.js";
 
-// A round filter button opening a short menu of options, with a tick on the
+// A pill filter button opening a short menu of options, with a tick on the
 // one chosen (the Modules wallet's filter, Progress's goal order). Filled
 // while anything but `defaultValue` is chosen: the button is that state's
 // one indicator. `options`: [{ key, label, count? }]; one with a count of 0
@@ -40,12 +40,12 @@ export default function FilterMenu({ label, options, value, defaultValue, onChan
   return (
     <div ref={box} onKeyDown={open ? onKeyDown : undefined} style={{position:"relative"}}>
       <button ref={button} type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={open ? id : undefined} aria-label={`${label}: ${name}`} className="tap44"
-        style={{...arrow, background:on ? G : WHITE, borderColor:on ? G : "rgba(22,47,36,0.15)"}}>
+        style={{...pill, background:on ? G : WHITE, borderColor:on ? G : "rgba(22,47,36,0.15)"}}>
         <ListFilter size={15} color={on ? WHITE : G}/>
       </button>
       {open && (
         <div ref={list} id={id} role="radiogroup" aria-label={label}
-          style={{position:"absolute",right:0,top:"36px",zIndex:30,minWidth:"170px",background:WHITE,borderRadius:"12px",boxShadow:"0 8px 28px rgba(22,47,36,0.16)",border:"1px solid rgba(22,47,36,0.08)",padding:"6px"}}>
+          style={{position:"absolute",right:0,top:"30px",zIndex:30,minWidth:"170px",background:WHITE,borderRadius:"12px",boxShadow:"0 8px 28px rgba(22,47,36,0.16)",border:"1px solid rgba(22,47,36,0.08)",padding:"6px"}}>
           {options.map(({ key, label: text, count }) => {
             const empty = count === 0;
             return (
