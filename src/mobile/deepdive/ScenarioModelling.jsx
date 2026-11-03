@@ -10,7 +10,7 @@ import SubscribeButtons from "./SubscribeButtons.jsx";
 import { SubscriberCrown } from "../Premium.jsx";
 import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.js";
 import { TileRow, ROW, withIcon, Nested } from "../MobileTile.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
 
 // "Scenario modelling", a row of the student loan page's What ifs tile
 // (MobileTile.jsx), marked as a subscriber feature for everyone: its icon in

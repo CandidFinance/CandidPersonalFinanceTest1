@@ -4,7 +4,7 @@ import { pensionReveal } from "../../lib/moduleReveal.js";
 import { pensionOutlook, cliffEdge, retirementAdequacy } from "../../lib/crossModule.js";
 import { choiceFor, CHOICE_IDS } from "../../lib/opportunityChoices.js";
 import OpportunityChoice from "../OpportunityChoice.jsx";
-import { AlertTriangle, Check, ChevronRight, Bell, BellRing, Mail, Info, Pencil, Gift, History, HandCoins } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, Bell, Info, Pencil, Gift, History, HandCoins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   isPensionContributing,
@@ -20,7 +20,8 @@ import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow, RowText, ROW, withIcon, Nested } from "../MobileTile.jsx";
+import MobileTile, { TileRow, RowText, ROW, withIcon, Nested, TilePopover, anchor, priorityTag } from "../MobileTile.jsx";
+import { AnimatePresence } from "framer-motion";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import MobileDrawdown from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
@@ -28,9 +29,9 @@ import { ADVISER_LINK } from "../GuidanceNote.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
-import { useReminder } from "../MobileReminderAction.jsx";
+import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
 import { firstName } from "../copy.js";
-import { pensionMatchDraft, bonusSacrificeDraft, buildMailtoUrl } from "../emailDrafts.js";
+import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK, NOTICE_LABEL } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
@@ -40,7 +41,6 @@ const EXTRA_PCT_OPTIONS = [0,1,2,3,5].map(p => ({ value:p, label:p ? `+${p}%` : 
 
 // A breakdown's lines, inside one row.
 const rowStyle = { display:"flex", justifyContent:"space-between", gap:"12px", fontSize:"13px", color:TEXT, padding:"4px 0" };
-const priorityTag = <span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>;
 
 // Full mobile version of desktop's Pension deep dive (ModuleDeepDive,
 // moduleKey==="pension" — CandidApp.jsx), as MobileTiles (rows on the tile,
@@ -94,27 +94,9 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
   );
 }
 
-// A tile's visible actions: open the drafted email to HR, and add a
-// calendar reminder (with the draft in it). Two rows, as a page can hand
-// off to the phone only once per tap.
-function ReminderRows({ reminder, email }) {
-  const [emailOpened, setEmailOpened] = useState(false);
-  return (
-    <>
-      {email && (
-        <TileRow align onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }}>
-          <span style={ROW.action}>{emailOpened ? <Check size={18} aria-hidden="true"/> : <Mail size={18} aria-hidden="true"/>}{emailOpened ? "Email draft opened" : "Draft an email to HR"}</span>
-        </TileRow>
-      )}
-      <TileRow align onClick={reminder.isSet ? undefined : reminder.setReminder}>
-        <span style={ROW.action}>
-          {reminder.isSet ? <BellRing size={18} aria-hidden="true"/> : <Bell size={18} aria-hidden="true"/>}
-          {reminder.isSet ? `Reminder set for ${reminder.dateLabel}` : `Remind me on ${reminder.dateLabel}`}
-        </span>
-      </TileRow>
-    </>
-  );
-}
+// A tile's visible actions, as pills on a row of their own: open the drafted
+// email to HR, and add a calendar reminder (with the draft in it).
+const ReminderRows = ({ reminder, email }) => <TileRow align><ReminderPills reminder={reminder} email={email}/></TileRow>;
 
 export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   const navigate = useNavigate();
@@ -129,7 +111,6 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(0);
-  const [showFVInfo, setShowFVInfo] = useState(false);
   // Each tile's explanation, from its menu.
   const [notes, setNotes] = useState({});
   const toggleNote = k => setNotes(n => ({ ...n, [k]: !n[k] }));
@@ -334,7 +315,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
             {withIcon(Gift, <RowText label={hasStatedBonus ? "Your bonus into your pension" : "A bonus into your pension"} note={bonusRow.note} figure={bonusRow.figure} figureStyle={{color:SUCCESS}}/>)}
           </TileRow>
           {whatIf === "bonus" && (
-            <Nested><BonusCalc hasStatedBonus={hasStatedBonus} bonusPotential={bonusPotential} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m} onEditInputs={onEditInputs}/></Nested>
+            <Nested><BonusCalc hasStatedBonus={hasStatedBonus} bonusPotential={bonusPotential} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} m={m} onEditInputs={onEditInputs}/></Nested>
           )}
 
           {aa.inAATaper && (
@@ -614,7 +595,8 @@ function CarryForwardCalc({ cf, setCfYears, aa }) {
 
 // A bonus into the pension: what sacrificing some of a stated bonus keeps,
 // or, with no bonus stated, a way to add one. Rows under its What ifs row.
-function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m, onEditInputs }) {
+function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, m, onEditInputs }) {
+  const [showFVInfo, setShowFVInfo] = useState(false);
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
   // What the slider's choice keeps from tax, NI and student loan: what
   // "I've done this" counts as saved.
@@ -681,19 +663,23 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
         <RowText label={`Paid to HMRC${bs.bonusSlRate>0?" and the SLC":""}`} figure={sacrificePct===100?fmt(0):fmt(bs.totalDeducted)} figureStyle={{color:TEXT}}
           note={sacrificePct !== 100 && [bs.taxOnCash>0 && `Tax ${fmt(bs.taxOnCash)}`, bs.niOnCash>0 && `NI ${fmt(bs.niOnCash)}`, bs.slOnCash>0 && `Student loan ${fmt(bs.slOnCash)}`].filter(Boolean).join(" · ")}/>
       </TileRow>
-      <TileRow align>
-        <RowText label={`At retirement (age ${bs.retireAge})`} tool={<InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>} figure={fmtCompact(bs.bonusFVpartial(sacrificePct))}/>
-        {showFVInfo && (
-          <p style={{...ROW.note,marginTop:"6px"}}>
-            Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
-            {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
-              ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
-              : m.willClear
-                ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
-                : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
-            {d.employmentStatus !== "self_employed" && ` *Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on the sacrificed amount is also saved — some employers pass this on.`}
-          </p>
-        )}
+      <TileRow align style={anchor}>
+        <RowText label={`At retirement (age ${bs.retireAge})`} tool={<span style={{display:"inline-flex",margin:"-4px 0"}}><InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/></span>} figure={fmtCompact(bs.bonusFVpartial(sacrificePct))}/>
+        <AnimatePresence>
+          {showFVInfo && (
+            <TilePopover key="fv" title="At retirement" onClose={() => setShowFVInfo(false)}>
+              <p style={{...ROW.text,margin:0}}>
+                Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
+                {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
+                  ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
+                  : m.willClear
+                    ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
+                    : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
+                {d.employmentStatus !== "self_employed" && ` *Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on the sacrificed amount is also saved — some employers pass this on.`}
+              </p>
+            </TilePopover>
+          )}
+        </AnimatePresence>
       </TileRow>
       {bonusPotential > 0 && <ReminderRows reminder={reminder} email={email}/>}
     </>

@@ -209,7 +209,7 @@ function BalanceTile({ d, m, sl, set, savingsRates, menu, overpayAmt, setOverpay
   };
   const resetStart = () => { if (set) set("slFirstDueYear", ""); closeStart(); };
   const pill = { flex:1, borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit" };
-  const growth = set ? payGrowthOf(d, m) : null;
+  const growth = set ? growthRowOf(d, m) : null;
   return (
     <MobileTile id="sl-balance" title="Your balance"
       // From the menu: once the menu has closed and handed focus back, so
@@ -314,13 +314,15 @@ function WhatIfs({ d, m, sl, set, menu, whatIf, toggleWhatIf, subscriber, planRu
 // Salary growth as its row in Your balance shows it: the rate, and the salary it
 // comes to in ten years; or, with pay set year by year, the average rate
 // that comes to (the same figures PayGrowth works with).
-function payGrowthOf(d, m) {
+function growthRowOf(d, m) {
   const salary = m.salary || 0;
   const path = payPathOf(d, +d.salary || 0, m.taxYear);
   if (path) return { path: true, pct: Math.round((Math.pow(path.factor(10), 0.1) - 1) * 1000) / 10, inTen: Math.round(salary * path.factor(10) / 100) * 100 };
   const exact = salaryGrowthOf(d) * 100;
-  return { path: false, pct: Math.round(exact * 10) / 10, inTen: salary > 0 ? Math.round(salary * Math.pow(1 + exact / 100, 10) / 100) * 100 : 0 };
+  return { path: false, pct: Math.round(exact * 10) / 10, inTen: salary > 0 ? salaryInTen(salary, exact) : 0 };
 }
+// A salary after ten years at `pct`% a year, to the nearest £100.
+const salaryInTen = (salary, pct) => Math.round(salary * Math.pow(1 + pct / 100, 10) / 100) * 100;
 
 // Salary growth, their own: 1% to 10% a year for ten years, then with
 // prices (growth.js payFactor). Set as a rate on the slider, or the other
@@ -334,7 +336,7 @@ function PayGrowth({ d, m, set }) {
   const salary = m.salary || 0;
   const exact = salaryGrowthOf(d) * 100;
   const pct = Math.round(exact * 10) / 10;
-  const inTen = p => Math.round(salary * Math.pow(1 + p / 100, 10) / 100) * 100;
+  const inTen = p => salaryInTen(salary, p);
   // To 0.01%, so a typed figure comes back as typed.
   const keep = p => Math.min(SALARY_GROWTH_MAX_PCT, Math.max(SALARY_GROWTH_MIN_PCT, Math.round(p * 100) / 100));
   const setPct = p => { set("salaryGrowthPct", String(keep(p))); set("salaryTrajectory", trajectoryNearest(keep(p))); };

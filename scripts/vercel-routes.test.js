@@ -21,3 +21,13 @@ test("app routes go to the app shell, anything else to the 404", () => {
   assert.equal(rewriteFor("/app/module"), null);
   assert.equal(rewriteFor("/app/module/pension/extra"), null);
 });
+
+// prerender.js's PAGES, read as text: importing it would start Vite.
+const prerendered = [...readFileSync(new URL("./prerender.js", import.meta.url), "utf8").matchAll(/path: "([^"]+)", file: "(prerendered\/[^"]+)"/g)]
+  .map(m => `${m[1]} -> /${m[2]}`);
+
+test("every /prerendered/ rewrite has a page in prerender.js, and the reverse", () => {
+  const served = rewrites.filter(r => r.destination.startsWith("/prerendered/")).map(r => `${r.source} -> ${r.destination}`);
+  assert.ok(prerendered.length > 0);
+  assert.deepEqual(served.sort(), [...prerendered].sort());
+});

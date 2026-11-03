@@ -1,18 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
-import { Bell, BellRing, Info, Pencil, EyeOff } from "lucide-react";
+import { Bell, Info, Pencil, EyeOff } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { cashOpportunity, accountName, assistItems } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { isLocked } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow, RowText, ROW } from "../MobileTile.jsx";
+import MobileTile, { TileRow, RowText, ROW, priorityTag } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
-import { useReminder } from "../MobileReminderAction.jsx";
+import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, CRITICAL, NOTICE_LABEL } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
@@ -155,7 +155,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
           {showEmergencyWin && (
             <TileRow>
               <RowText label="Gap to your target" figure={fmt(m.emergencyShortfall)}
-                tool={<span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>}
+                tool={priorityTag}
                 note={monthsToCloseGap > 0 && `Your spare ${fmt(Math.round(m.monthlySurplus))} a month would close it in about ${monthsToCloseGap} month${monthsToCloseGap===1?"":"s"}`}/>
             </TileRow>
           )}
@@ -201,12 +201,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
               <RowText label={<span style={{fontWeight:700}}>Together, after tax</span>} figure={`${fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr`} figureStyle={{color:SUCCESS}}/>
             </TileRow>
             {gain > 50 && (
-              <TileRow onClick={reminder.isSet ? undefined : reminder.setReminder} align>
-                <span style={{display:"flex",alignItems:"center",gap:"10px",fontSize:"14px",fontWeight:600,color:G}}>
-                  {reminder.isSet ? <BellRing size={18} aria-hidden="true"/> : <Bell size={18} aria-hidden="true"/>}
-                  {reminder.isSet ? `Reminder set for ${reminder.dateLabel}` : `Remind me on ${reminder.dateLabel}`}
-                </span>
-              </TileRow>
+              <TileRow align><ReminderPills reminder={reminder}/></TileRow>
             )}
             {notes.savings && (
               <TileRow>

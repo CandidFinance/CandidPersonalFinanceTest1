@@ -63,6 +63,39 @@ export function useReminder({ id, title, description, email, who = "HR" }) {
   return { isSet, dateLabel, setReminder };
 }
 
+// A tile's visible actions as pills, in the same style as the pill below:
+// open the drafted email (`email`, optional) and add the calendar reminder
+// (`reminder`, from useReminder). Two buttons, as a page can hand off to the
+// phone only once per tap. Short labels, so the two fit side by side at
+// phone width; the reminder's date in a note under them.
+const pillStyle = done => ({
+  display:"inline-flex", alignItems:"center", gap:"8px", whiteSpace:"nowrap",
+  background: done ? "rgba(196,150,58,0.12)" : "transparent", color: done ? "#8a6a24" : G,
+  border:`1.5px solid ${done ? GOLD : G}`, borderRadius:RADIUS_PILL, padding:"9px 16px",
+  fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor:"pointer",
+});
+export function ReminderPills({ reminder, email, who = "HR" }) {
+  const [emailOpened, setEmailOpened] = useState(false);
+  return (
+    <>
+      <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+        {email && (
+          <button type="button" onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }} style={pillStyle(emailOpened)}>
+            {emailOpened ? <Check size={15} aria-hidden="true"/> : <Mail size={15} aria-hidden="true"/>}{emailOpened ? "Email opened" : `Email ${who}`}
+          </button>
+        )}
+        <button type="button" onClick={reminder.isSet ? undefined : reminder.setReminder} style={{...pillStyle(reminder.isSet),cursor:reminder.isSet ? "default" : "pointer"}}>
+          {reminder.isSet ? <BellRing size={15} aria-hidden="true"/> : <Bell size={15} aria-hidden="true"/>}
+          {reminder.isSet ? "Reminder set" : "Remind me"}
+        </button>
+      </div>
+      <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"6px"}}>
+        {reminder.isSet ? `In your calendar for ${reminder.dateLabel}` : `The reminder is for ${reminder.dateLabel}`}
+      </div>
+    </>
+  );
+}
+
 export default function MobileReminderAction({ id, title, description, email, action, beside, who = "HR" }) {
   const { isSet, dateLabel, setReminder } = useReminder({ id, title, description, email, who });
   const [panelOpen, setPanelOpen] = useState(false);

@@ -1,7 +1,7 @@
 import { useState, useRef, useId, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MoreHorizontal, ChevronRight } from "lucide-react";
-import { G, TEXT, MUT, WHITE, SANS, SERIF, CARD, HAIRLINE, GOLD_TEXT } from "../design-tokens.js";
+import { G, TEXT, MUT, WHITE, SANS, SERIF, CARD, HAIRLINE, GOLD_TEXT, CRITICAL } from "../design-tokens.js";
 import useDialogFocus from "./useDialogFocus.js";
 
 // A module answer tile, after Monzo's: a short bold title top left, a gold
@@ -99,6 +99,9 @@ export function RowText({ label, note, figure, inline = false, figureStyle, tool
     </div>
   );
 }
+
+// A PRIORITY pill, for a row's `tool`.
+export const priorityTag = <span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>;
 
 // A calculator row's icon, where a provider's logo sits in a list
 // (ProviderLogo): marks the row as something to open. `muted`: a note's, with
