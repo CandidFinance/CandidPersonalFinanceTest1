@@ -1,4 +1,18 @@
 User-agent: *
 Allow: /
 
+# AI search and assistant crawlers, named so their access is explicit. A
+# crawler named here follows only its own group, not the * group above.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+Allow: /
+
 Sitemap: https://www.candid-finance.co.uk/sitemap.xml

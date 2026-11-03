@@ -1,6 +1,6 @@
 // The last step of `npm run build`: renders the marketing pages that need
-// to be readable without JavaScript (the homepage and /about,
-// src/site/renderPages.jsx) to HTML, each into its own copy of
+// to be readable without JavaScript (the homepage, /about and the explainer
+// pages, src/site/renderPages.jsx) to HTML, each into its own copy of
 // dist/index.html with its own title, description and social tags. The app
 // still renders on the client as before; main.jsx keeps this markup on
 // screen until the page's own code has loaded (see Prerendered there).
@@ -27,6 +27,30 @@ const PAGES = [
       title: "About | Candid",
       description: "Built to stop you wasting thousands on financial blind spots: the tax traps, idle cash and unused allowances costing you.",
       url: `${SITE_URL}/about`,
+    },
+  },
+  {
+    path: "/the-problem", file: "prerendered/the-problem.html",
+    meta: {
+      title: "The problem | Candid",
+      description: "Why higher and additional rate taxpayers lose thousands a year to tax traps, idle cash and unused allowances, and why the picture changes every tax year.",
+      url: `${SITE_URL}/the-problem`,
+    },
+  },
+  {
+    path: "/how-it-works", file: "prerendered/how-it-works.html",
+    meta: {
+      title: "How it works | Candid",
+      description: "Four steps, five minutes, and a picture of your tax efficiency, net worth and options in pounds, updated as your life changes.",
+      url: `${SITE_URL}/how-it-works`,
+    },
+  },
+  {
+    path: "/what-candid-is", file: "prerendered/what-candid-is.html",
+    meta: {
+      title: "What Candid is, and isn't | Candid",
+      description: "Candid is guidance, not financial advice: what it does, what it doesn't, how it is paid for, and why it is not authorised by the FCA.",
+      url: `${SITE_URL}/what-candid-is`,
     },
   },
 ];

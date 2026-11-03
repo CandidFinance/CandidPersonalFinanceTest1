@@ -3,11 +3,11 @@
     { "source": "/about.html", "destination": "/about", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/the-problem", "destination": "/app-shell.html" },
-    { "source": "/how-it-works", "destination": "/app-shell.html" },
+    { "source": "/the-problem", "destination": "/prerendered/the-problem.html" },
+    { "source": "/how-it-works", "destination": "/prerendered/how-it-works.html" },
     { "source": "/signin", "destination": "/app-shell.html" },
     { "source": "/app/signin", "destination": "/app-shell.html" },
-    { "source": "/what-candid-is", "destination": "/app-shell.html" },
+    { "source": "/what-candid-is", "destination": "/prerendered/what-candid-is.html" },
     { "source": "/about", "destination": "/prerendered/about.html" },
     { "source": "/beta", "destination": "/app-shell.html" },
     { "source": "/welcome", "destination": "/app-shell.html" },

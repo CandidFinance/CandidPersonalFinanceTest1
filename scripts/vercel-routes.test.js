@@ -13,7 +13,8 @@ test("vercel.json serves the app on exactly main.jsx's routes", () => {
 });
 
 test("app routes go to the app shell, anything else to the 404", () => {
-  assert.equal(rewriteFor("/how-it-works"), "/app-shell.html");
+  assert.equal(rewriteFor("/signin"), "/app-shell.html");
+  assert.equal(rewriteFor("/how-it-works"), "/prerendered/how-it-works.html");
   assert.equal(rewriteFor("/app/module/pension"), "/app-shell.html");
   assert.equal(rewriteFor("/app/assessment/5"), "/app-shell.html");
   assert.equal(rewriteFor("/fake-url"), null);

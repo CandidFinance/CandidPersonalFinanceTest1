@@ -124,7 +124,7 @@ const NotFoundPage = lazy(() => import("./site/NotFoundPage.jsx"))
 const AboutPage = lazy(() => import("./site/AboutPage.jsx"))
 
 // The page's own HTML, for the routes rendered at build time so crawlers can
-// read them (the homepage and /about, scripts/prerender.js). Read before
+// read them (the homepage, /about and the explainer pages, scripts/prerender.js). Read before
 // React takes over the root, and shown until that page's code has loaded,
 // so it doesn't blank out in between. Empty on every other route
 // (app-shell.html), and only shown on the path it was rendered for.
@@ -295,11 +295,11 @@ function AppRoutes() {
     <>
       <Routes>
         <Route path="/" element={<RootRoute />} />
-        <Route path="/the-problem" element={<Suspense fallback={null}><TheProblemPage /></Suspense>} />
-        <Route path="/how-it-works" element={<Suspense fallback={null}><HowItWorksPage /></Suspense>} />
+        <Route path="/the-problem" element={<Suspense fallback={<Prerendered />}><TheProblemPage /></Suspense>} />
+        <Route path="/how-it-works" element={<Suspense fallback={<Prerendered />}><HowItWorksPage /></Suspense>} />
         <Route path="/signin" element={<Suspense fallback={null}><SignInPage /></Suspense>} />
         <Route path="/app/signin" element={<Suspense fallback={null}><SignInPage app /></Suspense>} />
-        <Route path="/what-candid-is" element={<Suspense fallback={null}><WhatCandidIsPage /></Suspense>} />
+        <Route path="/what-candid-is" element={<Suspense fallback={<Prerendered />}><WhatCandidIsPage /></Suspense>} />
         <Route path="/about" element={<Suspense fallback={<Prerendered />}><AboutPage /></Suspense>} />
         {/* The app used to sit behind a beta password here; old links now go
             straight in. */}

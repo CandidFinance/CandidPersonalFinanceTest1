@@ -68,14 +68,18 @@ const SITE_CSS = `
   }
 `;
 
+// index.html's own title, the home page's and the app's.
+const HOME_TITLE = "Candid | Reclaim wealth lost to tax traps";
+
 // `title` is the browser tab's title for this page; the home page leaves it
-// out and keeps index.html's own.
+// out and keeps index.html's own. Leaving the page puts back index.html's
+// title, not the one the tab had on arriving: a prerendered page
+// (scripts/prerender.js) arrives with its own title already in the tab.
 export default function SiteLayout({ title, children }) {
   useEffect(() => {
     if (!title) return;
-    const previous = document.title;
     document.title = title;
-    return () => { document.title = previous; };
+    return () => { document.title = HOME_TITLE; };
   }, [title]);
 
   return (
