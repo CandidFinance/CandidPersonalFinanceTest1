@@ -2,6 +2,7 @@ import { X, Plus } from "lucide-react";
 import { GOLD_TEXT, MUT, MUT_ON_CDARK, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
 import PillMoneyInput, { PILL_ANSWER_TEXT, pillFieldStyle } from "../PillMoneyInput.jsx";
 import { capField } from "../../lib/onboarding.js";
+import { stateFill, stateBorder } from "../fieldState.js";
 
 // Repeatable "one row per cash account" list for the onboarding Cash step:
 // cashTiers' data shape ([{amount,rate}]) and FIELD_CAPS' field caps, so
@@ -9,10 +10,15 @@ import { capField } from "../../lib/onboarding.js";
 // Each account can also have a name (optional), which Candid Assist uses to
 // say exactly which account money would move from. Two rows to start with,
 // as most people have more than one account; a blank row counts for nothing.
+// `estimated` (Edit inputs: inputState.js estimatedFields) marks each figure
+// that's an estimate or still to fill in (fieldState.js); left out, none are.
 const BLANK = { amount:"", rate:"" };
-export default function MobileCashTiersList({ d, set }) {
+export default function MobileCashTiersList({ d, set, estimated = null }) {
   const stored = d.cashTiers || [];
   const tiers = stored.length >= 2 ? stored : [...stored, BLANK, BLANK].slice(0, 2);
+  const anyAmount = tiers.some(t => +t.amount > 0);
+  const amountState = i => !estimated ? null : estimated.has(`cashTiers.${i}.amount`) ? "estimate" : i === 0 && !anyAmount ? "empty" : "actual";
+  const rateState = (i, t) => !estimated ? null : estimated.has(`cashTiers.${i}.rate`) ? "estimate" : +t.amount > 0 && (t.rate === "" || t.rate == null) ? "empty" : "actual";
 
   const updateTier = (i, patch) => {
     const t = [...tiers];
@@ -28,15 +34,15 @@ export default function MobileCashTiersList({ d, set }) {
     <div>
       {tiers.map((tier, i) => (
         <div key={i} style={{marginBottom:"12px"}}>
-        <label className="pill-field" style={{display:"flex",flexDirection:"column",justifyContent:"center",background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",marginBottom:"8px",cursor:"text"}}>
+        <label className="pill-field" style={{display:"flex",flexDirection:"column",justifyContent:"center",background:stateFill(estimated && "actual", CDARK),border:stateBorder(estimated && "actual"),borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",marginBottom:"8px",cursor:"text"}}>
           <span style={{fontSize:"9.5px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase"}}>Account name (optional)</span>
           <input type="text" value={tier.name || ""} maxLength={60} placeholder="e.g. Barclays Everyday Saver"
             onChange={e => updateTier(i, { name: e.target.value })}
             style={{...PILL_ANSWER_TEXT,border:"none",background:"none",outline:"none",padding:0,...pillFieldStyle("100%")}}/>
         </label>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          <PillMoneyInput label="Amount" value={tier.amount || null} onChange={v => updateTier(i, { amount: capField("isaPrevCash", v ?? "") })}/>
-          <PillMoneyInput label="Rate" unit="%" value={tier.rate || null} onChange={v => updateTier(i, { rate: capField("savingsRate", v ?? "") })}/>
+          <PillMoneyInput label="Amount" value={tier.amount || null} state={amountState(i)} onChange={v => updateTier(i, { amount: capField("isaPrevCash", v ?? "") })}/>
+          <PillMoneyInput label="Rate" unit="%" value={tier.rate || null} state={rateState(i, tier)} onChange={v => updateTier(i, { rate: capField("savingsRate", v ?? "") })}/>
           {tiers.length > 2 && (
             <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:MUT}}>
               <X size={16}/>

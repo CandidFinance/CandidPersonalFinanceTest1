@@ -9,6 +9,9 @@ import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
 import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
 import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
+import { briefQuestions } from "../../lib/moduleGuide.js";
+import { ABOUT_FIELDS, tileCounts, firstGap } from "../../lib/inputState.js";
+import { QUESTION_HEADING, QUESTION_HINT, HAIRLINE, FILLED, EMPTY_FILL, EMPTY_CLASS } from "../fieldState.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
 // figure is one tap away rather than a walk back through onboarding. About
@@ -23,7 +26,12 @@ import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from 
 // Tapping empty space in an open tile closes it, as on a phone, so its
 // header doesn't need scrolling back to. Not a tap on anything that responds
 // to one (a field, a pill, a slider, a link), nor one that started on such a
-// thing, so a slider let go of over empty space stays open.
+// thing, so a slider let go of over empty space stays open; nor one while a
+// pop-out is open (TilePopover), which that tap closes instead.
+// Each tile's header counts its estimates and gaps (inputState.js), each
+// shown on its answer (fieldState.js). Arriving with `field` (?field=), or
+// from a module (`open`) without one, brings that answer, or the tile's
+// first estimate or gap, to the middle of the screen with a brief ring.
 const INTERACTIVE = "button,input,select,textarea,a,label,[role],[contenteditable],svg";
 function onSomething(target, container) {
   for (let el = target; el && el !== container; el = el.parentElement) {
@@ -34,7 +42,7 @@ function onSomething(target, container) {
   return false;
 }
 
-export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule, onEmailChange }) {
+export default function MobileInputsScreen({ d, m, set, open, field = null, onStartModule, onOpenModule, onEmailChange }) {
   const pressedOn = useRef(false);
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
   // Cash & savings and Pension answered only as far as Student loan needs
@@ -45,14 +53,32 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
   // From Home's checklist (`open` "email"): the email on its own at the top,
   // picked out in blue, every tile closed under it.
   const emailFirst = open === "email";
-  const [openKey, setOpenKey] = useState([...answered, "cash", "pension"].includes(open) ? open : emailFirst ? null : "about");
+  // An About-you figure opens About you, whichever module the link came from.
+  const [openKey, setOpenKey] = useState(ABOUT_FIELDS.includes(field) ? "about"
+    : [...answered, "cash", "pension", "about"].includes(open) ? open : emailFirst ? null : "about");
   const refs = useRef({});
+  const ctx = { d, m, regionalRows: null };
+  const questionsFor = key => partly.includes(key) ? briefQuestions(key, "studentLoan") || [] : undefined;
 
   useEffect(() => {
     const el = openKey && refs.current[openKey];
+    const want = el && (field || (open === openKey ? firstGap(openKey, ctx, questionsFor(openKey)) : null));
+    const target = want && el.querySelector(`[data-q~="${CSS.escape(want)}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: "instant", block: "center" });
+      target.classList.add("q-flash");
+      const done = setTimeout(() => target.classList.remove("q-flash"), 1400);
+      return () => clearTimeout(done);
+    }
     if (el) el.scrollIntoView({ behavior: "instant", block: "start" });
     else window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
+
+  // "2 estimated · 1 to add": nothing once every answer is their own.
+  const countsLine = key => {
+    const { estimate, empty } = tileCounts(key, ctx, questionsFor(key));
+    return [estimate && `${estimate} estimated`, empty && `${empty} to add`].filter(Boolean).join(" · ");
+  };
 
   const title = key => key === "about" ? "About you" : MODULE_META.find(mm => mm.key === key)?.title || key;
   const icon = key => key === "about" ? User : MODULE_META.find(mm => mm.key === key)?.icon;
@@ -78,6 +104,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
           const isOpen = openKey === key;
           const isModule = key !== "about";
           const isPartly = partly.includes(key);
+          const sub = [isPartly && "What your student loan answer uses", countsLine(key)].filter(Boolean).join(" · ");
           return (
             <div key={key} ref={el => { refs.current[key] = el; }} style={{...tile,scrollMarginTop:"80px"}}>
               <button type="button" onClick={() => setOpenKey(k => k === key ? null : key)} aria-expanded={isOpen}
@@ -85,13 +112,13 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                 {iconBox(key)}
                 <span style={{flex:1,minWidth:0}}>
                   <span style={{display:"block",fontSize:"16px",fontWeight:700,color:TEXT}}>{title(key)}</span>
-                  {isPartly && <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>What your student loan answer uses</span>}
+                  {sub && <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>{sub}</span>}
                 </span>
                 <ChevronDown size={18} color={MUT} style={{transform:isOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
               </button>
               {isOpen && (
                 <div style={{padding:"4px 18px 18px",borderTop:"1px solid rgba(22,47,36,0.08)"}}
-                  onPointerDown={e => { pressedOn.current = onSomething(e.target, e.currentTarget); }}
+                  onPointerDown={e => { pressedOn.current = onSomething(e.target, e.currentTarget) || !!e.currentTarget.querySelector("[role=dialog]"); }}
                   onClick={e => {
                     if (pressedOn.current || onSomething(e.target, e.currentTarget)) return;
                     setOpenKey(null);
@@ -101,7 +128,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                   <div style={{paddingTop:"14px"}}>
                     {isModule
                       ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
-                      : <><AboutYouFields d={d} set={set}/>{!emailFirst && <EmailField d={d} onEmailChange={onEmailChange}/>}</>}
+                      : <AboutYouFields d={d} set={set} shown={shown} email={!emailFirst && <EmailField d={d} onEmailChange={onEmailChange}/>}/>}
                   </div>
                   {isModule && (
                     <>
@@ -223,13 +250,16 @@ function EmailField({ d, onEmailChange, spotlight = false }) {
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const accent = spotlight ? CTA_BLUE : G;
   return (
-    <div style={spotlight ? {background:"#EAF3FE",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"16px",padding:"18px",marginBottom:"20px"} : {marginTop:"18px"}}>
+    <div style={spotlight ? {background:"#EAF3FE",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"16px",padding:"18px",marginBottom:"20px"} : {}}>
       {spotlight && <h2 style={{fontFamily:SERIF,fontSize:"21px",color:G,fontWeight:700,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
-      <label htmlFor="inputs-email" style={fieldLabel}>Email</label>
-      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>
-      <input ref={inputRef} id="inputs-email" type="email" autoComplete="email" value={draft} placeholder="your@email.com"
+      {/* In About you, laid out as its other answers (fieldState.js): the
+          question, the field, the note under it. */}
+      <label htmlFor="inputs-email" style={spotlight ? fieldLabel : {...QUESTION_HEADING,display:"block"}}>Email</label>
+      {spotlight && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>}
+      <input ref={inputRef} id="inputs-email" type="email" className={!spotlight && !draft ? EMPTY_CLASS : undefined} autoComplete="email" value={draft} placeholder="your@email.com"
         onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
-        style={{width:"100%",boxSizing:"border-box",border:spotlight ? `1.5px solid ${CTA_BLUE}` : "1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+        style={{width:"100%",boxSizing:"border-box",border:spotlight ? `1.5px solid ${CTA_BLUE}` : draft ? HAIRLINE : "1px solid transparent",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:spotlight ? WHITE : draft ? FILLED : EMPTY_FILL}}/>
+      {!spotlight && <p style={QUESTION_HINT}>{EMAIL_WHY}</p>}
       {link && !changed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
       {unconfirmed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>This email isn't confirmed yet.</p>}
       {(changed || unsent || unconfirmed) && (

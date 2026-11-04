@@ -7,11 +7,11 @@ import WheelPicker from "./WheelPicker.jsx";
 // gets a string, or "".
 export const yearInRange = (v, { min, max }) => v !== "" && v != null && Number.isInteger(+v) && +v >= min && +v <= max;
 
-export default function YearPicker({ value, onChange, range, label = "", blankLabel = "Not sure" }) {
+export default function YearPicker({ value, onChange, range, label = "", blankLabel = "Not sure", state = null }) {
   const { min, max } = range;
   const items = [
     ...(blankLabel ? [{ value: "", label: blankLabel }] : []),
     ...Array.from({ length: Math.max(0, max - min + 1) }, (_, i) => ({ value: String(max - i), label: String(max - i) })),
   ];
-  return <WheelPicker items={items} value={yearInRange(value, range) ? String(+value) : ""} onChange={onChange} label={label || "Year"}/>;
+  return <WheelPicker items={items} value={yearInRange(value, range) ? String(+value) : ""} onChange={onChange} label={label || "Year"} state={state}/>;
 }

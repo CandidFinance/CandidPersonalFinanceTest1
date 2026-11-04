@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { formatThousands } from "../lib/format.js";
 import { MUT_ON_CDARK, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../design-tokens.js";
+import { EMPTY_PLACEHOLDER, EMPTY_CLASS, stateFill, stateBorder } from "./fieldState.js";
 
 // ── Answer text inside a pill: the same as PillSlider's options (body size,
 // 600 weight, the app's sans font), so a typed £ figure and a Yes/No choice
@@ -35,15 +36,22 @@ export function pillFieldStyle(width) {
 // button at the pill's right end, since iOS's decimal keypad has no minus
 // key. The button sits after the input so the <label> still focuses the
 // input, not the button, when the pill is tapped.
-export default function PillMoneyInput({ label, value, onChange, unit = "£", placeholder = "0", allowNegative = false }) {
+// `state` (Edit inputs, fieldState.js): "actual" the page's cream with a
+// hairline, "estimate" a dashed edge (borders, so the focus outline still
+// shows), "empty" a pale gold fill reading "Add".
+// No `label`: no caption (a question above names it; `ariaLabel` then).
+export default function PillMoneyInput({ label, value, onChange, unit = "£", placeholder = "0", allowNegative = false, state = null, ariaLabel }) {
   // Thousands-formatting only makes sense for money; % and plain-number
   // fields (e.g. onboarding's Age) are always small values typed digit by
   // digit, so they skip it and allow a decimal point instead.
   const useThousands = unit === "£";
-  const showPrefix = unit === "£";
-  const showSuffix = unit === "%";
+  const empty = state === "empty";
+  if (empty) placeholder = EMPTY_PLACEHOLDER;
   const displayValue = v => (v ? (useThousands ? formatThousands(v) : String(v)) : "");
   const [display, setDisplay] = useState(displayValue(value));
+  // "Add" on its own, without a £ or % round it.
+  const showPrefix = unit === "£" && !(empty && !display);
+  const showSuffix = unit === "%" && !(empty && !display);
   const focused = useRef(false);
   useEffect(() => {
     if (!focused.current) setDisplay(displayValue(value));
@@ -53,8 +61,8 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
     // (its padding, the caption, the £/% symbol) focuses the input. Without
     // this the % variant's auto-width input made the tap target only as wide
     // as the digits typed.
-    <label className="pill-field" style={{flex:1,minWidth:0,background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",cursor:"text"}}>
-      <span style={{fontSize:"9.5px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
+    <label className={empty ? `pill-field pill-empty ${EMPTY_CLASS}` : "pill-field"} style={{flex:1,minWidth:0,background:stateFill(state, CDARK),border:stateBorder(state),borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",cursor:"text"}}>
+      {label && <span style={{fontSize:"9.5px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>}
       <div style={{display:"flex",alignItems:"center"}}>
         {/* The input itself is 16px scaled down (see pillFieldStyle): iOS
             Safari zooms the page in on focusing any input under 16px. */}
@@ -65,7 +73,7 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
         <span style={showSuffix ? {position:"relative",flex:"0 0 auto",display:"inline-block",maxWidth:"60%"} : {display:"contents"}}>
         {showSuffix && <span aria-hidden="true" style={{...PILL_ANSWER_TEXT,visibility:"hidden",whiteSpace:"pre",paddingRight:"1px"}}>{display || placeholder || "0"}</span>}
         <input
-          type="text" inputMode={useThousands ? "numeric" : "decimal"} placeholder={placeholder}
+          type="text" inputMode={useThousands ? "numeric" : "decimal"} placeholder={placeholder} aria-label={ariaLabel}
           value={display}
           onFocus={() => { focused.current = true; }}
           onBlur={() => { focused.current = false; setDisplay(displayValue(value)); }}

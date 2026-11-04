@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { G, WHITE, MUT, TEXT } from "../../design-tokens.js";
+import { AnimatePresence } from "framer-motion";
+import { TEXT, PILL_HEIGHT } from "../../design-tokens.js";
+import { TilePopover, anchor } from "../MobileTile.jsx";
 import { fmt } from "../../lib/format.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PillSlider } from "../PillSlider.jsx";
-import { MODULE_GUIDES, flatQuestions, briefQuestions } from "../../lib/moduleGuide.js";
+import { briefQuestions } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
 import { withAnswered } from "../../lib/appEntry.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import YearPicker from "../YearPicker.jsx";
 import WheelPicker from "../WheelPicker.jsx";
 import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
+import { answerState, estimatedFields, tileQuestions } from "../../lib/inputState.js";
+import { shortLabel } from "../../lib/inputLabels.js";
+import { ESTIMATE_EDGE, EMPTY_FILL, EMPTY_TEXT, EMPTY_CLASS, OFF_FILL, OFF_EDGE, OFF_TEXT, FILLED, HAIRLINE, stateBorder, QUESTION_GAP, QUESTION_HEADING, QUESTION_HINT, QUESTION_LINK, CHOICE_RADIUS, CHOICE_TEXT } from "../fieldState.js";
 
 // A module's answers as one form, for its tile on Edit inputs: the module's
 // own questions (src/lib/moduleGuide.js), each shown only when it applies,
@@ -17,6 +22,9 @@ import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 // the module uses. The shared "about you" questions (group "you") are left
 // to the About you tile. Writes go through each question's `also`, as in
 // the walk-through, so linked fields stay in step.
+// Each answer shows whether it's theirs, an estimate or still to fill in
+// (inputState.js answerState, drawn as fieldState.js), and carries its
+// field as `data-q`, for Edit inputs to bring it into view.
 const sliderFits = options => options.length <= 3 && options.every(o => o.label.length <= 14);
 
 // `brief`: only the questions asked on the short route from Student loan
@@ -25,8 +33,8 @@ const sliderFits = options => options.length <= 3 && options.every(o => o.label.
 export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }) {
   const [editingLoan, setEditingLoan] = useState(false);
   const ctx = { d, m, regionalRows: null };
-  const questions = flatQuestions((brief ? briefQuestions(moduleKey, "studentLoan") : MODULE_GUIDES[moduleKey]?.questions) || [])
-    .filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)));
+  const questions = tileQuestions(moduleKey, ctx, brief ? briefQuestions(moduleKey, "studentLoan") || [] : undefined);
+  const estimated = estimatedFields(d);
   const write = (q, value) => {
     const v = q.cap && typeof value !== "object" ? capField(q.cap, value ?? "") : value;
     // Changing an answer here counts as answering the module.
@@ -34,13 +42,19 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
     Object.entries(patch).forEach(([k, val]) => set(k, val));
   };
 
-  const heading = { fontSize:"13.5px", fontWeight:700, color:TEXT, lineHeight:1.35, marginBottom:"8px" };
-  const hint = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:"6px 0 0" };
-  const link = { background:"none", border:"none", padding:"6px 0 0", color:G, fontSize:"12px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", textAlign:"left" };
-  const chip = on => ({ display:"block", width:"100%", textAlign:"left", background:on ? "rgba(22,47,36,0.06)" : WHITE, border:`1.5px solid ${on ? G : "rgba(22,47,36,0.15)"}`, borderRadius:"12px", padding:"10px 14px", fontSize:"13.5px", fontWeight:600, color:TEXT, fontFamily:"inherit", cursor:"pointer" });
+  // A choice too long for a slider, one per row: the picked one filled (its
+  // edge dashed if it's an estimate), the rest stepping back; none picked,
+  // all of them gold (fieldState.js).
+  const chip = (on, state) => {
+    const empty = state === "empty" && !on;
+    return { display:"block", width:"100%", minHeight:PILL_HEIGHT, boxSizing:"border-box", textAlign:"left", borderRadius:CHOICE_RADIUS, padding:"11px 18px", ...CHOICE_TEXT, fontFamily:"inherit", cursor:"pointer",
+      background:empty ? EMPTY_FILL : on ? FILLED : OFF_FILL,
+      border:empty ? "1px solid transparent" : on ? (state === "estimate" ? ESTIMATE_EDGE : HAIRLINE) : OFF_EDGE,
+      color:empty ? EMPTY_TEXT : on ? TEXT : OFF_TEXT };
+  };
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"20px"}}>
+    <div style={{display:"flex",flexDirection:"column",gap:QUESTION_GAP}}>
       {questions.map(q => {
         // A result line (the plan worked out, the balance estimated).
         if (q.kind === "info") return (
@@ -49,6 +63,11 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
           </div>
         );
         const raw = d[q.field];
+        // Named in a word or two (inputLabels.js), which also names the
+        // control, so a pill needs no caption of its own.
+        const name = shortLabel(q, ctx);
+        const st = answerState(q, ctx, estimated);
+        const state = st;
         const note = q.note ? q.note(ctx) : null;
         // The walk-through's "not sure" answers that still mean something in
         // a form: an estimate, or one that sets something else (`also`), and
@@ -58,38 +77,45 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
           .filter(o => o && o.value !== undefined && (o.value !== "" || q.also) && String(raw ?? "") !== String(o.value));
         let control;
         if (q.kind === "choice" && q.wheel) {
-          control = <WheelPicker label={q.ask(ctx)} items={[{ value:"", label:q.wheel }, ...q.options(ctx)]} value={raw ?? ""} onChange={v => write(q, v)}/>;
+          control = <WheelPicker label={name} items={[{ value:"", label:q.wheel }, ...q.options(ctx)]} value={raw ?? ""} onChange={v => write(q, v)} state={state}/>;
         } else if (q.kind === "choice") {
           const options = q.options(ctx);
           control = sliderFits(options)
-            ? <PillSlider value={raw ?? ""} onChange={v => write(q, v)} options={options}/>
-            : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>{options.map(o => <button key={o.value} type="button" onClick={() => write(q, o.value)} style={chip(raw === o.value)}>{o.label}{o.sub && <span style={{fontWeight:500,color:MUT}}> · {o.sub}</span>}</button>)}</div>;
+            ? <PillSlider value={raw ?? ""} onChange={v => write(q, v)} options={options} state={state}/>
+            : <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{options.map(o => <button key={o.value} type="button" onClick={() => write(q, o.value)} className={state === "empty" && raw !== o.value ? EMPTY_CLASS : undefined} style={chip(raw === o.value, state)}>{o.label}{o.sub && <span style={{fontWeight:500,color:"inherit",opacity:0.8}}> · {o.sub}</span>}</button>)}</div>;
         } else if (q.kind === "custom" && q.render === "cashAccounts") {
-          control = <MobileCashTiersList d={d} set={set}/>;
+          control = <MobileCashTiersList d={d} set={set} estimated={estimated}/>;
         } else if (q.field === "loanBalance" && raw !== "" && raw != null && !isNaN(+raw)) {
           // The balance, once there is one: updated in two steps, so an
           // overpayment's source is asked (LoanBalanceEditor).
-          control = editingLoan
-            ? <LoanBalanceEditor d={d} m={m} set={set} onClose={() => setEditingLoan(false)}/>
-            : (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-                <span style={{fontSize:"17px",fontWeight:700,color:TEXT}}>{fmt(Math.round(+raw))}</span>
-                <button type="button" onClick={() => setEditingLoan(true)} style={{...link,padding:"6px 0"}}>Update</button>
-              </div>
-            );
+          // The balance shows as a pill, as every other answer; Update pops
+          // out over the page (TilePopover), as on Student loan's own page.
+          control = (
+            <div style={{...anchor,display:"flex",alignItems:"center",gap:"10px",background:FILLED,border:stateBorder(state),borderRadius:"100px",padding:"0 8px 0 16px",height:PILL_HEIGHT,boxSizing:"border-box"}}>
+              <span style={{flex:1,minWidth:0,...CHOICE_TEXT}}>{fmt(Math.round(+raw))}</span>
+              <button type="button" onClick={() => setEditingLoan(o => !o)} aria-expanded={editingLoan} style={{...QUESTION_LINK,padding:"8px 10px",minHeight:"44px"}}>Update</button>
+              <AnimatePresence>
+                {editingLoan && (
+                  <TilePopover key="balance" title="Update your balance" onClose={() => setEditingLoan(false)}>
+                    <LoanBalanceEditor bare d={d} m={m} set={set} onClose={() => setEditingLoan(false)}/>
+                  </TilePopover>
+                )}
+              </AnimatePresence>
+            </div>
+          );
         } else if (q.yearRange) {
-          control = <YearPicker label={q.label} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q, v)} blankLabel={q.required ? "Pick a year" : "Not sure"}/>;
+          control = <YearPicker label={name} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q, v)} blankLabel={q.required ? "Pick a year" : "Not sure"} state={state}/>;
         } else if (["money", "percent", "years"].includes(q.kind)) {
           const filled = raw !== "" && raw != null && !isNaN(+raw);
-          control = <PillMoneyInput label={q.label || ""} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
-            value={filled ? +raw : (q.prefill ? q.prefill(ctx) : null)} onChange={v => write(q, v ?? "")}/>;
+          control = <PillMoneyInput label="" ariaLabel={name} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
+            value={filled ? +raw : (q.prefill ? q.prefill(ctx) : null)} onChange={v => write(q, v ?? "")} state={state}/>;
         } else return null;
         return (
-          <div key={q.id}>
-            <div style={heading}>{q.ask(ctx)}</div>
+          <div key={q.id} data-q={q.field} style={{scrollMarginTop:"90px",borderRadius:"14px"}}>
+            <div style={QUESTION_HEADING}>{name}</div>
             {control}
-            {note && <p style={hint}>{note}</p>}
-            {notSure.map(o => <button key={o.label} type="button" onClick={() => write(q, o.value)} style={link}>{o.label}</button>)}
+            {note && <p style={QUESTION_HINT}>{note}</p>}
+            {notSure.map(o => <button key={o.label} type="button" onClick={() => write(q, o.value)} style={QUESTION_LINK}>{o.label}</button>)}
           </div>
         );
       })}

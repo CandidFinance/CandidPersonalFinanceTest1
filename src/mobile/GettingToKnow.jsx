@@ -20,10 +20,17 @@ import { tap } from "./haptics.js";
 
 // The modules still answered from quick-start bands.
 const estimated = d => Object.keys(d.quickEstimates || {}).filter(k => estimateItems(d, k).length);
+// Straight to the first of them on Edit inputs (its `field`), in whichever
+// tile it's in.
+function exactFiguresLink(d) {
+  const key = estimated(d)[0];
+  const field = key && estimateItems(d, key)[0]?.field.split(".")[0];
+  return `/app/inputs?open=${key || "cash"}${field ? `&field=${field}` : ""}`;
+}
 
 const ITEMS = [
   { id: "first", label: "First area checked", done: ({ answered }) => answered >= 1, to: "/app/modules" },
-  { id: "exact", label: "Exact figures in", done: ({ d }) => !estimated(d).length, to: d => `/app/inputs?open=${estimated(d)[0] || "cash"}` },
+  { id: "exact", label: "Exact figures in", done: ({ d }) => !estimated(d).length, to: d => exactFiguresLink(d) },
   { id: "email", label: "Email alerts on", done: ({ d }) => !!d.alertsOptIn && validEmailShape(d.email || ""), to: "/app/inputs?open=email" },
   { id: "second", label: "A second area checked", done: ({ answered }) => answered >= 2, to: "/app/modules" },
 ];

@@ -705,10 +705,13 @@ export default function AppShell() {
     set("selectedModules", [...(d.selectedModules || []), stepId]);
     openInputs(stepId);
   }
-  function openInputs(moduleKey = null) {
+  // `field`: one answer to bring into view (its tile opened), else the
+  // module's first estimate or gap (MobileInputsScreen).
+  function openInputs(moduleKey = null, field = null) {
     inputsReturnPath.current = pathname;
-    posthog.capture("edit_inputs_opened", { from: pathname, module: moduleKey });
-    navigate(moduleKey ? `/app/inputs?open=${moduleKey}` : "/app/inputs");
+    posthog.capture("edit_inputs_opened", { from: pathname, module: moduleKey, field });
+    const query = new URLSearchParams({ ...(moduleKey && { open: moduleKey }), ...(field && { field }) }).toString();
+    navigate(query ? `/app/inputs?${query}` : "/app/inputs");
   }
   // ── Router ──
   // Deep-link guard: the app's screens open once the user has been through
@@ -837,12 +840,13 @@ export default function AppShell() {
   );
 
   if (pathname === "/app/inputs") {
-    const open = new URLSearchParams(window.location.search).get("open");
+    const params = new URLSearchParams(window.location.search);
+    const open = params.get("open"), field = params.get("field");
     const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); scrollToTop(); };
     return (
       <MobileLayout d={d} assist={assistNode} activeTab={null} pageLabel="Your inputs"
         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
-        <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
+        <MobileInputsScreen key={`${open || "all"}.${field || ""}`} d={d} m={m} set={set} open={open} field={field}
           onStartModule={key => navigate(`/app/module/${key}`)}
           onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); scrollToTop(); }}
           onEmailChange={(email, alerts = false) => { set("email", email); if (alerts) set("alertsOptIn", true); posthog.capture("email_captured", { source: alerts ? "inputs_alerts" : "inputs" }); setUnlockSaveTick(t => t + 1); }}/>

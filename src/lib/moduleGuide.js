@@ -357,9 +357,9 @@ const PENSION_QUESTIONS = [
 const hasLoan = ({ d }) => d.studentLoan && d.studentLoan !== "none";
 // metrics.js SALARY_GROWTH_RATES, in words.
 export const PAY_GROWTH_OPTIONS = [
-  { value:"stable", label:"In line with prices (about 2% a year)" },
-  { value:"moderate", label:"Steady pay rises (about 5% a year)" },
-  { value:"high", label:"Fast, with promotions (about 10% a year)" },
+  { value:"stable", label:"In line with prices (~2%/yr)" },
+  { value:"moderate", label:"Steady pay rises (~5%/yr)" },
+  { value:"high", label:"Fast, with promotions (~10%/yr)" },
 ];
 const estimating = ctx => hasLoan(ctx) && ctx.d.slBalanceEstimate === "yes";
 // The rate for their plan and salary, shown until they change it: the same

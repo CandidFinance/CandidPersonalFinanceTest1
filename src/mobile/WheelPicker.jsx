@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { G, MUT, TEXT, WHITE, CDARK } from "../design-tokens.js";
+import { stateOutline, stateFill, EMPTY_CLASS } from "./fieldState.js";
 
 // One answer from a list, on a wheel that turns like a tombola drum: the row
 // in the middle band is the answer. Scrolled, dragged, tapped (the row moves
@@ -7,7 +8,7 @@ import { G, MUT, TEXT, WHITE, CDARK } from "../design-tokens.js";
 // wheel stops. `items`: [{ value, label }], a value of "" meaning no answer
 // yet. `value` is the stored answer (a string, "" when none); a value not
 // in the list sits on the first row. Used for years (YearPicker.jsx) and
-// months (the bonus month).
+// months (the bonus month). `state`: as PillSlider's (fieldState.js).
 
 const ROW = 34;
 // Rows in view: the answer, with half a row above and below to show it
@@ -16,7 +17,7 @@ const VISIBLE = 2;
 const PAD = ROW * ((VISIBLE - 1) / 2);
 const SETTLE_MS = 120;
 
-export default function WheelPicker({ items, value, onChange, label = "" }) {
+export default function WheelPicker({ items, value, onChange, label = "", state = null }) {
   const current = String(value ?? "");
   const at = Math.max(0, items.findIndex(o => o.value === current));
   const listKey = items.map(o => o.value).join("|");
@@ -61,7 +62,7 @@ export default function WheelPicker({ items, value, onChange, label = "" }) {
   const markTouched = () => { touched.current = true; };
 
   return (
-    <div style={{position:"relative",height:ROW * VISIBLE,background:CDARK,borderRadius:"18px",overflow:"hidden"}}>
+    <div className={state === "empty" ? EMPTY_CLASS : undefined} style={{position:"relative",height:ROW * VISIBLE,background:stateFill(state, CDARK),...stateOutline(state),borderRadius:"22px",overflow:"hidden"}}>
       {/* The middle band: the answer. */}
       <div aria-hidden="true" style={{position:"absolute",left:"8px",right:"8px",top:PAD,height:ROW,background:WHITE,borderRadius:"100px",boxShadow:"0 1px 4px rgba(22,47,36,0.12)"}}/>
       <div ref={ref} role="listbox" tabIndex={0} aria-label={label}
