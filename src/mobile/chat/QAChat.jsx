@@ -2,15 +2,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "framer-motion";
 import posthog from "posthog-js";
 import { ArrowUp } from "lucide-react";
-import { G, WHITE, TEXT, SANS, CREAM, FIELD_BORDER } from "../../design-tokens.js";
-import { TOPICS, WINDFALL, greeting, starters, matchTopic, wantsLead, answerParts, topicFigures, moduleTitle, MODULE_SUB, boldRuns } from "../../lib/chatTopics.js";
+import { G, WHITE, TEXT, MUT, SANS, CREAM, FIELD_BORDER } from "../../design-tokens.js";
+import { TOPICS, WINDFALL, matchTopic, wantsLead, answerParts, topicFigures, MODULE_SUB, boldRuns } from "../../lib/chatTopics.js";
+import { computeModuleStatuses } from "../../lib/moduleStatus.js";
+import { isLocked } from "../../lib/unlock.js";
+import { opening, titleOf, askReplies, CHAT_QUICK } from "../../lib/chatStart.js";
+import { makeVoice } from "../../lib/chatVoice.js";
 import { Bubble, Dots, DotsKeyframes, Thinking, SheenKeyframes, ModuleButton, AskNext } from "./ChatParts.jsx";
 import ChatVisual from "./ChatVisuals.jsx";
+import { AreaPicker, ChatQuestion, ModuleRows } from "./ChatStartParts.jsx";
+import { useChatStart } from "./useChatStart.js";
 
 // The Chat tab's questions and answers (chatTopics.js): the user asks, by a
 // starter, an Ask next follow-up or by typing; Candid answers in a few short
 // bubbles, one visual and a button into the module. "I've got a lump sum"
-// opens the windfall conversation instead (MobileChatScreen).
+// opens the windfall conversation instead (MobileChatScreen). It opens on
+// the way in (chatStart.js, useChatStart): what they've checked, or the
+// areas to pick and each module's questions in the conversation.
 //
 // The conversation's state lives in useQAChat, held by MobileChatScreen, so
 // it survives a visit to the lump-sum conversation and back. Opening the tab
@@ -35,15 +43,33 @@ const key = () => `qa${++seq}`;
 
 const wordCount = text => String(text).trim().split(/\s+/).filter(Boolean).length;
 // How long a shown message takes to build.
-const buildMs = msg => (msg.text ? wordCount(msg.text) * WORD_MS + 400 : msg.visual ? VISUAL_BUILD_MS : MODULE_MS);
+const buildMs = msg => (msg.text ? wordCount(msg.text) * WORD_MS + 400 : msg.visual || msg.rows ? VISUAL_BUILD_MS : msg.divider ? 200 : MODULE_MS);
 
-export function useQAChat(d, m, onWindfall) {
+export function useQAChat(d, m, { onWindfall, set, marketRates, answerModule }) {
+  // Candid's phrases (chatVoice.js), from a different place each visit.
+  const [voice] = useState(() => makeVoice(Math.floor(Math.random() * 1000)));
+  // The way in, worked out once as the tab opens.
+  const [start] = useState(() => opening(d, m, computeModuleStatuses(d, m, marketRates), key => isLocked(d, key), voice));
   const [msgs, setMsgs] = useState([]);
-  const [queue, setQueue] = useState(() => greeting(d).map(text => ({ text })));
+  const [queue, setQueue] = useState(start.parts);
   const [typing, setTyping] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const [next, setNext] = useState(null); // null: the starters
+  // What's offered under the thread: { kind: "next", items, label },
+  // { kind: "areas" }, { kind: "question" } (the module question on
+  // screen), or null while Candid works something out.
+  const [replies, setReplies] = useState(start.replies);
   const last = useRef(null);
+  useEffect(() => { posthog.capture("chat_start_shown", { branch: start.branch }); }, [start]);
+
+  // The user's reply (none when Candid goes on by itself), then Candid's
+  // parts, with "Thinking" before the first unless `think` is false.
+  // `divider`: a new section starts, named, before the reply.
+  const say = useCallback((userText, parts, { think = true, divider = null } = {}) => {
+    if (divider) setMsgs(list => [...list, { key: key(), from: "candid", divider }]);
+    if (userText) setMsgs(list => [...list, { key: key(), from: "user", text: userText }]);
+    setQueue(q => [...q, ...parts.map((p, i) => (i || !think ? p : { ...p, think: true }))]);
+  }, []);
+  const flow = useChatStart({ d, m, marketRates, set, answerModule, say, setReplies, voice });
   const shown = useRef(msgs);
   shown.current = msgs;
 
@@ -59,11 +85,11 @@ export function useQAChat(d, m, onWindfall) {
     const wait = part.think ? THINK_MS + Math.round(Math.random() * THINK_JITTER_MS)
       : !prev ? OPEN_MS
       : prev.from === "user" ? AFTER_USER_MS
-      : part.visual ? DOTS_MS
+      : part.visual || part.rows ? DOTS_MS
       : FLOW_MS;
     setThinking(!!part.think);
     setTyping(false);
-    const dots = setTimeout(() => setTyping(!part.think && !!part.visual), built);
+    const dots = setTimeout(() => setTyping(!part.think && !!(part.visual || part.rows)), built);
     const t = setTimeout(() => {
       setThinking(false);
       setTyping(false);
@@ -74,8 +100,12 @@ export function useQAChat(d, m, onWindfall) {
   }, [queue]);
 
   const ask = useCallback((label, id, via) => {
+    if (flow.route(label, id)) return;
+    flow.leave();
     if (id === WINDFALL) {
       posthog.capture("chat_question", { topic: WINDFALL, via, matched: true });
+      // A module question left on screen has nothing to answer on the way back.
+      setReplies(r => (r?.kind === "question" ? askReplies(d) : r));
       onWindfall();
       return;
     }
@@ -89,8 +119,8 @@ export function useQAChat(d, m, onWindfall) {
     posthog.capture("chat_question", { topic: plain ? "plain" : topicId, via, matched: topicId !== "fallback" });
     setMsgs(list => [...list, { key: key(), from: "user", text: label }]);
     setQueue(parts.map((p, i) => (i ? p : { ...p, think: true })));
-    setNext([...topic.next, ...(!plain && topic.plain ? [["In plain English", "plain"]] : [])]);
-  }, [d, m, onWindfall]);
+    setReplies({ kind: "next", label: "Ask next", items: [...topic.next, ...(!plain && topic.plain ? [["In plain English", "plain"]] : [])] });
+  }, [d, m, onWindfall, flow]);
 
   // Busy until the last part has built too, so Ask next waits for it.
   const [building, setBuilding] = useState(false);
@@ -102,7 +132,7 @@ export function useQAChat(d, m, onWindfall) {
     return () => clearTimeout(t);
   }, [lastMsg]);
 
-  return { msgs, typing, thinking, busy: typing || thinking || building || queue.length > 0, next: next || starters(d), ask, lastTopic: () => last.current };
+  return { msgs, typing, thinking, busy: typing || thinking || building || queue.length > 0, replies, flow, ask, lastTopic: () => last.current };
 }
 
 // Builds word by word when fresh; shown whole otherwise.
@@ -118,7 +148,7 @@ function Text({ text, build }) {
 }
 
 export default function QAChat({ chat, d, m, onGoTo }) {
-  const { msgs, typing, thinking, busy, next, ask, lastTopic } = chat;
+  const { msgs, typing, thinking, busy, replies, flow, ask, lastTopic } = chat;
   const [draft, setDraft] = useState("");
   const asked = msgs.some(msg => msg.from === "user");
   // The page follows the newest message while the reader is at the bottom,
@@ -148,7 +178,7 @@ export default function QAChat({ chat, d, m, onGoTo }) {
     const text = draft.trim();
     if (!text || busy) return;
     pinned.current = true;
-    ask(text, matchTopic(text), "typed");
+    if (!flow.typed(text)) ask(text, matchTopic(text), "typed");
     setDraft("");
   };
   const open = moduleKey => {
@@ -159,6 +189,28 @@ export default function QAChat({ chat, d, m, onGoTo }) {
   // A visual opens from the top; its rows and bars then come in (ChatVisuals).
   const unfold = { initial: { opacity: 0, clipPath: "inset(0 0 100% 0)" }, animate: { opacity: 1, clipPath: "inset(0 0 0% 0)" }, transition: { duration: 0.6, ease: [0.2, 0.8, 0.2, 1] } };
   const fresh = msg => !!msg.at && Date.now() - msg.at < FRESH_MS;
+
+  // Where the latest section starts: everything before it fades back.
+  const cut = msgs.findLastIndex(msg => msg.divider);
+  const message = msg => {
+    if (msg.divider) return (
+      <div role="separator" aria-label={msg.divider} style={{display:"flex",alignItems:"center",gap:"10px",margin:"22px 0 8px"}}>
+        <span style={{flex:1,height:"1px",background:"rgba(22,47,36,0.16)"}}/>
+        <span style={{fontSize:"12px",fontWeight:700,color:MUT,fontFamily:SANS}}>{msg.divider}</span>
+        <span style={{flex:1,height:"1px",background:"rgba(22,47,36,0.16)"}}/>
+      </div>
+    );
+    if (msg.from === "user") return <Bubble from="user">{msg.text}</Bubble>;
+    if (msg.visual) return <motion.div {...(fresh(msg) ? unfold : {})} style={{display:"flex",margin:"6px 0"}}><ChatVisual id={msg.visual} d={d} m={m} build={fresh(msg)}/></motion.div>;
+    if (msg.rows) return <motion.div {...(fresh(msg) ? unfold : {})} style={{display:"flex",margin:"0 0 4px"}}><ModuleRows rows={msg.rows} build={fresh(msg)} onOpen={open}/></motion.div>;
+    if (msg.module) return (
+      <motion.div {...(fresh(msg) ? rise : {})} style={{display:"flex",marginTop:"4px"}}>
+        <ModuleButton title={titleOf(msg.module)} sub={MODULE_SUB[msg.module]} onClick={() => open(msg.module)}/>
+      </motion.div>
+    );
+    if (msg.note) return <Bubble from="candid"><span style={{display:"block",fontSize:"13px",lineHeight:1.45,color:MUT}}><Text text={msg.text} build={fresh(msg)}/></span></Bubble>;
+    return <Bubble from="candid"><Text text={msg.text} build={fresh(msg)}/></Bubble>;
+  };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -186,30 +238,38 @@ export default function QAChat({ chat, d, m, onGoTo }) {
             at the bottom with the rest, rather than appearing where the
             last one was while that one slides up past it. */}
         <motion.div layout="position" transition={STACK_SPRING} style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-          {msgs.map(msg => {
-            if (msg.from === "user") return <Bubble key={msg.key} from="user">{msg.text}</Bubble>;
-            if (msg.visual) return <motion.div key={msg.key} {...(fresh(msg) ? unfold : {})} style={{display:"flex",margin:"6px 0"}}><ChatVisual id={msg.visual} d={d} m={m} build={fresh(msg)}/></motion.div>;
-            if (msg.module) return (
-              <motion.div key={msg.key} {...(fresh(msg) ? rise : {})} style={{display:"flex",marginTop:"4px"}}>
-                <ModuleButton title={moduleTitle(msg.module)} sub={MODULE_SUB[msg.module]} onClick={() => open(msg.module)}/>
-              </motion.div>
-            );
-            return <Bubble key={msg.key} from="candid"><Text text={msg.text} build={fresh(msg)}/></Bubble>;
-          })}
+          {msgs.map((msg, i) => (
+            // Each module is a section, opened by a named rule; the
+            // sections before the latest fade back.
+            <div key={msg.key} style={{display:"flex",flexDirection:"column",opacity:i < cut ? 0.4 : 1,transition:"opacity 0.8s ease"}}>
+              {message(msg)}
+            </div>
+          ))}
           {thinking && <Bubble from="candid" typing><Thinking/></Bubble>}
           {typing && <Bubble from="candid" typing><Dots/></Bubble>}
         </motion.div>
 
-        {!busy && next.length > 0 && (
+        {!busy && replies?.kind === "next" && replies.items.length > 0 && (
           <motion.div {...rise}>
-            <AskNext items={next} label={asked ? "Ask next" : "Try asking"} onAsk={(text, id) => { pinned.current = true; ask(text, id, asked ? "next" : "starter"); }}/>
+            <AskNext items={replies.items} label={replies.label} onAsk={(text, id) => { pinned.current = true; ask(text, id, asked ? "next" : "starter"); }}/>
+          </motion.div>
+        )}
+        {!busy && replies?.kind === "areas" && (
+          <motion.div {...rise}>
+            <AreaPicker onDone={values => { pinned.current = true; flow.pickAreas(values); }}/>
+          </motion.div>
+        )}
+        {!busy && replies?.kind === "question" && flow.run && (
+          <motion.div {...rise} key={flow.run.qid}>
+            <ChatQuestion setup={CHAT_QUICK[flow.run.key]} qid={flow.run.qid} ctx={{ d, m, a: flow.run.a, direct: true }}
+              onAnswer={value => { pinned.current = true; flow.answer(value); }}/>
           </motion.div>
         )}
 
         <form onSubmit={send} className="qa-box"
           style={{position:"sticky",marginTop:"16px",paddingTop:"10px",display:"flex",gap:"8px",alignItems:"center",background:`linear-gradient(180deg, rgba(250,247,240,0) 0%, ${CREAM} 30%)`}}>
           <label htmlFor="chat-ask" style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)"}}>Ask a question</label>
-          <input id="chat-ask" value={draft} onChange={e => setDraft(e.target.value)} placeholder="Ask about your money" autoComplete="off" enterKeyHint="send"
+          <input id="chat-ask" value={draft} onChange={e => setDraft(e.target.value)} placeholder={flow.hint || "Ask about your money"} autoComplete="off" enterKeyHint="send"
             style={{flex:1,minWidth:0,height:"46px",borderRadius:"100px",border:`1px solid ${FIELD_BORDER}`,background:WHITE,padding:"0 18px",fontSize:"16px",fontFamily:SANS,color:TEXT,boxSizing:"border-box"}}/>
           <button type="submit" aria-label="Send" disabled={busy || !draft.trim()}
             style={{width:"46px",height:"46px",flex:"none",borderRadius:"50%",border:"none",background:G,color:WHITE,display:"grid",placeItems:"center",cursor:busy || !draft.trim() ? "default" : "pointer",opacity:busy || !draft.trim() ? 0.35 : 1}}>

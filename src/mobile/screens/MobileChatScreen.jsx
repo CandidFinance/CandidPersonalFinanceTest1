@@ -7,10 +7,10 @@ import WindfallChat from "../windfall/WindfallChat.jsx";
 // The Chat tab: questions and answers (QAChat), with the lump-sum
 // conversation (WindfallChat) as one of its topics. The Q&A's state is held
 // here so it's still there on the way back from the lump sum.
-export default function MobileChatScreen({ d, m, set, marketRates, onGoTo }) {
+export default function MobileChatScreen({ d, m, set, marketRates, answerModule, onGoTo }) {
   const [view, setView] = useState("qa");
   const openWindfall = useCallback(() => { setView("windfall"); window.scrollTo(0, 0); }, []);
-  const chat = useQAChat(d, m, openWindfall);
+  const chat = useQAChat(d, m, { onWindfall: openWindfall, set, marketRates, answerModule });
 
   if (view === "windfall") return (
     <>

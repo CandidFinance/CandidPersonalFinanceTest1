@@ -91,7 +91,7 @@ export function ModuleButton({ title, sub, onClick }) {
 }
 
 // Suggested follow-ups: options for the user, set apart from the answer by
-// a rule, a label and tinted pills with no border, in rows that wrap.
+// a rule, a label and tinted rounded tiles with no border, in rows that wrap.
 export function AskNext({ items, onAsk, label = "Ask next" }) {
   return (
     <div role="group" aria-label={label} style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"8px",marginTop:"14px",paddingTop:"12px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}>
@@ -99,7 +99,7 @@ export function AskNext({ items, onAsk, label = "Ask next" }) {
       <div style={{display:"flex",flexWrap:"wrap",justifyContent:"flex-end",gap:"6px"}}>
       {items.map(([text, id]) => (
         <button key={text} type="button" onClick={() => onAsk(text, id)}
-          style={{display:"inline-flex",alignItems:"center",gap:"7px",background:CDARK,color:G,border:"none",borderRadius:"100px",padding:"8px 14px 8px 11px",fontSize:"13.5px",fontWeight:500,fontFamily:SANS,cursor:"pointer"}}>
+          style={{display:"inline-flex",alignItems:"center",gap:"7px",background:CDARK,color:G,border:"none",borderRadius:"12px",padding:"8px 14px 8px 11px",textAlign:"left",fontSize:"13.5px",fontWeight:500,fontFamily:SANS,cursor:"pointer"}}>
           <CornerDownRight size={15} color={GOLD_TEXT} aria-hidden="true"/>{text}
         </button>
       ))}
@@ -110,5 +110,5 @@ export function AskNext({ items, onAsk, label = "Ask next" }) {
 
 export const Replies =({ children }) => <div style={{display:"flex",flexWrap:"wrap",justifyContent:"flex-end",gap:"8px"}}>{children}</div>;
 export const ReplyButton = ({ onClick, disabled, children }) => (
-  <button type="button" onClick={onClick} disabled={disabled} style={{background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"10px 16px",fontSize:"14px",fontWeight:700,fontFamily:SANS,cursor:disabled ? "default" : "pointer",opacity:disabled ? 0.5 : 1}}>{children}</button>
+  <button type="button" onClick={onClick} disabled={disabled} style={{background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"12px",padding:"10px 16px",textAlign:"center",fontSize:"14px",fontWeight:700,fontFamily:SANS,cursor:disabled ? "default" : "pointer",opacity:disabled ? 0.5 : 1}}>{children}</button>
 );

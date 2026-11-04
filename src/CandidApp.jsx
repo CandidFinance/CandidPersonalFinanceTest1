@@ -230,9 +230,10 @@ function loanEstimateLine(d) {
 }
 
 // The line under a quick-started module's answer saying what's estimated.
-const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : key === "cash" || key === "pension" ? estimateLineFor(d, key) : null;
+const QUICK_ESTIMATED = ["cash", "pension", "taxTrap"];
+const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : QUICK_ESTIMATED.includes(key) ? estimateLineFor(d, key) : null;
 // Quick-started, and every estimate since replaced with their own figure.
-const ownFigures = (key, d) => (key === "studentLoan" ? !!d.slEstimate : (key === "cash" || key === "pension") && (d.quickEstimates?.[key]?.items || []).length > 0)
+const ownFigures = (key, d) => (key === "studentLoan" ? !!d.slEstimate : QUICK_ESTIMATED.includes(key) && (d.quickEstimates?.[key]?.items || []).length > 0)
   && !quickEstimateLine(key, d);
 
 export default function AppShell() {
@@ -854,12 +855,33 @@ export default function AppShell() {
     );
   }
 
+  // A module's questions answered (or skipped), from its walk-through or the
+  // Chat tab: it joins selectedModules, so its own screen, the answer, takes
+  // over, and its answers are saved to the user's row. The first module
+  // finished unlocks by itself (unlock.js); returns that patch, or null.
+  const answerModule = (key, how, at, via = null) => {
+    const selected = d.selectedModules || [];
+    if (!selected.includes(key)) set("selectedModules", [...selected, key]);
+    if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, key).answeredModules);
+    posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: key, at, ...(via && { via }) });
+    posthog.capture("module_answer_shown", { module: key, ...(via && { via }) });
+    const firstFree = how === "finished" ? firstUnlockPatch(d, key) : null;
+    if (firstFree) {
+      Object.entries(firstFree).forEach(([k, v]) => set(k, v));
+      posthog.capture("module_unlocked", { module: key, via: "first_free" });
+      setUnlockSaveTick(t => t + 1);
+    }
+    setRowSaveTick(t => t + 1);
+    return firstFree;
+  };
+
   if (pathname === "/app/chat") return (
     // No Candid Assist button here: the conversation is the help, and the
     // button would sit over its running total.
     <MobileLayout d={d} activeTab="chat">
       <MobileChatScreen d={d} m={m} set={set} marketRates={marketRates}
-        onGoTo={key => { navigate(`/app/module/${key}`); scrollToTop(); }}/>
+        answerModule={(key, at) => answerModule(key, "finished", at, "chat")}
+        onGoTo={key => { navigate(modulePath(key)); scrollToTop(); }}/>
     </MobileLayout>
   );
 
@@ -925,18 +947,7 @@ export default function AppShell() {
     // the answer, takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d)) {
       const finishGuide = (how, at) => {
-        const selected = d.selectedModules || [];
-        if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
-        if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, mobileActiveModule).answeredModules);
-        posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at });
-        posthog.capture("module_answer_shown", { module: mobileActiveModule });
-        // The first module finished unlocks by itself (unlock.js).
-        const firstFree = how === "finished" ? firstUnlockPatch(d, mobileActiveModule) : null;
-        if (firstFree) {
-          Object.entries(firstFree).forEach(([k, v]) => set(k, v));
-          posthog.capture("module_unlocked", { module: mobileActiveModule, via: "first_free" });
-          setUnlockSaveTick(t => t + 1);
-        }
+        const firstFree = answerModule(mobileActiveModule, how, at);
         // A walk-through, finished, goes on to the answer step by
         // step (MODULE_REVEALS), when there's one to give.
         if (how === "finished" && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
@@ -944,7 +955,6 @@ export default function AppShell() {
           setRevealReplay(null);
           posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
         }
-        setRowSaveTick(t => t + 1);
         scrollToTop();
       };
       return (

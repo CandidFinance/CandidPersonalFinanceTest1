@@ -2,9 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
 import { MODULE_META, HIDDEN_MVP_MODULE_KEYS } from "./moduleStatus.js";
+import { opening } from "./chatStart.js";
 import {
   TOPICS, WINDFALL, starters, matchTopic, wantsLead, answerParts, topicFigures,
-  ratesFigures, impactFigures, childcareFigures, boldRuns, greeting,
+  ratesFigures, impactFigures, childcareFigures, boldRuns,
 } from "./chatTopics.js";
 
 const RICH = {
@@ -120,7 +121,7 @@ test("a lump sum is picked up only where WindfallChat would welcome them back", 
 
 test("copy stays guidance: no directive or advice words", () => {
   const f = topicFigures(RICH, calcMetrics(RICH));
-  const words = [...greeting({ name: "Sam Smith" })];
+  const words = opening({ name: "Sam Smith" }, calcMetrics({}), {}).parts.map(p => p.text).filter(Boolean);
   for (const id of Object.keys(TOPICS)) {
     for (const p of answerParts(id, f, { lead: true })) if (p.text) words.push(p.text);
     if (TOPICS[id].plain) words.push(TOPICS[id].plain);
@@ -136,7 +137,6 @@ test("bold markers become runs", () => {
 });
 
 test("the opening says hello by first name, or without one", () => {
-  assert.equal(greeting({ name: "Sam Smith" })[0], "Hello, Sam.");
-  assert.equal(greeting({})[0], "Hello.");
-  assert.match(greeting({}).at(-1), /^Ask me a question about/);
+  assert.equal(opening({ name: "Sam Smith" }, calcMetrics({}), {}).parts[0].text, "Hi, Sam.");
+  assert.equal(opening({}, calcMetrics({}), {}).parts[0].text, "Hi.");
 });

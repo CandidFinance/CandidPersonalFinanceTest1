@@ -98,6 +98,10 @@ export const MODULE_SUB = {
   taxTrap: "Your salary, bonus and pension against the line",
   pension: "Contributions modelled on your own pay",
   kids: "Childcare support at your income",
+  cash: "Your savings against today's rates",
+  studentLoan: "Your repayments, and whether paying early comes out ahead",
+  investments: "Your ISAs and tax allowances",
+  property: "What you could borrow, and renting against buying",
 };
 
 export const TOPICS = {
@@ -176,16 +180,6 @@ export function starters(d) {
     ["Salary sacrifice vs personal?", "versus"],
     // As WindfallChat decides whether to welcome them back.
     [d?.windfall?.split && d.windfall.amount > 0 && d.windfall.earmark ? "Pick up your lump sum" : "I've got a lump sum", WINDFALL],
-  ];
-}
-
-// What Candid says when the tab opens, typed out one message at a time.
-export function greeting(d) {
-  const name = d?.name ? String(d.name).trim().split(/\s+/)[0] : "";
-  return [
-    name ? `Hello, ${name}.` : "Hello.",
-    "This is **Candid's chat**. Ask how something works and I'll explain it in a few lines, then point you to the module with **your own figures**.",
-    "Ask me a question about **tax**, **pensions**, **childcare** or a **lump sum**, or pick one below.",
   ];
 }
 
