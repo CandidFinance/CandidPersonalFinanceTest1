@@ -63,29 +63,51 @@ const aboutShown = d => ABOUT_FIELDS.filter(f =>
   (f !== "notWorkingReason" || d.employmentStatus === "not_working")
   && (f !== "earnedThisTaxYear" || (d.employmentStatus === "not_working" && d.notWorkingReason === "break")));
 
-// A module's questions as its tile shows them (ModuleInputsForm).
-export function tileQuestions(moduleKey, ctx, questions = MODULE_GUIDES[moduleKey]?.questions || []) {
-  return flatQuestions(questions).filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)));
+// The £100k tax trap's walk-through asks Pension's and Kids & family's
+// questions again. On Edit inputs, with that module answered too, they're
+// in its tile, so the trap's tile links there rather than repeating them.
+// `owners`: the modules answered in full (a partly answered one's tile
+// holds only some of its questions).
+const BORROWS = { taxTrap: ["pension", "kids"] };
+// Each module's own answers, as its tile holds them (the shared About-you
+// ones are in About you).
+const GUIDE_FIELDS = Object.fromEntries(Object.entries(MODULE_GUIDES)
+  .map(([k, { questions }]) => [k, new Set(flatQuestions(questions).filter(q => q.group !== "you").map(q => q.field))]));
+export const answeredIn = (moduleKey, field, owners = []) =>
+  (BORROWS[moduleKey] || []).find(k => owners.includes(k) && GUIDE_FIELDS[k].has(field)) ?? null;
+
+// The answers in `owner`'s tile that `moduleKey` works from: the questions
+// both ask, and for the trap Pension's employer part and any income drawn
+// too, which set the pension allowance left (pension.js
+// calcAnnualAllowanceRoom).
+const ALSO_USES = { taxTrap: { pension: ["employerContributionType", "employerMatch", "pensionAccess"] } };
+export const usedFrom = (moduleKey, owner) =>
+  [...GUIDE_FIELDS[owner]].filter(f => GUIDE_FIELDS[moduleKey]?.has(f)).concat(ALSO_USES[moduleKey]?.[owner] || []);
+
+// A module's questions as its tile shows them (ModuleInputsForm), less any
+// answered in another tile (`owners`, answeredIn).
+export function tileQuestions(moduleKey, ctx, questions = MODULE_GUIDES[moduleKey]?.questions || [], owners = []) {
+  return flatQuestions(questions).filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)) && !answeredIn(moduleKey, q.field, owners));
 }
 
 // Each field in a tile ("about" or a module) with its state, in order.
-function tileStates(key, ctx, questions) {
+function tileStates(key, ctx, questions, owners) {
   const estimated = estimatedFields(ctx.d);
   return key === "about"
     ? aboutShown(ctx.d).map(field => ({ field, state: aboutState(field, ctx.d, estimated) }))
-    : tileQuestions(key, ctx, questions).map(q => ({ field: q.field, state: answerState(q, ctx, estimated) }));
+    : tileQuestions(key, ctx, questions, owners).map(q => ({ field: q.field, state: answerState(q, ctx, estimated) }));
 }
 
 // Counts for a tile's header line: { estimate, empty }.
-export function tileCounts(key, ctx, questions) {
+export function tileCounts(key, ctx, questions, owners) {
   const counts = { estimate: 0, empty: 0 };
-  for (const { state } of tileStates(key, ctx, questions)) if (state !== "actual") counts[state]++;
+  for (const { state } of tileStates(key, ctx, questions, owners)) if (state !== "actual") counts[state]++;
   return counts;
 }
 
 // The first estimate or gap in a tile, to take them to.
-export function firstGap(key, ctx, questions) {
-  return tileStates(key, ctx, questions).find(f => f.state !== "actual")?.field ?? null;
+export function firstGap(key, ctx, questions, owners) {
+  return tileStates(key, ctx, questions, owners).find(f => f.state !== "actual")?.field ?? null;
 }
 
 // The modules among `shown` whose walk-through asks this About-you field.

@@ -1,7 +1,7 @@
 import posthog from "posthog-js";
 import InviteFriends from "../InviteFriends.jsx";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Mail, User } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Mail, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
@@ -10,7 +10,7 @@ import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
 import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
 import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 import { briefQuestions } from "../../lib/moduleGuide.js";
-import { ABOUT_FIELDS, tileCounts, firstGap } from "../../lib/inputState.js";
+import { ABOUT_FIELDS, tileCounts, firstGap, usedFrom } from "../../lib/inputState.js";
 import { QUESTION_HEADING, QUESTION_HINT, HAIRLINE, FILLED, EMPTY_FILL, EMPTY_CLASS } from "../fieldState.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
@@ -60,23 +60,54 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
   const ctx = { d, m, regionalRows: null };
   const questionsFor = key => partly.includes(key) ? briefQuestions(key, "studentLoan") || [] : undefined;
 
+  // An answer in an open tile: to the middle of the screen, with a ring
+  // that fades; or with `keep` (from another module's link), to the top of
+  // the first of the rings the tile draws round the answers that module
+  // works from (ModuleInputsForm `linked`).
+  const bringIn = (el, want, behavior, keep = false) => {
+    if (keep) {
+      const ring = el.querySelector("[data-ring]");
+      if (!ring) return null;
+      ring.scrollIntoView({ behavior, block: "start" });
+      return () => {};
+    }
+    const target = want && el.querySelector(`[data-q~="${CSS.escape(want)}"]`);
+    if (!target) return null;
+    target.scrollIntoView({ behavior, block: "center" });
+    target.classList.add("q-flash");
+    const done = setTimeout(() => target.classList.remove("q-flash"), 1400);
+    return () => clearTimeout(done);
+  };
   useEffect(() => {
     const el = openKey && refs.current[openKey];
-    const want = el && (field || (open === openKey ? firstGap(openKey, ctx, questionsFor(openKey)) : null));
-    const target = want && el.querySelector(`[data-q~="${CSS.escape(want)}"]`);
-    if (target) {
-      target.scrollIntoView({ behavior: "instant", block: "center" });
-      target.classList.add("q-flash");
-      const done = setTimeout(() => target.classList.remove("q-flash"), 1400);
-      return () => clearTimeout(done);
-    }
+    const want = el && (field || (open === openKey ? firstGap(openKey, ctx, questionsFor(openKey), answered) : null));
+    const brought = el && bringIn(el, want, "instant");
+    if (brought) return brought;
     if (el) el.scrollIntoView({ behavior: "instant", block: "start" });
     else window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
+  // From a link in one tile to the answer in another (ModuleInputsForm
+  // `onJump`): that tile opened, the answer brought in with the ring kept
+  // on it, and a way back (`back`) to the link they came from.
+  const [jump, setJump] = useState(null);
+  const [back, setBack] = useState(null);
+  useEffect(() => {
+    const el = jump && refs.current[jump.key];
+    if (!el) return;
+    const brought = bringIn(el, jump.field, "smooth", jump.keep);
+    if (brought) return brought;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [jump]);
+  const onJump = (key, to, from) => { setOpenKey(key); setJump({ key, field: to, keep: true, from }); setBack({ key: from, link: `link-${key}` }); };
+  // While there: the answers the module they came from works from, in green.
+  const linkedIn = key => jump?.keep && jump.key === key ? new Set(usedFrom(jump.from, key)) : null;
+  const goBack = () => { setOpenKey(back.key); setJump({ key: back.key, field: back.link }); setBack(null); };
+  // Opening or closing a tile themselves: the jump is over.
+  const toggle = key => { setOpenKey(k => k === key ? null : key); setJump(null); setBack(null); };
 
   // "2 estimated · 1 to add": nothing once every answer is their own.
   const countsLine = key => {
-    const { estimate, empty } = tileCounts(key, ctx, questionsFor(key));
+    const { estimate, empty } = tileCounts(key, ctx, questionsFor(key), answered);
     return [estimate && `${estimate} estimated`, empty && `${empty} to add`].filter(Boolean).join(" · ");
   };
 
@@ -107,7 +138,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
           const sub = [isPartly && "What your student loan answer uses", countsLine(key)].filter(Boolean).join(" · ");
           return (
             <div key={key} ref={el => { refs.current[key] = el; }} style={{...tile,scrollMarginTop:"80px"}}>
-              <button type="button" onClick={() => setOpenKey(k => k === key ? null : key)} aria-expanded={isOpen}
+              <button type="button" onClick={() => toggle(key)} aria-expanded={isOpen}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",background:"none",border:"none",padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                 {iconBox(key)}
                 <span style={{flex:1,minWidth:0}}>
@@ -127,7 +158,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
                   }}>
                   <div style={{paddingTop:"14px"}}>
                     {isModule
-                      ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
+                      ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly} owners={answered} order={shown} onJump={onJump} linked={linkedIn(key)}/>
                       : <AboutYouFields d={d} set={set} shown={shown} email={!emailFirst && <EmailField d={d} onEmailChange={onEmailChange}/>}/>}
                   </div>
                   {isModule && (
@@ -153,6 +184,16 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
           );
         })}
       </div>
+
+      {back && (() => {
+        const Arrow = shown.indexOf(back.key) < shown.indexOf(jump?.key) ? ArrowUp : ArrowDown;
+        return (
+          <button type="button" onClick={goBack}
+            style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:"calc(env(safe-area-inset-bottom, 0px) + 104px)",zIndex:30,display:"flex",alignItems:"center",gap:"8px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"11px 18px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",boxShadow:"0 6px 20px rgba(22,47,36,0.25)",whiteSpace:"nowrap"}}>
+            <Arrow size={15} aria-hidden="true"/>Return to {title(back.key)}
+          </button>
+        );
+      })()}
 
       {notYet.length > 0 && (
         <>

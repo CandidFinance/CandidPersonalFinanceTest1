@@ -12,9 +12,11 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import YearPicker from "../YearPicker.jsx";
 import WheelPicker from "../WheelPicker.jsx";
 import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
-import { answerState, estimatedFields, tileQuestions } from "../../lib/inputState.js";
+import { answerState, estimatedFields, tileQuestions, answeredIn } from "../../lib/inputState.js";
+import { MODULE_META } from "../../lib/moduleStatus.js";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { shortLabel } from "../../lib/inputLabels.js";
-import { ESTIMATE_EDGE, EMPTY_FILL, EMPTY_TEXT, EMPTY_CLASS, OFF_FILL, OFF_EDGE, OFF_TEXT, FILLED, HAIRLINE, stateBorder, QUESTION_GAP, QUESTION_HEADING, QUESTION_HINT, QUESTION_LINK, CHOICE_RADIUS, CHOICE_TEXT } from "../fieldState.js";
+import { ESTIMATE_EDGE, EMPTY_FILL, EMPTY_TEXT, EMPTY_CLASS, OFF_FILL, OFF_EDGE, OFF_TEXT, FILLED, LINKED_FILL, HAIRLINE, stateBorder, QUESTION_GAP, QUESTION_HEADING, QUESTION_HINT, QUESTION_LINK, CHOICE_RADIUS, CHOICE_TEXT } from "../fieldState.js";
 
 // A module's answers as one form, for its tile on Edit inputs: the module's
 // own questions (src/lib/moduleGuide.js), each shown only when it applies,
@@ -30,7 +32,14 @@ const sliderFits = options => options.length <= 3 && options.every(o => o.label.
 // `brief`: only the questions asked on the short route from Student loan
 // (moduleGuide.js briefQuestions), for a module not answered in full, and
 // changing them doesn't count as answering it.
-export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }) {
+// `owners` (the modules answered in full) and `order` (the tiles as they
+// sit on the page): a question another tile holds (inputState.js
+// answeredIn) is a link to it instead, one per tile, which `onJump(key,
+// field, from)` follows; the link carries `data-q="link-<key>"` to come
+// back to. `linked`: the answers here another module works from, after
+// following its link, filled green (fieldState.js LINKED_FILL).
+const LINK_HEADING = { pension: "Pension contributions", kids: "Children and childcare" };
+export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false, owners = [], order = [], onJump, linked: linkedFields = null }) {
   const [editingLoan, setEditingLoan] = useState(false);
   const ctx = { d, m, regionalRows: null };
   const questions = tileQuestions(moduleKey, ctx, brief ? briefQuestions(moduleKey, "studentLoan") || [] : undefined);
@@ -53,9 +62,48 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
       color:empty ? EMPTY_TEXT : on ? TEXT : OFF_TEXT };
   };
 
+  const linked = new Set();
+  const link = (owner, q) => {
+    if (linked.has(owner)) return null;
+    linked.add(owner);
+    const { title, icon: Icon } = MODULE_META.find(mm => mm.key === owner);
+    const Arrow = order.indexOf(owner) < order.indexOf(moduleKey) ? ArrowUp : ArrowDown;
+    return (
+      <div key={`link-${owner}`} data-q={`link-${owner}`} style={{scrollMarginTop:"90px",borderRadius:"14px"}}>
+        <div style={QUESTION_HEADING}>{LINK_HEADING[owner] || title}</div>
+        <button type="button" onClick={() => onJump?.(owner, q.field, moduleKey)}
+          style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",height:PILL_HEIGHT,boxSizing:"border-box",padding:"0 16px",borderRadius:"100px",background:OFF_FILL,border:OFF_EDGE,...CHOICE_TEXT,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+          {Icon && <Icon size={15} color={TEXT} aria-hidden="true"/>}
+          <span style={{flex:1}}>In your {title} answers</span>
+          <Arrow size={15} color={TEXT} aria-hidden="true"/>
+        </button>
+        <p style={QUESTION_HINT}>One answer, used by both.</p>
+      </div>
+    );
+  };
+
+  // After following another module's link: each unbroken run of the answers
+  // it works from in one ring (index.html .q-ring), `data-ring` to land on.
+  const ringed = els => {
+    if (!linkedFields) return els;
+    const runs = [];
+    els.forEach((el, i) => {
+      if (!el) return;
+      const on = linkedFields.has(questions[i].field);
+      const last = runs[runs.length - 1];
+      if (on && last?.on) last.els.push(el);
+      else runs.push({ on, els: [el], key: questions[i].id });
+    });
+    return runs.flatMap(r => r.on
+      ? [<div key={`ring-${r.key}`} className="q-ring" data-ring style={{display:"flex",flexDirection:"column",gap:QUESTION_GAP,borderRadius:"14px",scrollMarginTop:"90px"}}>{r.els}</div>]
+      : r.els);
+  };
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:QUESTION_GAP}}>
-      {questions.map(q => {
+      {ringed(questions.map(q => {
+        const owner = answeredIn(moduleKey, q.field, owners);
+        if (owner) return link(owner, q);
         // A result line (the plan worked out, the balance estimated).
         if (q.kind === "info") return (
           <div key={q.id} style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.5}}>
@@ -111,14 +159,14 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
             value={filled ? +raw : (q.prefill ? q.prefill(ctx) : null)} onChange={v => write(q, v ?? "")} state={state}/>;
         } else return null;
         return (
-          <div key={q.id} data-q={q.field} style={{scrollMarginTop:"90px",borderRadius:"14px"}}>
+          <div key={q.id} data-q={q.field} style={{scrollMarginTop:"90px",borderRadius:"14px",...(linkedFields?.has(q.field) && { "--filled": LINKED_FILL })}}>
             <div style={QUESTION_HEADING}>{name}</div>
             {control}
             {note && <p style={QUESTION_HINT}>{note}</p>}
             {notSure.map(o => <button key={o.label} type="button" onClick={() => write(q, o.value)} style={QUESTION_LINK}>{o.label}</button>)}
           </div>
         );
-      })}
+      }))}
     </div>
   );
 }

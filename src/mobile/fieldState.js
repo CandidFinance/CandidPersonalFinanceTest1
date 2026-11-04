@@ -9,7 +9,12 @@ import { G, MUT, TEXT, CREAM, WHITE, GOLD_TEXT, FONT_SIZE } from "../design-toke
 // looks as it does everywhere else in the app.
 export const HAIRLINE = "1px solid rgba(22,47,36,0.14)";
 export const ESTIMATE_EDGE = `1.5px dashed ${G}`;
-export const FILLED = CREAM;
+// Through a CSS variable, so a set of answers can be filled another way
+// together (LINKED_FILL).
+export const FILLED = `var(--filled, ${CREAM})`;
+// The answers another module works from, reached by its link: pale green
+// until they go back (MobileInputsScreen).
+export const LINKED_FILL = "#e2efe6";
 export const EMPTY_FILL = "rgba(196,150,58,0.3)"; // GOLD, pale
 export const EMPTY_PLACEHOLDER = "Add";
 export const EMPTY_TEXT = GOLD_TEXT;

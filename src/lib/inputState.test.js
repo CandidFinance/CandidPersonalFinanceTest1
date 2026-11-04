@@ -79,3 +79,21 @@ test("every answer on Edit inputs has a short label", async () => {
     .filter(q => q.group !== "you" && q.kind !== "info" && !SHORT_LABELS[q.field]).map(q => q.field);
   assert.deepEqual([...new Set(missing)], []);
 });
+
+test("the answers the tax trap works from in Pension's tile", async () => {
+  const { usedFrom } = await import("./inputState.js");
+  assert.deepEqual(usedFrom("taxTrap", "pension").sort(), ["employerContributionType", "employerMatch", "myContribution", "pensionAccess", "pensionStatus", "pensionType"]);
+  assert.ok(usedFrom("taxTrap", "kids").includes("childcareMonthly"));
+});
+
+test("the tax trap's pension and children questions link to those tiles when answered", async () => {
+  const { answeredIn, tileQuestions } = await import("./inputState.js");
+  assert.equal(answeredIn("taxTrap", "myContribution", ["pension"]), "pension");
+  assert.equal(answeredIn("taxTrap", "kidsCount", ["pension", "kids"]), "kids");
+  assert.equal(answeredIn("taxTrap", "myContribution", []), null, "no Pension tile: asked here");
+  assert.equal(answeredIn("taxTrap", "payday", ["pension", "kids"]), null);
+  assert.equal(answeredIn("pension", "myContribution", ["taxTrap"]), null);
+  const d = { pensionStatus: "yes", myContribution: "5", kidsStatus: "yes", kidsCount: "1" };
+  const fields = tileQuestions("taxTrap", { d, m: calcMetrics(d) }, undefined, ["pension", "kids"]).map(x => x.field);
+  assert.ok(!fields.includes("myContribution") && !fields.includes("kidsCount") && fields.includes("payday"));
+});
