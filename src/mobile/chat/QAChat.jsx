@@ -160,11 +160,15 @@ export default function QAChat({ chat, d, m, onGoTo }) {
   const pinned = useRef(true);
   useEffect(() => {
     let touched = 0;
-    const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 48;
+    // Within 48px still counts as at the bottom for pinning, but following
+    // goes all the way down: a short new message (one line, Ask next) would
+    // otherwise stay part-hidden behind the message box.
+    const below = () => document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+    const atBottom = () => below() <= 48;
     // Keys only when they scroll the page, not typing in the message box.
     const touch = e => { if (e.type !== "keydown" || !/^(INPUT|TEXTAREA)$/.test(e.target?.tagName)) touched = Date.now(); };
     const onScroll = () => { if (atBottom()) pinned.current = true; else if (Date.now() - touched < 400) pinned.current = false; };
-    const follow = () => { if (pinned.current && !atBottom()) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }); };
+    const follow = () => { if (pinned.current && below() > 1) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }); };
     const grows = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(follow);
     if (grows && thread.current) grows.observe(thread.current);
     const inputs = ["wheel", "touchmove", "keydown"];
