@@ -18,7 +18,7 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-haiku-5-5";
 const RECHECK_AFTER_DAYS = 6;
 const SOURCES_PER_RUN = 6;
 const CONCURRENCY = 3;
@@ -60,7 +60,6 @@ async function extractProducts(providerName, url, pageText) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4000,
-      temperature: 0,
       system: EXTRACTION_SYSTEM,
       tools: [EXTRACTION_TOOL],
       tool_choice: { type: "tool", name: EXTRACTION_TOOL.name },
