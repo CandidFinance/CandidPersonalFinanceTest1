@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-11-04T09:15:59.237Z",
         "reason": "Claude: the dots are the chat typing indicator, shown only while a reply is arriving; they mirror the app's existing Dots in src/mobile/chat/ChatParts.jsx"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/mobile/chat/ChatParts.jsx"
+        ],
+        "createdAt": "2026-11-04T10:12:49.467Z",
+        "reason": "Harvey asked for a sheening thinking indicator in chat (4 Nov 2026); the gradient is the animated sheen on the 'Thinking' status label, not decorative heading or metric text"
       }
     ]
   }

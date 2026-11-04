@@ -862,7 +862,8 @@ export default function AppShell() {
     // No Candid Assist button here: the conversation is the help, and the
     // button would sit over its running total.
     <MobileLayout d={d} activeTab="chat">
-      <MobileChatScreen d={d} m={m} set={set} marketRates={marketRates}/>
+      <MobileChatScreen d={d} m={m} set={set} marketRates={marketRates}
+        onGoTo={key => { navigate(`/app/module/${key}`); scrollToTop(); }}/>
     </MobileLayout>
   );
 

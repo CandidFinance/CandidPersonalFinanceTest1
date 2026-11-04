@@ -144,6 +144,23 @@ try {
         if (await tour.count()) problems.push(`${name} ${r}: the tour didn't close`);
         broken = await check(`${r} (tour)`);
       }
+      // Chat: a starter question answered through to its module button,
+      // then the lump-sum conversation and back to the questions.
+      if (!broken && r === "/app/chat") {
+        await page.getByRole("button", { name: "What is the £100k tax trap?" }).click();
+        await page.locator("[data-chat-module]").waitFor({ timeout: 15000 }).catch(() => problems.push(`${name} ${r}: the tax trap answer didn't reach its module button`));
+        broken = await check(`${r} (answer)`);
+        // Ask next shows once the answer has finished building.
+        if (!broken) await page.getByRole("button", { name: /Childcare too\?/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${name} ${r}: the answer's Ask next follow-ups are missing`));
+        if (!broken) {
+          await page.goto(base + r);
+          await page.waitForTimeout(600);
+          await page.getByRole("button", { name: /lump sum/ }).click();
+          await page.getByRole("button", { name: "All topics" }).waitFor({ timeout: 3000 }).catch(() => problems.push(`${name} ${r}: the lump sum didn't open`));
+          broken = await check(`${r} (lump sum)`);
+          if (!broken) { await page.getByRole("button", { name: "All topics" }).click(); await page.waitForTimeout(300); broken = await check(`${r} (back)`); }
+        }
+      }
       // The module's answer, step by step, to its last step.
       if (!broken && r.startsWith("/app/module/")) {
         const explain = page.getByText("Explain this", { exact: true });
