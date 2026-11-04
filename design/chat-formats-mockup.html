@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guidance Chat Formats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          pine: '#162f24', pine2: '#244a38', gold: '#c4963a', goldsoft: '#f3e7cf',
+          cream: '#faf7f0', paper: '#fffdf8', ink: '#1d2420', mute: '#5b675f',
+          line: '#e4ddcd', ok: '#2f6f4a', oksoft: '#e3efe6', warn: '#9a4d1c', warnsoft: '#f6e6da'
+        },
+        fontFamily: {
+          serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          sans: ['"DM Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif']
+        }
+      }
+    }
+  };
+</script>
+<style>
+  :root {
+    /* One light world: Candid pine, gold and cream. Layout: header, format tabs, one working surface per format. */
+    --pine: #162f24;
+    --gold: #c4963a;
+    --cream: #faf7f0;
+    --paper: #fffdf8;
+    --ink: #1d2420;
+    --line: #e4ddcd;
+    --font-display: "Playfair Display", Georgia, serif;
+    --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { text-wrap: balance; }
+  .num { font-variant-numeric: tabular-nums; }
+  input[type="range"] { accent-color: var(--gold); width: 100%; height: 22px; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @keyframes flash { from { background: rgba(196, 150, 58, .32); } to { background: transparent; } }
+  .flash { animation: flash 1.1s ease-out; border-radius: 4px; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .dot { animation: blink 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .3s; }
+  @media (prefers-reduced-motion: reduce) { .flash, .dot { animation: none; } }
+  .scroll-soft { scrollbar-width: thin; scrollbar-color: #d6cdb8 transparent; }
+</style>
+</head>
+<body>
+<div id="root">
+  <p style="padding:24px;font-family:system-ui;color:#5b675f">Loading the chat formats mockup…</p>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
+
+/* ------------------------------------------------------------------
+   Tax engine: 2026/27, England, Wales and Northern Ireland rates
+   ------------------------------------------------------------------ */
+const PA = 12570, BASIC_BAND = 37700, ADDITIONAL = 125140, TAPER_START = 100000;
+const NI_PT = 12570, NI_UEL = 50270;
+
+function incomeTax(totalIncome, rasGross) {
+  const ani = totalIncome - rasGross;
+  const pa = Math.max(0, PA - Math.max(0, ani - TAPER_START) / 2);
+  const taxable = Math.max(0, totalIncome - pa);
+  const b = BASIC_BAND + rasGross, a = ADDITIONAL + rasGross;
+  const tax = 0.2 * Math.min(taxable, b) + 0.4 * Math.max(0, Math.min(taxable, a) - b) + 0.45 * Math.max(0, taxable - a);
+  return { ani, pa, tax };
+}
+const ni = pay => 0.08 * Math.max(0, Math.min(pay, NI_UEL) - NI_PT) + 0.02 * Math.max(0, pay - NI_UEL);
+
+// pension = gross amount into the pension per month, for either method
+function model({ salary, pension, method }) {
+  const annual = pension * 12;
+  const sac = method === 'sacrifice' ? annual : 0;
+  const rasGross = method === 'ras' ? annual : 0;
+  const rasNet = rasGross * 0.8;
+  const pay = salary - sac;
+  const t = incomeTax(pay, rasGross);
+  const n = ni(pay);
+  return { ...t, ni: n, pay, annual, rasNet, takeHome: pay - t.tax - n - rasNet };
+}
+function compare(params) {
+  const base = model({ ...params, pension: 0 });
+  const now = model(params);
+  return {
+    base, now,
+    taxCut: base.tax - now.tax,
+    niCut: base.ni - now.ni,
+    takeHomeChange: now.takeHome - base.takeHome,
+    paRestored: now.pa - base.pa,
+  };
+}
+function band(ani) {
+  if (ani > ADDITIONAL) return { label: 'Additional rate', rate: 45, ni: 2 };
+  if (ani > TAPER_START) return { label: 'Allowance taper band', rate: 60, ni: 2 };
+  if (ani > NI_UEL) return { label: 'Higher rate', rate: 40, ni: 2 };
+  if (ani > PA) return { label: 'Basic rate', rate: 20, ni: 8 };
+  return { label: 'Personal allowance', rate: 0, ni: 0 };
+}
+function mortgagePayment(balance, years, ratePct) {
+  const r = ratePct / 100 / 12, n = years * 12;
+  return r === 0 ? balance / n : balance * r / (1 - Math.pow(1 + r, -n));
+}
+
+const gbp = n => (n < -0.5 ? '-' : '') + '£' + Math.round(Math.abs(n)).toLocaleString('en-GB');
+const methodName = m => (m === 'ras' ? 'relief at source' : 'salary sacrifice');
+const nowStamp = () => new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const timeOnly = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+let _id = 0; const uid = () => 'm' + (++_id) + Date.now().toString(36);
+const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+
+/* ------------------------------------------------------------------
+   Icons: Lucide-style outline set, one stroke weight
+   ------------------------------------------------------------------ */
+const ICONS = {
+  send: <><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></>,
+  bookmark: <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />,
+  clipboard: <><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></>,
+  file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /></>,
+  check: <path d="M20 6 9 17l-5-5" />,
+  x: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  chat: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
+  columns: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 3v18" /></>,
+  steps: <><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></>,
+  clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
+  left: <path d="m15 18-6-6 6-6" />,
+  right: <path d="m9 18 6-6-6-6" />,
+  info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></>,
+  copy: <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
+  list: <><path d="M3 12h18" /><path d="M3 6h18" /><path d="M3 18h18" /></>,
+  rotate: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></>,
+};
+function Icon({ name, size = 16, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{ICONS[name]}</svg>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Scripted responses (proxy Q&A)
+   ------------------------------------------------------------------ */
+const Q = {
+  taper: 'How does earning over £100k affect my tax and childcare?',
+  impact: 'Show me how a £350/mo pension contribution changes my modelled take-home pay.',
+  methods: 'Explain the difference between salary sacrifice and personal pension contributions.',
+};
+const TEST_QUESTIONS = [
+  { text: Q.taper, rid: 'taper' },
+  { text: Q.impact, rid: 'impact' },
+  { text: Q.methods, rid: 'methods' },
+];
+const C = {
+  impact: { label: 'Show modelled impact at £350/mo', rid: 'impact' },
+  childcare: { label: 'How does this interact with childcare hours?', rid: 'childcare' },
+  ani: { label: 'What counts as adjusted net income?', rid: 'ani' },
+  cliff: { label: 'What happens above £125,140?', rid: 'cliff' },
+  methods: { label: 'Compare salary sacrifice with a personal contribution', rid: 'methods' },
+  taper: { label: 'How does the £100k taper work?', rid: 'taper' },
+  sa: { label: 'How is higher-rate relief claimed?', rid: 'sa' },
+  repayment: { label: 'How is a monthly repayment worked out?', rid: 'repayment' },
+  mortgage: { label: 'What happens when a fixed rate ends?', rid: 'mortgage' },
+  bonus: { label: 'How does a bonus count towards £100k?', rid: 'bonus' },
+};
+
+const RESPONSES = {
+  taper: {
+    topic: 'Personal allowance taper',
+    widget: 'threshold',
+    text: [
+      'Above £100,000 of adjusted net income, the personal allowance tapers away at £1 for every £2 of income. By £125,140 it has gone entirely.',
+      'Within that £25,140 band, each extra £1 of income meets 40% higher-rate tax plus the loss of 50p of allowance, which is itself taxed at 40%. The modelled marginal income tax rate in the band is 60%, or 62% with employee National Insurance at 2%.',
+      'Childcare support uses the same measure. Tax-Free Childcare and the working-parent funded hours each require adjusted net income of £100,000 or less for each parent. Eligibility does not taper: it ends at the line.',
+      'The modeller below starts from the example profile. Move the sliders to see how each figure responds.',
+    ],
+    eli5: [
+      'Everyone gets a slice of income with no tax on it: £12,570. Once you earn over £100,000, that slice shrinks by £1 for every £2 more you earn, until it is gone at £125,140.',
+      'So in that stretch, each extra £100 of pay brings about £38 home, compared with £58 just below it.',
+      'Childcare help works like a light switch, not a dimmer. At £100,000 or less the switch is on. A pound over and it goes off.',
+    ],
+    chips: [C.impact, C.childcare, C.ani, C.cliff],
+  },
+  impact: {
+    topic: 'Pension contribution at £350/mo',
+    widget: 'compare',
+    effect: () => ({ pension: 350, method: 'sacrifice' }),
+    text: [
+      'This models £350 a month (£4,200 a year) going into a pension by salary sacrifice, set beside the same salary taken as cash.',
+      'Salary sacrifice lowers gross pay before tax and National Insurance are worked out, so adjusted net income falls by the full £4,200. Where part of the contribution sits in the £100,000 to £125,140 band, the modelled tax reduction is larger than 40% of the amount.',
+      'Take-home pay falls by less than the contribution. The difference is the modelled tax and National Insurance reduction. Money in a pension is not accessible until the normal minimum pension age, currently 55 and rising to 57 from 6 April 2028.',
+    ],
+    eli5: [
+      'Picture £4,200 a year leaving your pay before tax is taken, and going into a locked savings box for later life.',
+      'Because tax is never charged on it, your pay packet shrinks by less than £4,200. The catch: the box stays locked until your late 50s.',
+    ],
+    chips: [C.methods, C.childcare, C.taper],
+  },
+  methods: {
+    topic: 'Salary sacrifice and relief at source',
+    widget: 'methods',
+    effect: p => ({ pension: p.pension || 350 }),
+    text: [
+      'Both routes put money into a pension with tax relief. They differ in how the relief arrives.',
+      'Salary sacrifice: you agree a lower contractual salary and your employer pays the difference into the pension. Income tax and employee National Insurance are both reduced through payroll. It depends on the employer offering a scheme, and a lower contractual salary can affect salary-linked figures such as mortgage affordability checks or some insurance cover. From April 2029, National Insurance relief on sacrificed amounts is due to be capped at £2,000 a year.',
+      'Relief at source (a personal contribution): you pay from take-home pay and the provider claims basic-rate relief from HMRC, so £80 paid becomes £100 in the pension. Relief above basic rate is claimed through Self Assessment or by contacting HMRC. There is no National Insurance relief. The gross contribution still reduces adjusted net income.',
+      'The table compares both at the current monthly amount.',
+    ],
+    eli5: [
+      'Salary sacrifice: your employer pays part of your wages straight into your pension, so tax and National Insurance never touch it.',
+      'Personal contribution: you pay in from money that has already been taxed. The pension company claims some tax back for you, and you claim the rest yourself on a tax return.',
+    ],
+    chips: [C.impact, C.ani, C.sa],
+  },
+  childcare: {
+    topic: 'Childcare income test',
+    widget: 'childcare',
+    text: [
+      'Two schemes use the £100,000 adjusted net income test. Tax-Free Childcare adds £2 for every £8 paid in, up to £2,000 per child per year (£4,000 for a disabled child). The working-parent funded hours in England cover up to 30 hours a week, 38 weeks a year, from 9 months old to school age.',
+      'The test applies to each parent separately and is based on expected income for the current tax year. Eligibility is reconfirmed every three months.',
+      'Pension contributions by salary sacrifice or relief at source reduce adjusted net income. The tile shows the status at the current modelled inputs.',
+    ],
+    eli5: [
+      'Childcare help has a £100,000 cut-off for each parent. Pension payments lower the number that gets checked against it.',
+    ],
+    chips: [C.ani, C.impact, C.taper],
+  },
+  ani: {
+    topic: 'Adjusted net income',
+    widget: 'ani',
+    text: [
+      'Adjusted net income is total taxable income less certain deductions: the gross amount of personal pension contributions paid under relief at source, and Gift Aid donations grossed up.',
+      'Salary sacrifice reduces it a different way. The sacrificed amount never counts as income in the first place.',
+      'Taxable benefits in kind, such as private medical insurance or a company car, count towards it, as do taxable interest and dividends. That is how a £98,000 salary can still produce adjusted net income above £100,000.',
+    ],
+    eli5: [
+      'It is the figure HMRC uses to decide things like your tax-free slice and childcare help. Start with everything you are taxed on, then take off pension payments and charity gifts.',
+    ],
+    chips: [C.taper, C.childcare, C.methods],
+  },
+  cliff: {
+    topic: 'Above £125,140',
+    widget: 'threshold',
+    text: [
+      'At £125,140 of adjusted net income the personal allowance reaches zero. Above that point, income over £125,140 is taxed at the 45% additional rate.',
+      'The 60% band therefore ends at £125,140, and the marginal income tax rate falls to 45%, or 47% with employee National Insurance.',
+    ],
+    eli5: [
+      'After £125,140 the tax-free slice is all gone, so there is nothing left to shrink. Each extra pound is taxed at 45p.',
+    ],
+    chips: [C.taper, C.impact, C.bonus],
+  },
+  sa: {
+    topic: 'Claiming higher-rate relief',
+    widget: 'sa',
+    text: [
+      'Personal contributions under relief at source get basic-rate relief automatically: for every £80 paid, the provider adds £20.',
+      'Relief above basic rate is not added automatically. Higher and additional rate taxpayers claim it through a Self Assessment return, or by contacting HMRC if they do not file one. The online filing deadline for 2025/26 is 31 January 2027.',
+      'Because the gross contribution also reduces adjusted net income, a claim in the £100,000 to £125,140 band can restore personal allowance. The tile models the extra relief at the example salary.',
+    ],
+    eli5: [
+      'The pension company claims the first slice of tax back for you. If you pay a higher rate, there is a second slice you ask for yourself, on your tax return.',
+    ],
+    chips: [C.methods, C.ani],
+  },
+  yearend: {
+    topic: 'Tax year end',
+    widget: 'threshold',
+    text: [
+      'The tax year runs from 6 April to 5 April. Adjusted net income, the allowance taper and the childcare income test all use the full year’s figures.',
+      'Pension contributions paid by 5 April 2027 count towards 2026/27. Payroll contributions count in the pay period they are deducted, so for salary sacrifice the last payday before 5 April is the cut-off.',
+      'The annual allowance is £60,000 of pension contributions a year, lower for very high incomes. Unused allowance from the previous three tax years can be carried forward by someone who was a member of a registered pension scheme in those years.',
+    ],
+    eli5: [
+      '5 April is the line where HMRC adds up your year. Pension payments made before it count for this year; after it, they count for next year.',
+    ],
+    chips: [C.impact, C.sa, C.childcare],
+  },
+  bonus: {
+    topic: 'Bonus and the £100k line',
+    widget: 'threshold',
+    text: [
+      'A bonus is taxed as earnings in the pay period it is paid, and it counts towards adjusted net income for that tax year.',
+      'A bonus that takes income from below £100,000 to above it brings the allowance taper and the childcare income test into play for the whole year, not only the month it lands in.',
+      'Some employers offer bonus sacrifice, where all or part of a bonus is paid into a pension instead. Whether it is available, and the deadline for choosing, is set by each scheme.',
+    ],
+    eli5: [
+      'A bonus adds to your year’s total. If the total crosses £100,000, the tax-free slice starts to shrink and childcare help switches off for the year.',
+    ],
+    chips: [C.cliff, C.methods, C.childcare],
+  },
+  mortgage: {
+    topic: 'End of a fixed rate',
+    widget: 'mortgage',
+    text: [
+      'When a fixed rate ends, the loan usually moves to the lender’s standard variable rate unless a new product is arranged. Lenders often allow a new rate to be arranged up to six months before the end date.',
+      'The monthly repayment depends on the balance, the remaining term and the rate. The tile uses an example loan; move the rate to see the modelled repayment.',
+      'Early repayment charges usually apply only during the fixed period, so the end date is also when overpaying or moving lender typically carries no charge.',
+    ],
+    eli5: [
+      'A fixed deal is a price promise with an end date. After it, the price can change. The slider shows the monthly bill at different prices.',
+    ],
+    chips: [C.repayment],
+  },
+  repayment: {
+    topic: 'Repayment mortgage maths',
+    widget: 'mortgage',
+    text: [
+      'A repayment mortgage payment is set so the balance reaches zero at the end of the term. Each payment covers that month’s interest first; the rest reduces the balance.',
+      'Early in the term most of each payment is interest. As the balance falls, the interest share shrinks and more goes to capital, while the payment itself stays the same at a given rate.',
+    ],
+    eli5: [
+      'Each month the bank charges a little rent on what you still owe. Your payment covers that rent, and whatever is left over chips away at the loan.',
+    ],
+    chips: [C.mortgage],
+  },
+  fallback: {
+    topic: null,
+    widget: null,
+    text: [
+      'This mockup holds scripted answers for a few topics: the £100,000 taper, pension contributions, salary sacrifice, childcare, adjusted net income and the timeline milestones. Pick a question below to continue.',
+    ],
+    eli5: [
+      'This demo only knows a few answers so far. Try one of the questions below.',
+    ],
+    chips: [C.taper, C.impact, C.methods],
+  },
+};
+
+function matchQuestion(text) {
+  const t = text.toLowerCase();
+  if (/350|take.?home|modelled impact/.test(t)) return 'impact';
+  if (/sacrifice|relief at source|personal pension|difference/.test(t)) return 'methods';
+  if (/childcare|nursery|funded hours|30 hours/.test(t)) return 'childcare';
+  if (/adjusted net|\bani\b/.test(t)) return 'ani';
+  if (/125/.test(t)) return 'cliff';
+  if (/self assessment|tax return|higher.?rate relief/.test(t)) return 'sa';
+  if (/bonus/.test(t)) return 'bonus';
+  if (/mortgage|fixed rate|remortgage/.test(t)) return 'mortgage';
+  if (/tax year|5 april|year end/.test(t)) return 'yearend';
+  if (/100k|100,000|taper|allowance|tax/.test(t)) return 'taper';
+  return 'fallback';
+}
+
+/* ------------------------------------------------------------------
+   Shared store
+   ------------------------------------------------------------------ */
+const Store = createContext(null);
+const useStore = () => useContext(Store);
+const DEFAULT_PARAMS = { salary: 110000, pension: 350, method: 'sacrifice' };
+
+function buildSummary(params, topics, saved) {
+  const c = compare(params);
+  const gap = c.now.ani - TAPER_START;
+  return [
+    'SAVED SCENARIO SUMMARY',
+    `Generated: ${nowStamp()}`,
+    'Source: Candid guidance chat (modelled figures, 2026/27 rates, England, Wales and NI)',
+    '',
+    'Inputs',
+    `- Salary: ${gbp(params.salary)}`,
+    `- Pension contribution: ${gbp(params.pension)} a month (${gbp(params.pension * 12)} a year), ${methodName(params.method)}`,
+    '',
+    'Modelled figures',
+    `- Adjusted net income: ${gbp(c.now.ani)} (no contribution: ${gbp(c.base.ani)})`,
+    `- Personal allowance: ${gbp(c.now.pa)} (no contribution: ${gbp(c.base.pa)})`,
+    `- Modelled income tax reduction: ${gbp(c.taxCut)} a year`,
+    `- Modelled National Insurance reduction: ${gbp(c.niCut)} a year`,
+    `- Take-home change: ${gbp(c.takeHomeChange)} a year`,
+    `- Childcare income test (£100,000 per parent): ${gap > 0 ? `${gbp(gap)} above` : `${gbp(-gap)} below`}`,
+    '',
+    `Topics explored: ${topics.length ? topics.join('; ') : 'none yet'}`,
+    `Saved scenarios in notes: ${saved.length}`,
+    '',
+    'These figures are modelled from the inputs above using published rates. They are not a personal recommendation, and tax rules can change.',
+  ].join('\n');
+}
+function buildHr(params) {
+  const amount = params.pension || 350;
+  return [
+    'DETAILS FOR HR / PAYROLL',
+    `Prepared from my own Candid scenario, ${nowStamp()}`,
+    '',
+    'I am looking into pension contributions through salary sacrifice and would like some details about our scheme.',
+    '',
+    `Amount I am modelling: ${gbp(amount)} a month (${gbp(amount * 12)} a year)`,
+    `Current salary: ${gbp(params.salary)}`,
+    '',
+    'Questions',
+    '- Does our pension scheme offer salary sacrifice?',
+    '- Is there a minimum salary after sacrifice, or a limit on the amount?',
+    '- When can an arrangement start or change, and is bonus sacrifice available?',
+    '- Does the employer add any of its National Insurance saving to the pension?',
+    '- Which salary figure is used for life cover, income protection and pay reviews?',
+  ].join('\n');
+}
+function buildAudit(audit) {
+  return [
+    'USER INTERACTION AUDIT RECORD',
+    `Exported: ${nowStamp()}`,
+    'A log of questions asked, inputs changed and items saved in this session. It records what was explored; it is not an assessment of suitability.',
+    '',
+    ...audit.map(a => `${timeOnly(a.t)}  ${a.kind}: ${a.detail}`),
+  ].join('\n');
+}
+
+/* ------------------------------------------------------------------
+   Small UI pieces
+   ------------------------------------------------------------------ */
+function Flash({ value, children, className = '' }) {
+  return <span key={String(value)} className={`flash ${className}`}>{children}</span>;
+}
+
+function Stat({ label, value, sub, tone }) {
+  const toneCls = tone === 'ok' ? 'text-ok' : tone === 'warn' ? 'text-warn' : 'text-ink';
+  return (
+    <div className="flex flex-col gap-0.5 min-w-0">
+      <dt className="text-xs text-mute leading-snug">{label}</dt>
+      <dd className={`font-serif text-xl num ${toneCls}`}><Flash value={value}>{value}</Flash></dd>
+      {sub && <dd className="text-xs text-mute">{sub}</dd>}
+    </div>
+  );
+}
+
+function Slider({ id, label, min, max, step, value, onChange, display, hint }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="text-sm text-ink">{label}</label>
+        <span className="font-serif text-lg num text-pine">{display}</span>
+      </div>
+      <input id={id} type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))} />
+      {hint && <div className="flex justify-between text-[11px] text-mute num">{hint.map(h => <span key={h}>{h}</span>)}</div>}
+    </div>
+  );
+}
+
+function Segmented({ id, options, value, onChange, label }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border border-line bg-cream p-0.5 text-sm">
+      {options.map(o => (
+        <button key={o.value} id={`${id}-${o.value}`} type="button" role="radio" aria-checked={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={`px-3 py-1 rounded-md transition-colors ${value === o.value ? 'bg-pine text-cream' : 'text-mute hover:text-ink'}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChildcareStatus({ ani }) {
+  const ok = ani <= TAPER_START;
+  const gap = Math.abs(ani - TAPER_START);
+  return (
+    <div className={`flex items-start gap-3 rounded-lg px-3 py-2.5 ${ok ? 'bg-oksoft' : 'bg-warnsoft'}`}>
+      <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${ok ? 'bg-ok' : 'bg-warn'}`} aria-hidden="true"></span>
+      <p className="text-sm leading-snug">
+        <span className="font-semibold">Childcare income test: {ok ? 'within the £100,000 limit' : 'above the £100,000 limit'}.</span>{' '}
+        <span className="text-mute">Modelled adjusted net income is <span className="num">{gbp(gap)}</span> {ok ? 'below' : 'above'} the line. Applies to each parent separately.</span>
+      </p>
+    </div>
+  );
+}
+
+function AniScale({ ani, base }) {
+  const lo = 75000, hi = 135000;
+  const pct = v => Math.min(100, Math.max(0, (v - lo) / (hi - lo) * 100));
+  return (
+    <div className="pt-1" aria-label={`Adjusted net income ${gbp(ani)} on a scale from ${gbp(lo)} to ${gbp(hi)}`}>
+      <div className="relative h-3 rounded-full bg-cream border border-line">
+        <div className="absolute top-0 bottom-0 bg-goldsoft border-x border-gold/60" style={{ left: pct(TAPER_START) + '%', width: (pct(ADDITIONAL) - pct(TAPER_START)) + '%' }}></div>
+        {Math.abs(base - ani) > 1 && (
+          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3 w-3 rounded-full border-2 border-mute bg-paper" style={{ left: pct(base) + '%' }} title="No contribution"></div>
+        )}
+        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-pine ring-2 ring-paper transition-all" style={{ left: pct(ani) + '%' }}></div>
+      </div>
+      <div className="relative h-5 text-[11px] text-mute num">
+        <span className="absolute -translate-x-1/2" style={{ left: pct(TAPER_START) + '%' }}>£100,000</span>
+        <span className="absolute -translate-x-1/2" style={{ left: pct(ADDITIONAL) + '%' }}>£125,140</span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-mute">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-pine"></span>Modelled</span>
+        {Math.abs(base - ani) > 1 && <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-mute"></span>No contribution</span>}
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm bg-goldsoft border border-gold/60"></span>Allowance taper band</span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   User-led action layer
+   ------------------------------------------------------------------ */
+function ActionBar({ context }) {
+  const { saveScenario, openModal } = useStore();
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { if (!saved) return; const t = setTimeout(() => setSaved(false), 2200); return () => clearTimeout(t); }, [saved]);
+  const btn = 'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-pine hover:bg-goldsoft transition-colors';
+  return (
+    <div className="flex flex-wrap items-center gap-1 border-t border-line pt-2 -mx-1">
+      <button type="button" className={btn} onClick={() => { saveScenario(context); setSaved(true); }}>
+        <Icon name={saved ? 'check' : 'bookmark'} size={14} />{saved ? 'Saved to notes' : 'Save to my notes'}
+      </button>
+      <button type="button" className={btn} onClick={() => openModal('hr')}>
+        <Icon name="clipboard" size={14} />Copy details for HR
+      </button>
+      <button type="button" className={btn} onClick={() => openModal('summary')}>
+        <Icon name="file" size={14} />Export summary
+      </button>
+    </div>
+  );
+}
+
+function WidgetCard({ kicker, title, context, children, actions = true }) {
+  return (
+    <section className="rounded-xl border border-line bg-white p-4 flex flex-col gap-4 shadow-[0_1px_0_rgba(22,47,36,0.04)]">
+      <header className="flex items-baseline justify-between gap-3">
+        <h4 className="text-sm font-semibold text-pine">{title}</h4>
+        <span className="text-[11px] uppercase tracking-wider text-gold font-semibold">{kicker}</span>
+      </header>
+      {children}
+      {actions && <ActionBar context={context || title} />}
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Widgets
+   ------------------------------------------------------------------ */
+function ThresholdWidget({ actions = true, idp = 'th' }) {
+  const { params, setParam } = useStore();
+  const c = compare(params);
+  const b = band(c.now.ani);
+  return (
+    <WidgetCard kicker="Modeller" title="£100k threshold modeller" actions={actions}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Slider id={`${idp}-salary`} label="Salary" min={90000} max={130000} step={500} value={params.salary}
+          onChange={v => setParam('salary', v)} display={gbp(params.salary)} hint={['£90k', '£130k']} />
+        <Slider id={`${idp}-pension`} label={`Pension, ${methodName(params.method)}`} min={0} max={1000} step={25} value={params.pension}
+          onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} hint={['£0', '£1,000']} />
+      </div>
+      <AniScale ani={c.now.ani} base={c.base.ani} />
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Stat label="Modelled adjusted net income" value={gbp(c.now.ani)} />
+        <Stat label="Tax band" value={`${b.rate}%`} sub={b.label} />
+        <Stat label="Personal allowance" value={gbp(c.now.pa)} sub={c.paRestored > 0.5 ? `${gbp(c.paRestored)} restored` : 'of £12,570'} />
+        <Stat label="Modelled tax reduction" value={`${gbp(c.taxCut)}/yr`} sub={`NI: ${gbp(c.niCut)}/yr`} />
+      </dl>
+      <ChildcareStatus ani={c.now.ani} />
+    </WidgetCard>
+  );
+}
+
+function CompareWidget() {
+  const { params, setParam } = useStore();
+  const p = { ...params, method: 'sacrifice' };
+  const a = model({ ...p, pension: 0 });
+  const b = model(p);
+  const col = (title, sub, m, features, tradeoffs) => (
+    <div className="flex flex-col gap-3 rounded-lg bg-cream/70 p-3.5">
+      <div>
+        <div className="text-xs uppercase tracking-wider text-mute font-semibold">{title}</div>
+        <div className="text-sm text-ink">{sub}</div>
+      </div>
+      <dl className="grid grid-cols-2 gap-3">
+        <Stat label="Take-home per month" value={gbp(m.takeHome / 12)} />
+        <Stat label="Into pension per year" value={gbp(m.annual)} />
+        <Stat label="Adjusted net income" value={gbp(m.ani)} />
+        <Stat label="Childcare income test" value={m.ani <= TAPER_START ? 'Within' : 'Above'} tone={m.ani <= TAPER_START ? 'ok' : 'warn'} />
+      </dl>
+      <div className="grid gap-2 text-sm">
+        <div>
+          <div className="text-xs text-mute mb-1">Features</div>
+          <ul className="flex flex-col gap-1">{features.map(f => <li key={f} className="flex gap-2"><Icon name="check" size={14} className="mt-0.5 shrink-0 text-ok" />{f}</li>)}</ul>
+        </div>
+        <div>
+          <div className="text-xs text-mute mb-1">Trade-offs</div>
+          <ul className="flex flex-col gap-1">{tradeoffs.map(f => <li key={f} className="flex gap-2"><span className="mt-2 h-1 w-2.5 shrink-0 rounded bg-mute/60"></span>{f}</li>)}</ul>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <WidgetCard kicker="Comparison" title="Option A and Option B, side by side">
+      <Slider id="cmp-pension" label="Monthly amount modelled" min={0} max={1000} step={25} value={params.pension}
+        onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} />
+      <div className="grid gap-3 md:grid-cols-2">
+        {col('Option A', 'Take the amount as cash', a,
+          ['Full amount available now', 'Contractual salary unchanged'],
+          ['Income tax and NI charged on the full amount', `Adjusted net income stays at ${gbp(a.ani)}`])}
+        {col('Option B', `${gbp(params.pension)}/mo by salary sacrifice`, b,
+          ['Tax and NI reduced through payroll', `Adjusted net income lowered by ${gbp(b.annual)}`],
+          ['Not accessible until minimum pension age (57 from April 2028)', 'Lower contractual salary can affect borrowing checks and salary-linked benefits'])}
+      </div>
+      <p className="text-sm text-mute">
+        Modelled difference: Option B has <span className="num text-ink font-medium">{gbp((a.takeHome - b.takeHome) / 12)}</span> a month less take-home pay
+        and <span className="num text-ink font-medium">{gbp(b.annual / 12)}</span> a month more in the pension.
+      </p>
+    </WidgetCard>
+  );
+}
+
+function MethodsWidget({ actions = true }) {
+  const { params, setParam } = useStore();
+  const base = model({ ...params, pension: 0 });
+  const s = model({ ...params, method: 'sacrifice' });
+  const r = model({ ...params, method: 'ras' });
+  const relief = m => m.annual + (m.takeHome - base.takeHome);
+  const rows = [
+    ['Paid from', 'Gross pay, before tax', 'Take-home pay'],
+    ['You pay per year', gbp(s.annual), gbp(r.rasNet)],
+    ['Into pension per year', gbp(s.annual), gbp(r.annual)],
+    ['Take-home change per year', gbp(s.takeHome - base.takeHome), gbp(r.takeHome - base.takeHome)],
+    ['Modelled tax and NI relief per year', gbp(relief(s)), gbp(relief(r))],
+    ['of which National Insurance', gbp(base.ni - s.ni), '£0'],
+    ['Adjusted net income', gbp(s.ani), gbp(r.ani)],
+    ['How relief arrives', 'Through payroll', '20% added by provider; the rest via Self Assessment'],
+  ];
+  return (
+    <WidgetCard kicker="Comparison" title="Two ways to contribute" actions={actions}>
+      <Slider id="mth-pension" label="Into pension per month" min={0} max={1000} step={25} value={params.pension}
+        onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} />
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full text-sm min-w-[420px]">
+          <thead>
+            <tr className="text-left text-xs text-mute">
+              <th className="font-medium py-1.5 px-1 w-[38%]"><span className="sr-only">Measure</span></th>
+              <th className="font-semibold py-1.5 px-1 text-pine">Salary sacrifice</th>
+              <th className="font-semibold py-1.5 px-1 text-pine">Relief at source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([k, x, y]) => {
+              const isText = k === 'Paid from' || k === 'How relief arrives';
+              return (
+                <tr key={k} className="border-t border-line align-top">
+                  <th scope="row" className="text-left font-normal text-mute py-2 px-1">{k}</th>
+                  <td className={`py-2 px-1 ${isText ? '' : 'font-serif text-base num'}`}><Flash value={x}>{x}</Flash></td>
+                  <td className={`py-2 px-1 ${isText ? '' : 'font-serif text-base num'}`}><Flash value={y}>{y}</Flash></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-mute">Relief at source figures assume higher-rate relief is claimed. Salary {gbp(params.salary)}; 2026/27 rates.</p>
+    </WidgetCard>
+  );
+}
+
+function ChildcareWidget({ actions = true }) {
+  const { params, setParam } = useStore();
+  const c = compare(params);
+  return (
+    <WidgetCard kicker="Status" title="Childcare income test" actions={actions}>
+      <Slider id="cc-pension" label={`Pension, ${methodName(params.method)}`} min={0} max={1000} step={25} value={params.pension}
+        onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} />
+      <dl className="grid grid-cols-2 gap-4">
+        <Stat label="Modelled adjusted net income" value={gbp(c.now.ani)} />
+        <Stat label="Tax-Free Childcare top-up limit" value="£2,000" sub="per child per year" />
+      </dl>
+      <ChildcareStatus ani={c.now.ani} />
+    </WidgetCard>
+  );
+}
+
+function AniWidget() {
+  const { params } = useStore();
+  const [bik, setBik] = useState(1200);
+  const [interest, setInterest] = useState(800);
+  const annual = params.pension * 12;
+  const sac = params.method === 'sacrifice' ? annual : 0;
+  const ras = params.method === 'ras' ? annual : 0;
+  const ani = params.salary - sac + bik + interest - ras;
+  const rows = [
+    ['Salary', params.salary],
+    ['Salary sacrifice', -sac],
+    ['Benefits in kind', bik],
+    ['Taxable savings interest', interest],
+    ['Gross personal pension contributions', -ras],
+  ];
+  return (
+    <WidgetCard kicker="Breakdown" title="How adjusted net income adds up">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Slider id="ani-bik" label="Benefits in kind" min={0} max={6000} step={100} value={bik} onChange={setBik} display={gbp(bik)} />
+        <Slider id="ani-int" label="Taxable savings interest" min={0} max={5000} step={100} value={interest} onChange={setInterest} display={gbp(interest)} />
+      </div>
+      <dl className="text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-4 py-1.5 border-t border-line">
+            <dt className="text-mute">{k}</dt>
+            <dd className="num">{v < 0 ? '−' : v > 0 && k !== 'Salary' ? '+' : ''}{gbp(Math.abs(v))}</dd>
+          </div>
+        ))}
+        <div className="flex justify-between gap-4 pt-2 border-t-2 border-pine/70 items-baseline">
+          <dt className="font-semibold">Adjusted net income</dt>
+          <dd className="font-serif text-xl num"><Flash value={ani}>{gbp(ani)}</Flash></dd>
+        </div>
+      </dl>
+      <ChildcareStatus ani={ani} />
+    </WidgetCard>
+  );
+}
+
+function SaWidget() {
+  const { params } = useStore();
+  const [gross, setGross] = useState(4800);
+  const base = incomeTax(params.salary, 0);
+  const withC = incomeTax(params.salary, gross);
+  const basic = gross * 0.2;
+  const extra = base.tax - withC.tax;
+  return (
+    <WidgetCard kicker="Modeller" title="Relief at source: who claims what">
+      <Slider id="sa-gross" label="Gross personal contributions in the tax year" min={0} max={20000} step={250} value={gross}
+        onChange={setGross} display={gbp(gross)} hint={['£0', '£20,000']} />
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Stat label="You pay" value={gbp(gross - basic)} />
+        <Stat label="Added by provider (20%)" value={gbp(basic)} />
+        <Stat label="Claimable via Self Assessment" value={gbp(extra)} />
+        <Stat label="Personal allowance restored" value={gbp(withC.pa - base.pa)} />
+      </dl>
+      <p className="text-xs text-mute">Salary {gbp(params.salary)}, no salary sacrifice, 2026/27 rates.</p>
+    </WidgetCard>
+  );
+}
+
+function MortgageWidget() {
+  const balance = 320000, years = 22, current = 4.19;
+  const [rate, setRate] = useState(4.6);
+  const now = mortgagePayment(balance, years, current);
+  const next = mortgagePayment(balance, years, rate);
+  const diff = next - now;
+  const firstInterest = balance * rate / 100 / 12;
+  return (
+    <WidgetCard kicker="Modeller" title="Repayment at the end of the fix">
+      <p className="text-xs text-mute">Example loan: {gbp(balance)} balance, {years} years left, current fixed rate {current}%.</p>
+      <Slider id="mtg-rate" label="Rate after the fix ends" min={3} max={7.5} step={0.05} value={rate}
+        onChange={setRate} display={`${rate.toFixed(2)}%`} hint={['3.00%', '7.50%']} />
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Stat label="Monthly now" value={gbp(now)} />
+        <Stat label="Monthly at modelled rate" value={gbp(next)} />
+        <Stat label="Change per month" value={(diff >= 0 ? '+' : '') + gbp(diff)} />
+        <Stat label="First month's interest" value={gbp(firstInterest)} sub={`${Math.round(firstInterest / next * 100)}% of the payment`} />
+      </dl>
+    </WidgetCard>
+  );
+}
+
+const WIDGETS = { threshold: ThresholdWidget, compare: CompareWidget, methods: MethodsWidget, childcare: ChildcareWidget, ani: AniWidget, sa: SaWidget, mortgage: MortgageWidget };
+
+/* ------------------------------------------------------------------
+   Chat
+   ------------------------------------------------------------------ */
+function ExplainToggle({ on, onChange, id }) {
+  return (
+    <Segmented id={id} label="Explanation style" value={on ? 'eli5' : 'standard'} onChange={v => onChange(v === 'eli5')}
+      options={[{ value: 'standard', label: 'Standard' }, { value: 'eli5', label: 'ELI5: plain English' }]} />
+  );
+}
+
+function AiMessage({ msg, onDone, onProgress }) {
+  const r = RESPONSES[msg.rid];
+  const words = useMemo(() => r.text.map(p => p.split(' ')), [r]);
+  const total = words.reduce((a, w) => a + w.length, 0);
+  const [shown, setShown] = useState(msg.done ? total : 0);
+  const [thinking, setThinking] = useState(!msg.done);
+  const [eli5, setEli5] = useState(false);
+
+  useEffect(() => {
+    if (msg.done) return;
+    if (reducedMotion()) { setShown(total); setThinking(false); onDone(); return; }
+    let n = 0, iv;
+    const t = setTimeout(() => {
+      setThinking(false);
+      iv = setInterval(() => {
+        n += 3; setShown(Math.min(n, total)); onProgress();
+        if (n >= total) { clearInterval(iv); onDone(); }
+      }, 28);
+    }, 600);
+    return () => { clearTimeout(t); clearInterval(iv); };
+  }, []);
+
+  const complete = shown >= total;
+  const Widget = r.widget ? WIDGETS[r.widget] : null;
+  let left = shown;
+  const paras = eli5 && complete ? r.eli5 : words.map(w => { const k = Math.min(left, w.length); left -= k; return w.slice(0, k).join(' '); }).filter(Boolean);
+
+  return (
+    <article className="flex gap-3 items-start">
+      <div className="h-8 w-8 shrink-0 rounded-full bg-pine text-cream grid place-items-center font-serif text-sm" aria-hidden="true">C</div>
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-semibold text-pine">Candid guidance</span>
+          {complete && <ExplainToggle id={`eli-${msg.id}`} on={eli5} onChange={setEli5} />}
+        </div>
+        {thinking ? (
+          <div className="flex gap-1 py-2" aria-label="Writing a response">
+            <span className="dot h-1.5 w-1.5 rounded-full bg-mute"></span><span className="dot h-1.5 w-1.5 rounded-full bg-mute"></span><span className="dot h-1.5 w-1.5 rounded-full bg-mute"></span>
+          </div>
+        ) : (
+          <div className={`flex flex-col gap-2.5 text-[15px] leading-relaxed max-w-[68ch] ${eli5 && complete ? 'border-l-2 border-gold pl-3' : ''}`}>
+            {paras.map((p, i) => <p key={i}>{p}</p>)}
+          </div>
+        )}
+        {complete && Widget && <Widget />}
+      </div>
+    </article>
+  );
+}
+
+function UserMessage({ text }) {
+  return (
+    <div className="flex justify-end">
+      <p className="max-w-[80%] rounded-2xl rounded-br-md bg-pine text-cream px-4 py-2.5 text-[15px] leading-snug">{text}</p>
+    </div>
+  );
+}
+
+function ChatPane({ threadKey, heightClass = 'h-[680px]', showTests = true, placeholder = 'Ask about tax, pensions or childcare' }) {
+  const { threads, ask, markDone } = useStore();
+  const messages = threads[threadKey] || [];
+  const scroller = useRef(null);
+  const [draft, setDraft] = useState('');
+  const toBottom = useCallback(() => { const el = scroller.current; if (el) el.scrollTop = el.scrollHeight; }, []);
+  useEffect(() => { requestAnimationFrame(toBottom); }, [messages.length]);
+  const lastAi = [...messages].reverse().find(m => m.role === 'ai');
+  const chips = lastAi && lastAi.done ? RESPONSES[lastAi.rid].chips : [];
+  const streaming = lastAi && !lastAi.done;
+
+  return (
+    <div className={`flex flex-col ${heightClass} min-h-[420px] bg-paper border border-line rounded-xl overflow-hidden`}>
+      <div ref={scroller} className="scroll-soft flex-1 overflow-y-auto px-4 sm:px-6 py-5 flex flex-col gap-6" aria-live="polite">
+        {messages.length === 0 && <p className="text-sm text-mute">Ask a question, or pick a test question below.</p>}
+        {messages.map(m => m.role === 'user'
+          ? <UserMessage key={m.id} text={m.text} />
+          : <AiMessage key={m.id} msg={m} onDone={() => markDone(threadKey, m.id)} onProgress={toBottom} />)}
+      </div>
+      <div className="border-t border-line bg-cream/70 px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+        {chips.length > 0 && (
+          <div className="flex flex-wrap gap-2" aria-label="Explore further">
+            {chips.map(c => (
+              <button key={c.label} type="button" onClick={() => ask(threadKey, c.label, c.rid)}
+                className="rounded-full border border-gold/70 bg-paper px-3 py-1.5 text-xs text-pine hover:bg-goldsoft transition-colors">
+                {c.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <form className="flex gap-2" onSubmit={e => { e.preventDefault(); const t = draft.trim(); if (t && !streaming) { ask(threadKey, t); setDraft(''); } }}>
+          <label htmlFor={`in-${threadKey}`} className="sr-only">Ask a question</label>
+          <input id={`in-${threadKey}`} value={draft} onChange={e => setDraft(e.target.value)} placeholder={placeholder}
+            className="flex-1 min-w-0 rounded-lg border border-line bg-paper px-3 py-2 text-sm placeholder:text-mute/80 focus:outline-none focus:border-gold" />
+          <button type="submit" disabled={streaming || !draft.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-pine px-3.5 py-2 text-sm text-cream disabled:opacity-40">
+            <Icon name="send" size={15} /><span className="hidden sm:inline">Send</span>
+          </button>
+        </form>
+        {showTests && (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs">
+            <span className="text-mute font-medium">Test questions</span>
+            {TEST_QUESTIONS.map(q => (
+              <button key={q.rid} type="button" disabled={streaming} onClick={() => ask(threadKey, q.text, q.rid)}
+                className="text-left text-pine underline decoration-gold/60 underline-offset-2 hover:decoration-gold disabled:opacity-40">
+                {q.text}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Format 1: Hybrid thread with inline widgets
+   ------------------------------------------------------------------ */
+function FormatThread() {
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <FormatIntro title="Hybrid thread with inline modellers"
+        text="A standard conversation. Answers explain the mechanics in words; exact figures sit in the interactive widget inside the reply. Exploratory chips sit above the message box." />
+      <ChatPane threadKey="f1" />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Format 2: Split screen with a living canvas
+   ------------------------------------------------------------------ */
+function Canvas() {
+  const { params, setParam, topics, saved, audit, openModal, removeSaved } = useStore();
+  const c = compare(params);
+  const b = band(c.now.ani);
+  return (
+    <div className="flex flex-col gap-5 text-sm">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="font-semibold text-pine">Scenario canvas</h3>
+        <span className="text-[11px] text-mute">Updates as you chat</span>
+      </div>
+
+      <section className="flex flex-col gap-3" aria-labelledby="cv-inputs">
+        <h4 id="cv-inputs" className="text-[11px] uppercase tracking-wider text-gold font-semibold">Inputs in use</h4>
+        <Slider id="cv-salary" label="Salary" min={90000} max={130000} step={500} value={params.salary} onChange={v => setParam('salary', v)} display={gbp(params.salary)} />
+        <Slider id="cv-pension" label="Pension per month" min={0} max={1000} step={25} value={params.pension} onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} />
+        <Segmented id="cv-method" label="Contribution method" value={params.method} onChange={v => setParam('method', v)}
+          options={[{ value: 'sacrifice', label: 'Salary sacrifice' }, { value: 'ras', label: 'Relief at source' }]} />
+      </section>
+      <hr className="border-line" />
+
+      <section className="flex flex-col gap-3" aria-labelledby="cv-figs">
+        <h4 id="cv-figs" className="text-[11px] uppercase tracking-wider text-gold font-semibold">Modelled figures</h4>
+        <dl className="grid grid-cols-2 gap-4">
+          <Stat label="Adjusted net income" value={gbp(c.now.ani)} sub={`${b.label}, ${b.rate}%`} />
+          <Stat label="Personal allowance" value={gbp(c.now.pa)} />
+          <Stat label="Modelled tax reduction" value={`${gbp(c.taxCut)}/yr`} />
+          <Stat label="Modelled NI reduction" value={`${gbp(c.niCut)}/yr`} />
+          <Stat label="Take-home per month" value={gbp(c.now.takeHome / 12)} sub={c.takeHomeChange ? `${gbp(c.takeHomeChange / 12)} vs no contribution` : 'No contribution modelled'} />
+          <Stat label="Into pension per year" value={gbp(c.now.annual)} />
+        </dl>
+        <ChildcareStatus ani={c.now.ani} />
+      </section>
+      <hr className="border-line" />
+
+      <section className="flex flex-col gap-2" aria-labelledby="cv-topics">
+        <h4 id="cv-topics" className="text-[11px] uppercase tracking-wider text-gold font-semibold">Topics explored</h4>
+        {topics.length === 0 ? <p className="text-mute">None yet.</p> : (
+          <ul className="flex flex-wrap gap-1.5">{topics.map(t => <li key={t} className="rounded-md bg-cream border border-line px-2 py-0.5 text-xs">{t}</li>)}</ul>
+        )}
+      </section>
+      <hr className="border-line" />
+
+      <section className="flex flex-col gap-2" aria-labelledby="cv-saved">
+        <h4 id="cv-saved" className="text-[11px] uppercase tracking-wider text-gold font-semibold">My notes: saved scenarios</h4>
+        {saved.length === 0 ? <p className="text-mute">Use "Save to my notes" under any widget to keep a snapshot here.</p> : (
+          <ul className="flex flex-col gap-2">
+            {saved.map(s => (
+              <li key={s.id} className="flex gap-2 items-start">
+                <Icon name="bookmark" size={14} className="mt-0.5 text-gold shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">{s.context} <span className="text-mute font-normal">· {timeOnly(s.t)}</span></div>
+                  <div className="text-xs text-mute">{s.line}</div>
+                </div>
+                <button type="button" onClick={() => removeSaved(s.id)} className="text-mute hover:text-ink p-1" aria-label={`Remove ${s.context} note`}><Icon name="x" size={14} /></button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <hr className="border-line" />
+
+      <section className="flex flex-col gap-2" aria-labelledby="cv-audit">
+        <div className="flex items-baseline justify-between gap-2">
+          <h4 id="cv-audit" className="text-[11px] uppercase tracking-wider text-gold font-semibold">User interaction audit record</h4>
+          <span className="text-[11px] text-mute num">{audit.length} entries</span>
+        </div>
+        <ol className="flex flex-col gap-1 text-xs">
+          {audit.slice(-5).reverse().map(a => (
+            <li key={a.id} className="flex gap-2"><span className="num text-mute shrink-0">{timeOnly(a.t)}</span><span><span className="font-medium">{a.kind}:</span> {a.detail}</span></li>
+          ))}
+        </ol>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button type="button" onClick={() => openModal('audit')} className="inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-2.5 py-1.5 text-xs text-pine hover:bg-goldsoft"><Icon name="list" size={14} />View full record</button>
+          <button type="button" onClick={() => openModal('summary')} className="inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-2.5 py-1.5 text-xs text-pine hover:bg-goldsoft"><Icon name="file" size={14} />Export summary</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function FormatSplit() {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="flex flex-col gap-4">
+      <FormatIntro title="Split screen with a living canvas"
+        text="Chat on the left; a persistent canvas on the right holds the inputs in use, the modelled figures, saved notes and the audit record. Moving any slider in the chat updates the canvas, and the reverse." />
+      <div className="lg:hidden">
+        <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="canvas-pane"
+          className="inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-3 py-1.5 text-sm text-pine">
+          <Icon name="columns" size={15} />{open ? 'Hide canvas' : 'Show canvas'}
+        </button>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] items-start">
+        <ChatPane threadKey="f2" heightClass="h-[760px]" />
+        <aside id="canvas-pane" className={`${open ? 'block' : 'hidden'} lg:block rounded-xl bg-[#f3eee2] border border-line p-5 lg:sticky lg:top-4 lg:max-h-[760px] overflow-y-auto scroll-soft`}>
+          <Canvas />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Format 3: Conversational sprint
+   ------------------------------------------------------------------ */
+function AllowanceMini() {
+  const { params, setParam } = useStore();
+  const c = compare(params);
+  const pct = c.now.pa / PA * 100;
+  return (
+    <WidgetCard kicker="Mini modeller" title="Personal allowance remaining" actions={false}>
+      <Slider id="sp-salary" label="Salary" min={90000} max={130000} step={500} value={params.salary}
+        onChange={v => setParam('salary', v)} display={gbp(params.salary)} hint={['£90k', '£130k']} />
+      <div>
+        <div className="h-4 rounded-md bg-cream border border-line overflow-hidden">
+          <div className="h-full bg-pine transition-all" style={{ width: pct + '%' }}></div>
+        </div>
+        <div className="flex justify-between text-xs text-mute mt-1 num"><span>£0</span><span>£12,570</span></div>
+      </div>
+      <dl className="grid grid-cols-2 gap-4">
+        <Stat label="Allowance remaining" value={gbp(c.now.pa)} />
+        <Stat label="Allowance tapered away" value={gbp(PA - c.now.pa)} />
+      </dl>
+    </WidgetCard>
+  );
+}
+
+function RatesMini() {
+  const { params } = useStore();
+  const ani = compare(params).now.ani;
+  const bands = [
+    { label: '£12,570 to £50,270', rate: 20, ni: 8, test: a => a > PA && a <= NI_UEL },
+    { label: '£50,270 to £100,000', rate: 40, ni: 2, test: a => a > NI_UEL && a <= TAPER_START },
+    { label: '£100,000 to £125,140', rate: 60, ni: 2, test: a => a > TAPER_START && a <= ADDITIONAL },
+    { label: 'Above £125,140', rate: 45, ni: 2, test: a => a > ADDITIONAL },
+  ];
+  return (
+    <WidgetCard kicker="Mini chart" title="Marginal income tax rate by band" actions={false}>
+      <div className="grid grid-cols-4 gap-3 items-end h-44" role="img" aria-label="Marginal rates: 20%, 40%, 60% and 45%">
+        {bands.map(b => {
+          const here = b.test(ani);
+          return (
+            <div key={b.label} className="flex flex-col items-center gap-1 h-full justify-end">
+              <span className={`font-serif num ${here ? 'text-pine text-lg' : 'text-mute'}`}>{b.rate}%</span>
+              <div className={`w-full rounded-t-md transition-colors ${here ? 'bg-pine' : 'bg-line'}`} style={{ height: (b.rate / 60 * 75) + '%' }}></div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-4 gap-3 text-[11px] text-mute text-center -mt-2">
+        {bands.map(b => <span key={b.label}>{b.label}<br />+{b.ni}% NI</span>)}
+      </div>
+      <p className="text-sm text-mute">Example adjusted net income of <span className="num text-ink">{gbp(ani)}</span> sits in the highlighted band.</p>
+    </WidgetCard>
+  );
+}
+
+function AniMini() {
+  const { params, setParam } = useStore();
+  const c = compare(params);
+  return (
+    <WidgetCard kicker="Mini modeller" title="Pension contributions and adjusted net income" actions={false}>
+      <Slider id="sp-pension" label={`Pension, ${methodName(params.method)}`} min={0} max={1000} step={25} value={params.pension}
+        onChange={v => setParam('pension', v)} display={`${gbp(params.pension)}/mo`} hint={['£0', '£1,000']} />
+      <AniScale ani={c.now.ani} base={c.base.ani} />
+      <dl className="grid grid-cols-3 gap-4">
+        <Stat label="Adjusted net income" value={gbp(c.now.ani)} />
+        <Stat label="Allowance restored" value={gbp(c.paRestored)} />
+        <Stat label="Modelled tax reduction" value={`${gbp(c.taxCut)}/yr`} />
+      </dl>
+    </WidgetCard>
+  );
+}
+
+function SprintSummary() {
+  const { params, topics, saved, openModal, saveScenario } = useStore();
+  const c = compare(params);
+  const [done, setDone] = useState(false);
+  const rows = [
+    ['Salary', gbp(params.salary)],
+    ['Pension contribution', `${gbp(params.pension)}/mo, ${methodName(params.method)}`],
+    ['Modelled adjusted net income', gbp(c.now.ani)],
+    ['Personal allowance', gbp(c.now.pa)],
+    ['Modelled tax reduction', `${gbp(c.taxCut)}/yr`],
+    ['Modelled NI reduction', `${gbp(c.niCut)}/yr`],
+    ['Take-home change', `${gbp(c.takeHomeChange)}/yr`],
+  ];
+  return (
+    <section className="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
+      <header className="flex items-baseline justify-between gap-2">
+        <h4 className="font-semibold text-pine">Saved Scenario Summary</h4>
+        <span className="text-[11px] uppercase tracking-wider text-gold font-semibold">Notes</span>
+      </header>
+      <dl className="text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-4 py-2 border-t border-line first:border-t-0">
+            <dt className="text-mute">{k}</dt><dd className="font-serif text-base num text-right">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <ChildcareStatus ani={c.now.ani} />
+      <p className="text-xs text-mute">Topics covered: {topics.join('; ') || 'none'}. Notes saved this session: {saved.length}.</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => openModal('summary')} className="inline-flex items-center gap-1.5 rounded-lg bg-pine px-3.5 py-2 text-sm text-cream"><Icon name="file" size={15} />Export notes</button>
+        <button type="button" onClick={() => { saveScenario('Tax mechanics sprint'); setDone(true); }} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3.5 py-2 text-sm text-pine hover:bg-goldsoft"><Icon name={done ? 'check' : 'bookmark'} size={15} />{done ? 'Saved to notes' : 'Save to my notes'}</button>
+        <button type="button" onClick={() => openModal('hr')} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3.5 py-2 text-sm text-pine hover:bg-goldsoft"><Icon name="clipboard" size={15} />Copy details for HR</button>
+      </div>
+    </section>
+  );
+}
+
+const SPRINT = [
+  {
+    title: 'The £100,000 line', topic: 'Personal allowance taper', widget: AllowanceMini, ask: C.taper,
+    text: ['Everyone starts with a £12,570 personal allowance. Above £100,000 of adjusted net income it reduces by £1 for every £2 of income, reaching zero at £125,140.'],
+    eli5: ['Your tax-free slice is £12,570. Above £100,000 it shrinks by £1 for every £2 you earn.'],
+  },
+  {
+    title: 'The 60% band', topic: 'Personal allowance taper', widget: RatesMini, ask: C.cliff,
+    text: ['Between £100,000 and £125,140, each extra £1 is taxed at 40% and also removes 50p of allowance, which is taxed at 40% too. The combined marginal income tax rate is 60%. Above £125,140 it falls to 45%.'],
+    eli5: ['In that stretch, tax takes 60p of each extra pound. Past £125,140 it drops back to 45p, because there is no tax-free slice left to lose.'],
+  },
+  {
+    title: 'Adjusted net income', topic: 'Adjusted net income', widget: AniMini, ask: C.ani,
+    text: ['The taper is measured on adjusted net income, not salary. Salary sacrifice and gross personal pension contributions both reduce it, so a contribution can move income back below the line.'],
+    eli5: ['HMRC checks a number called adjusted net income. Paying into a pension lowers that number.'],
+  },
+  {
+    title: 'The childcare income test', topic: 'Childcare income test', widget: () => <ChildcareWidget actions={false} />, ask: C.childcare,
+    text: ['Tax-Free Childcare and the working-parent funded hours both require adjusted net income of £100,000 or less for each parent. Unlike the allowance, this test does not taper: eligibility ends at the line.'],
+    eli5: ['Childcare help is on below £100,000 and off above it, for each parent.'],
+  },
+  {
+    title: 'Two ways to pay in', topic: 'Salary sacrifice and relief at source', widget: () => <MethodsWidget actions={false} />, ask: C.methods,
+    text: ['Salary sacrifice reduces pay before tax and National Insurance. Relief at source is paid from take-home pay, with basic-rate relief added by the provider and the rest claimed through Self Assessment.'],
+    eli5: ['One way, your employer pays in before tax. The other, you pay in after tax and claim the tax back.'],
+  },
+  { title: 'Your notes', topic: null, widget: SprintSummary, text: ['Here is what this sprint covered, with the figures at the current inputs. Export the notes or save them to My notes.'], eli5: ['Here is everything from the last five screens in one place.'] },
+];
+
+function FormatSprint({ goChat }) {
+  const { addTopic, log } = useStore();
+  const [step, setStep] = useState(0);
+  const [eli5, setEli5] = useState(false);
+  const s = SPRINT[step];
+  const W = s.widget;
+  useEffect(() => { if (s.topic) addTopic(s.topic); }, [step]);
+  const go = n => { setStep(n); setEli5(false); log('Sprint step viewed', `${n + 1} of ${SPRINT.length}: ${SPRINT[n].title}`); };
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <FormatIntro title="Conversational sprint: 3-minute £100k tax mechanics"
+        text="One concept per screen, each with a small widget. Progress shows at the top; the last screen gathers everything into exportable notes." />
+      <div className="rounded-xl border border-line bg-paper overflow-hidden">
+        <div className="px-5 pt-4 pb-3 border-b border-line flex flex-col gap-2">
+          <div className="flex items-baseline justify-between text-xs text-mute">
+            <span>Step <span className="num">{step + 1}</span> of <span className="num">{SPRINT.length}</span></span>
+            <span className="num">about {Math.max(0, Math.round((SPRINT.length - 1 - step) * 0.6 * 10) / 10)} min left</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-cream overflow-hidden" role="progressbar" aria-valuemin={1} aria-valuemax={SPRINT.length} aria-valuenow={step + 1}>
+            <div className="h-full bg-gold transition-all" style={{ width: ((step + 1) / SPRINT.length * 100) + '%' }}></div>
+          </div>
+          <ol className="hidden sm:flex gap-1 text-[11px]">
+            {SPRINT.map((x, i) => (
+              <li key={x.title} className="flex-1">
+                <button type="button" onClick={() => go(i)} className={`w-full text-left truncate ${i === step ? 'text-pine font-semibold' : 'text-mute hover:text-ink'}`}>{x.title}</button>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="p-5 flex flex-col gap-4 min-h-[460px]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h3 className="font-serif text-2xl text-pine">{s.title}</h3>
+            <ExplainToggle id={`sp-eli-${step}`} on={eli5} onChange={setEli5} />
+          </div>
+          <div className={`flex flex-col gap-2 text-[15px] leading-relaxed max-w-[68ch] ${eli5 ? 'border-l-2 border-gold pl-3' : ''}`}>
+            {(eli5 ? s.eli5 : s.text).map((p, i) => <p key={i}>{p}</p>)}
+          </div>
+          <W />
+        </div>
+        <div className="px-5 py-3 border-t border-line bg-cream/70 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => go(step - 1)} disabled={step === 0}
+            className="inline-flex items-center gap-1 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-pine disabled:opacity-40"><Icon name="left" size={15} />Back</button>
+          {s.ask && (
+            <button type="button" onClick={() => goChat(s.ask)} className="inline-flex items-center gap-1.5 px-2 py-2 text-sm text-pine underline decoration-gold/60 underline-offset-2">
+              <Icon name="chat" size={15} />Explore this in chat
+            </button>
+          )}
+          <div className="ml-auto">
+            {step < SPRINT.length - 1 ? (
+              <button type="button" onClick={() => go(step + 1)} className="inline-flex items-center gap-1 rounded-lg bg-pine px-4 py-2 text-sm text-cream">Next<Icon name="right" size={15} /></button>
+            ) : (
+              <button type="button" onClick={() => go(0)} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-pine"><Icon name="rotate" size={15} />Start again</button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Format 4: Timeline / horizon feed
+   ------------------------------------------------------------------ */
+const TODAY = new Date(2026, 10, 4);
+const EVENTS = [
+  { id: 'sa', date: new Date(2027, 0, 31), title: 'Self Assessment deadline for 2025/26', tag: 'Tax', rid: 'sa', note: 'Higher-rate pension relief is claimed here' },
+  { id: 'tfc', date: new Date(2027, 1, 18), title: 'Tax-Free Childcare reconfirmation', tag: 'Childcare', rid: 'childcare', note: 'Example date; every three months', example: true },
+  { id: 'bonus', date: new Date(2027, 2, 31), title: 'Annual bonus paid', tag: 'Pay', rid: 'bonus', note: 'Example from your inputs', example: true },
+  { id: 'tye', date: new Date(2027, 3, 5), title: 'Tax year ends', tag: 'Tax', rid: 'yearend', note: 'Contributions after this count for 2027/28' },
+  { id: 'fix', date: new Date(2027, 7, 31), title: 'Fixed-rate mortgage ends', tag: 'Mortgage', rid: 'mortgage', note: 'Example from your inputs', example: true },
+];
+const daysAway = d => Math.round((d - TODAY) / 86400000);
+
+function FormatTimeline() {
+  const { threads, seedThread, log, addTopic } = useStore();
+  const [openId, setOpenId] = useState('sa');
+  const toggle = ev => {
+    if (openId === ev.id) { setOpenId(null); return; }
+    setOpenId(ev.id);
+    const key = 't-' + ev.id;
+    if (!threads[key]) { seedThread(key, ev.rid); log('Timeline event opened', ev.title); addTopic(RESPONSES[ev.rid].topic); }
+  };
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <FormatIntro title="Timeline and horizon feed"
+        text="Upcoming milestones in date order. Opening one starts a thread focused on how that milestone works, with a modeller tile. Dates marked as examples come from the example profile." />
+      <p className="text-xs text-mute">Today: 4 November 2026</p>
+      <ol className="relative flex flex-col">
+        <span className="absolute left-[27px] top-2 bottom-2 w-px bg-line" aria-hidden="true"></span>
+        {EVENTS.map(ev => {
+          const open = openId === ev.id;
+          return (
+            <li key={ev.id} className="relative pb-4">
+              <button type="button" onClick={() => toggle(ev)} aria-expanded={open} aria-controls={`ev-${ev.id}`}
+                className={`w-full flex items-start gap-4 text-left rounded-xl p-2 transition-colors ${open ? 'bg-paper border border-line' : 'hover:bg-paper/70 border border-transparent'}`}>
+                <div className={`relative z-10 w-10 shrink-0 rounded-lg text-center py-1 ${open ? 'bg-pine text-cream' : 'bg-cream border border-line text-pine'}`}>
+                  <div className="font-serif text-lg leading-none num pt-0.5">{ev.date.getDate()}</div>
+                  <div className="text-[10px] uppercase tracking-wide">{ev.date.toLocaleString('en-GB', { month: 'short' })}</div>
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-semibold text-ink">{ev.title}</span>
+                    <span className="text-[11px] uppercase tracking-wider text-gold font-semibold">{ev.tag}</span>
+                  </div>
+                  <div className="text-sm text-mute">{ev.note} · <span className="num">{ev.date.getFullYear()}</span></div>
+                </div>
+                <div className="text-right shrink-0 pt-0.5">
+                  <div className="font-serif text-lg num text-pine">{daysAway(ev.date)}</div>
+                  <div className="text-[11px] text-mute">days away</div>
+                </div>
+              </button>
+              {open && (
+                <div id={`ev-${ev.id}`} className="mt-2 sm:ml-14">
+                  <ChatPane threadKey={'t-' + ev.id} heightClass="h-[600px]" showTests={false} placeholder={`Ask about: ${ev.title.toLowerCase()}`} />
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Shell
+   ------------------------------------------------------------------ */
+function FormatIntro({ title, text }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <h2 className="font-serif text-2xl text-pine">{title}</h2>
+      <p className="text-sm text-mute max-w-[72ch]">{text}</p>
+    </div>
+  );
+}
+
+const MODAL_META = {
+  summary: { title: 'Saved Scenario Summary', note: 'Export preview. Copy the text to keep it.' },
+  hr: { title: 'Details for HR', note: 'Your own message to send if you choose. Edit before copying.' },
+  audit: { title: 'User Interaction Audit Record', note: 'What was explored in this session.' },
+};
+
+function Modal({ kind, text, onClose }) {
+  const [value, setValue] = useState(text);
+  const [status, setStatus] = useState('');
+  const ta = useRef(null);
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(value); setStatus('Copied'); }
+    catch (e) { if (ta.current) { ta.current.focus(); ta.current.select(); } setStatus('Text selected: press Ctrl+C or Cmd+C to copy'); }
+  };
+  const meta = MODAL_META[kind];
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-pine/40" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title" className="w-full max-w-xl rounded-xl bg-paper border border-line shadow-xl flex flex-col max-h-[90%]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 px-5 pt-4">
+          <div>
+            <h3 id="modal-title" className="font-semibold text-pine">{meta.title}</h3>
+            <p className="text-xs text-mute">{meta.note}</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-1 text-mute hover:text-ink" aria-label="Close"><Icon name="x" size={18} /></button>
+        </div>
+        <div className="px-5 py-3 flex-1 min-h-0">
+          <label htmlFor="modal-text" className="sr-only">{meta.title}</label>
+          <textarea id="modal-text" ref={ta} value={value} onChange={e => setValue(e.target.value)} readOnly={kind !== 'hr'}
+            className="w-full h-72 rounded-lg border border-line bg-white p-3 font-mono text-xs leading-relaxed text-ink focus:outline-none focus:border-gold" />
+        </div>
+        <div className="px-5 pb-4 flex items-center gap-3">
+          <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 rounded-lg bg-pine px-3.5 py-2 text-sm text-cream"><Icon name="copy" size={15} />Copy text</button>
+          <span className="text-xs text-mute" role="status">{status}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const FORMATS = [
+  { id: 'thread', n: 1, label: 'Hybrid thread', sub: 'Inline modellers', icon: 'chat' },
+  { id: 'split', n: 2, label: 'Split screen', sub: 'Chat plus living canvas', icon: 'columns' },
+  { id: 'sprint', n: 3, label: 'Guided sprint', sub: 'One concept per step', icon: 'steps' },
+  { id: 'timeline', n: 4, label: 'Timeline feed', sub: 'Milestone threads', icon: 'clock' },
+];
+
+function App() {
+  const initialTab = () => { try { const h = location.hash.slice(1); return FORMATS.some(f => f.id === h) ? h : 'thread'; } catch (e) { return 'thread'; } };
+  const [tab, setTab] = useState(initialTab);
+  const [params, setParams] = useState(DEFAULT_PARAMS);
+  const [threads, setThreads] = useState({
+    f1: [{ id: 'a1', role: 'user', text: Q.taper }, { id: 'a2', role: 'ai', rid: 'taper', done: true }],
+    f2: [{ id: 'b1', role: 'user', text: Q.impact }, { id: 'b2', role: 'ai', rid: 'impact', done: true }],
+    't-sa': [{ id: 'c1', role: 'ai', rid: 'sa', done: true }],
+  });
+  const [topics, setTopics] = useState(['Personal allowance taper', 'Pension contribution at £350/mo', 'Claiming higher-rate relief']);
+  const [saved, setSaved] = useState([]);
+  const [audit, setAudit] = useState([{ id: 'l0', t: new Date(), kind: 'Session started', detail: 'Example profile loaded (salary £110,000)' }]);
+  const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    const on = () => { const h = location.hash.slice(1); if (FORMATS.some(f => f.id === h)) setTab(h); };
+    window.addEventListener('hashchange', on);
+    return () => window.removeEventListener('hashchange', on);
+  }, []);
+  const choose = id => { setTab(id); try { location.hash = id; } catch (e) {} };
+
+  const log = useCallback((kind, detail) => setAudit(a => [...a, { id: uid(), t: new Date(), kind, detail }]), []);
+  const addTopic = useCallback(t => { if (t) setTopics(ts => ts.includes(t) ? ts : [...ts, t]); }, []);
+
+  // Debounce slider logging so one drag makes one audit entry
+  const pending = useRef({});
+  const setParam = useCallback((k, v) => {
+    setParams(p => ({ ...p, [k]: v }));
+    clearTimeout(pending.current[k]);
+    pending.current[k] = setTimeout(() => {
+      const shown = k === 'salary' ? gbp(v) : k === 'pension' ? `${gbp(v)}/mo` : methodName(v);
+      log('Input changed', `${k === 'method' ? 'Method' : k[0].toUpperCase() + k.slice(1)} set to ${shown}`);
+    }, 700);
+  }, [log]);
+
+  const ask = useCallback((key, label, rid) => {
+    const id = rid || matchQuestion(label);
+    const r = RESPONSES[id];
+    if (r.effect) setParams(p => ({ ...p, ...r.effect(p) }));
+    addTopic(r.topic);
+    log('Question asked', label);
+    setThreads(t => ({ ...t, [key]: [...(t[key] || []), { id: uid(), role: 'user', text: label }, { id: uid(), role: 'ai', rid: id, done: false }] }));
+  }, [log, addTopic]);
+  const seedThread = useCallback((key, rid) => setThreads(t => ({ ...t, [key]: [{ id: uid(), role: 'ai', rid, done: false }] })), []);
+  const markDone = useCallback((key, id) => setThreads(t => ({ ...t, [key]: (t[key] || []).map(m => m.id === id ? { ...m, done: true } : m) })), []);
+
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
+  const saveScenario = useCallback(context => {
+    const p = paramsRef.current, c = compare(p);
+    const line = `${gbp(p.salary)} salary, ${gbp(p.pension)}/mo ${methodName(p.method)}; adjusted net income ${gbp(c.now.ani)}; modelled tax reduction ${gbp(c.taxCut)}/yr`;
+    setSaved(s => [...s, { id: uid(), t: new Date(), context, line }]);
+    log('Saved to notes', `${context}: ${line}`);
+  }, [log]);
+  const removeSaved = id => { setSaved(s => s.filter(x => x.id !== id)); log('Note removed', 'A saved scenario was removed'); };
+
+  const openModal = kind => {
+    const text = kind === 'hr' ? buildHr(params) : kind === 'audit' ? buildAudit(audit) : buildSummary(params, topics, saved);
+    log(kind === 'hr' ? 'HR details opened' : kind === 'audit' ? 'Audit record viewed' : 'Summary exported', MODAL_META[kind].title);
+    setModal({ kind, text });
+  };
+
+  const goChat = chip => { ask('f1', chip.label, chip.rid); choose('thread'); };
+
+  const store = { params, setParam, threads, ask, seedThread, markDone, topics, addTopic, saved, saveScenario, removeSaved, audit, log, openModal };
+  const reset = () => { setParams(DEFAULT_PARAMS); log('Inputs reset', 'Example profile restored'); };
+
+  return (
+    <Store.Provider value={store}>
+      <div className="min-h-full flex flex-col">
+        <header className="bg-pine text-cream">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+            <span className="font-serif text-xl font-bold tracking-tight">Candid</span>
+            <span className="text-cream/40" aria-hidden="true">/</span>
+            <span className="text-sm text-cream/90">Guidance chat formats</span>
+            <span className="ml-auto text-[11px] uppercase tracking-wider text-gold font-semibold">Mockup</span>
+          </div>
+        </header>
+
+        <nav className="bg-paper border-b border-line" aria-label="Chat formats">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-1 py-2">
+            {FORMATS.map(f => (
+              <button key={f.id} type="button" onClick={() => choose(f.id)} aria-current={tab === f.id ? 'page' : undefined}
+                className={`flex items-start gap-2.5 rounded-lg px-3 py-2 text-left transition-colors ${tab === f.id ? 'bg-cream ring-1 ring-gold/70' : 'hover:bg-cream/70'}`}>
+                <Icon name={f.icon} size={18} className={`mt-0.5 shrink-0 ${tab === f.id ? 'text-gold' : 'text-mute'}`} />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-ink">Format {f.n}: {f.label}</span>
+                  <span className="block text-xs text-mute truncate">{f.sub}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 pt-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-mute">
+            <span className="inline-flex items-center gap-1.5"><Icon name="info" size={14} />Example profile, shared by all four formats:</span>
+            <span className="num text-ink">Salary {gbp(params.salary)}</span>
+            <span className="num text-ink">Pension {gbp(params.pension)}/mo, {methodName(params.method)}</span>
+            <span className="num text-ink">Two children under 4</span>
+            <button type="button" onClick={reset} className="inline-flex items-center gap-1 text-pine underline decoration-gold/60 underline-offset-2"><Icon name="rotate" size={13} />Reset inputs</button>
+          </div>
+        </div>
+
+        <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-5 flex-1">
+          {tab === 'thread' && <FormatThread />}
+          {tab === 'split' && <FormatSplit />}
+          {tab === 'sprint' && <FormatSprint goChat={goChat} />}
+          {tab === 'timeline' && <FormatTimeline />}
+        </main>
+
+        <footer className="border-t border-line bg-paper">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-xs text-mute leading-relaxed">
+            Candid is a calculator and guidance tool, not a regulated adviser. Figures are modelled from the inputs shown using 2026/27 income tax and National Insurance rates for England, Wales and Northern Ireland; Scottish income tax bands differ. Nothing here is a personal recommendation. Responses in this mockup are scripted.
+          </div>
+        </footer>
+      </div>
+      {modal && <Modal kind={modal.kind} text={modal.text} onClose={() => setModal(null)} />}
+    </Store.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

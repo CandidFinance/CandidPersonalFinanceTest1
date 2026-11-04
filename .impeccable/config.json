@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "design/chat-formats-mockup.html"
+        ],
+        "createdAt": "2026-11-04T09:01:10.952Z",
+        "reason": "Claude: PRODUCT.md line 43 documents Candid's palette as dark green #162f24, gold #c4963a, cream #faf7f0; the mockup uses the brand cream deliberately"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "design/chat-lite-mockup.html"
+        ],
+        "createdAt": "2026-11-04T09:15:58.829Z",
+        "reason": "Claude: PRODUCT.md line 43 documents Candid's palette as dark green, gold and cream #faf7f0; the mockup uses the brand cream deliberately"
+      },
+      {
+        "rule": "pulsing-dot",
+        "value": "*",
+        "files": [
+          "design/chat-lite-mockup.html"
+        ],
+        "createdAt": "2026-11-04T09:15:59.237Z",
+        "reason": "Claude: the dots are the chat typing indicator, shown only while a reply is arriving; they mirror the app's existing Dots in src/mobile/chat/ChatParts.jsx"
+      }
+    ]
+  }
+}

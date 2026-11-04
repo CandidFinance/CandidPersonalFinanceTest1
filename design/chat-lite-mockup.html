@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candid Chat Lite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Candid app tokens (src/design-tokens.js). Layout: one phone screen, thread over a fixed composer and tab bar. */
+    --g: #162f24;
+    --gold: #c4963a;
+    --gold-text: #8a6a24;
+    --cream: #faf7f0;
+    --cdark: #ede7db;
+    --text: #1a1a1a;
+    --mut: #6b6b6b;
+    --ok: #2d6b4a;
+    --warn: #9a4d1c;
+    --white: #ffffff;
+    --serif: "Playfair Display", Georgia, serif;
+    --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: #e9e4d8; font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .fig { font-family: var(--serif); font-variant-numeric: tabular-nums lining-nums; }
+
+  .stage { min-height: 100%; display: flex; gap: 40px; align-items: center; justify-content: center; padding: 28px 16px; flex-wrap: wrap; }
+  .phone { width: 390px; height: 844px; background: var(--cream); border-radius: 46px; box-shadow: 0 0 0 10px #1c1c1c, 0 30px 60px rgba(22,47,36,.25); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .notes { max-width: 300px; font-size: 13.5px; line-height: 1.55; color: #3d4540; display: flex; flex-direction: column; gap: 10px; }
+  .notes h1 { font-family: var(--serif); font-size: 22px; color: var(--g); margin: 0; }
+  .notes p { margin: 0; }
+  .notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 480px) {
+    .stage { padding: 0; gap: 0; }
+    .phone { width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
+    .notes { display: none; }
+  }
+
+  .status { height: 44px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 14px; font-weight: 700; }
+  .topbar { height: 52px; flex: none; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 0 12px; }
+  .topbar h2 { margin: 0; text-align: center; font-size: 16px; font-weight: 700; color: var(--g); }
+  .iconbtn { width: 40px; height: 40px; border-radius: 50%; border: none; background: transparent; color: var(--g); display: grid; place-items: center; }
+  .iconbtn:hover { background: var(--cdark); }
+
+  .thread { flex: 1; overflow-y: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
+  .thread::-webkit-scrollbar { display: none; }
+  .row { display: flex; flex-direction: column; animation: pop .32s cubic-bezier(.2,.9,.3,1.2) both; }
+  .row.me { align-items: flex-end; }
+  .row.gap { margin-top: 10px; }
+  @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .row { animation: none; } .dot { animation: none !important; } }
+
+  .bubble { max-width: 82%; padding: 11px 15px; font-size: 14.5px; line-height: 1.5; border-radius: 18px; background: var(--white); border: 1px solid rgba(22,47,36,.1); border-bottom-left-radius: 4px; }
+  .me .bubble { background: var(--g); color: var(--white); border: none; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
+  .bubble b { font-weight: 700; }
+  .dots { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mut); animation: bob 1.2s infinite ease-in-out; }
+  .dot:nth-child(2) { animation-delay: .15s; } .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bob { 0%,80%,100% { opacity: .25; transform: none; } 40% { opacity: 1; transform: translateY(-3px); } }
+
+  .card { width: 88%; background: var(--white); border: 1px solid rgba(22,47,36,.1); border-radius: 18px; padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
+  .card-title { font-size: 12px; font-weight: 700; color: var(--mut); letter-spacing: .02em; }
+
+  .rates { display: grid; grid-template-columns: 76px 1fr 38px; gap: 7px 10px; align-items: center; font-size: 12.5px; }
+  .rates .lab { color: var(--mut); }
+  .rates .bar { height: 12px; border-radius: 6px; background: var(--cdark); }
+  .rates .bar.on { background: var(--g); }
+  .rates .val { font-family: var(--serif); font-size: 15px; text-align: right; color: var(--mut); }
+  .rates .val.on { color: var(--g); font-weight: 700; }
+  .rates .lab.on { color: var(--g); font-weight: 700; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { background: var(--cream); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .tile .k { font-size: 11.5px; color: var(--mut); }
+  .tile .v { font-family: var(--serif); font-size: 22px; color: var(--g); line-height: 1.2; }
+  .foot { font-size: 12px; color: var(--mut); }
+
+  .slider { display: flex; flex-direction: column; gap: 4px; }
+  .slider .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: var(--mut); }
+  .slider .top span:last-child { font-family: var(--serif); font-size: 16px; color: var(--g); }
+  input[type="range"] { width: 100%; accent-color: var(--g); margin: 0; height: 22px; }
+
+  .list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+  .list li { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--cdark); font-size: 13.5px; line-height: 1.4; }
+  .list li:first-child { border-top: none; padding-top: 0; }
+  .list .n { font-family: var(--serif); color: var(--gold-text); font-weight: 700; width: 12px; flex: none; }
+  .list small { display: block; color: var(--mut); font-size: 12px; }
+
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; font-size: 13px; }
+  .vs h4 { margin: 0 0 4px; font-size: 12.5px; color: var(--g); }
+  .vs p { margin: 0; padding: 6px 0; border-top: 1px solid var(--cdark); line-height: 1.35; }
+
+  .pill { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 5px 10px; border-radius: 100px; }
+  .pill.warn { background: #f6e6da; color: var(--warn); }
+  .pill.ok { background: #e3efe6; color: var(--ok); }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .cta { width: 88%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; border: none; background: var(--g); color: var(--white); text-align: left; }
+  .cta .ic { width: 36px; height: 36px; flex: none; border-radius: 10px; background: rgba(255,255,255,.12); display: grid; place-items: center; color: var(--gold); font-family: var(--serif); font-weight: 700; font-size: 15px; }
+  .cta .t { flex: 1; min-width: 0; }
+  .cta .t b { display: block; font-size: 14.5px; }
+  .cta .t span { display: block; font-size: 12px; opacity: .75; }
+  .cta:hover { background: #21402f; }
+
+  .replies { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+  .reply { background: var(--white); color: var(--g); border: 1.5px solid var(--g); border-radius: 100px; padding: 9px 15px; font-size: 14px; font-weight: 700; }
+  .reply:hover { background: var(--cream); }
+  /* Suggested follow-ups: options for the user, so they sit apart from the answer: labelled, tinted, no border */
+  .next { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(22,47,36,.18); }
+  .next-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
+  .suggest { display: inline-flex; align-items: center; gap: 7px; background: var(--cdark); color: var(--g); border: none; border-radius: 100px; padding: 8px 14px 8px 11px; font-size: 13.5px; font-weight: 500; }
+  .suggest svg { color: var(--gold-text); flex: none; }
+  .suggest:hover { background: #e3dccd; }
+
+  .composer { flex: none; padding: 8px 14px 6px; display: flex; gap: 8px; align-items: center; }
+  .composer input { flex: 1; min-width: 0; height: 46px; border-radius: 100px; border: 1px solid #8f8d84; background: var(--white); padding: 0 18px; font: inherit; font-size: 15px; color: var(--text); }
+  .composer input::placeholder { color: var(--mut); }
+  .send { width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--g); color: var(--white); display: grid; place-items: center; flex: none; }
+  .send:disabled { opacity: .35; cursor: default; }
+
+  .tabs { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 6px 26px; background: var(--white); border-top: 1px solid rgba(22,47,36,.08); }
+  .tab { border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--mut); font-size: 10px; font-weight: 500; padding: 4px 0; }
+  .tab.on { color: var(--g); font-weight: 700; }
+
+  /* Forecast: horizon feed */
+  .feed { flex: 1; overflow-y: auto; padding: 4px 16px 20px; scrollbar-width: none; }
+  .feed h3 { font-family: var(--serif); font-size: 26px; color: var(--g); margin: 4px 0 2px; }
+  .feed .sub { font-size: 13px; color: var(--mut); margin: 0 0 14px; }
+  .ev { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding-bottom: 14px; }
+  .ev::before { content: ""; position: absolute; left: 21px; top: 44px; bottom: 0; width: 2px; background: var(--cdark); }
+  .ev:last-child::before { display: none; }
+  .date { width: 44px; height: 44px; border-radius: 12px; background: var(--white); border: 1px solid rgba(22,47,36,.1); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  .date b { font-family: var(--serif); font-size: 18px; color: var(--g); }
+  .date span { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--mut); margin-top: 2px; }
+  .ev.open .date { background: var(--g); border-color: var(--g); }
+  .ev.open .date b, .ev.open .date span { color: var(--white); }
+  .evbtn { border: none; background: none; text-align: left; padding: 2px 0 0; display: flex; flex-direction: column; gap: 2px; width: 100%; }
+  .evbtn .t { font-size: 15px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; gap: 8px; }
+  .evbtn .t em { font-style: normal; font-family: var(--serif); color: var(--gold-text); font-size: 14px; white-space: nowrap; }
+  .evbtn .m { font-size: 12.5px; color: var(--mut); }
+  .evbody { margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+  .evbody p { margin: 0; font-size: 14px; line-height: 1.5; background: var(--white); border: 1px solid rgba(22,47,36,.1); border-radius: 14px; padding: 10px 13px; }
+  .evbody .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .evbody .cta { width: 100%; }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--gold-text); letter-spacing: .04em; text-transform: uppercase; }
+  .placeholder { flex: 1; display: grid; place-items: center; color: var(--mut); font-size: 14px; padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="root"><p style="padding:24px;font-family:system-ui;color:#6b6b6b">Loading…</p></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ---------- 2026/27 tax engine (England, Wales and NI) ---------- */
+const PA = 12570, BASIC = 37700, ADD = 125140, TAPER = 100000;
+function incomeTax(income, rasGross = 0) {
+  const ani = income - rasGross;
+  const pa = Math.max(0, PA - Math.max(0, ani - TAPER) / 2);
+  const taxable = Math.max(0, income - pa);
+  const b = BASIC + rasGross, a = ADD + rasGross;
+  return { ani, pa, tax: 0.2 * Math.min(taxable, b) + 0.4 * Math.max(0, Math.min(taxable, a) - b) + 0.45 * Math.max(0, taxable - a) };
+}
+const ni = p => 0.08 * Math.max(0, Math.min(p, 50270) - 12570) + 0.02 * Math.max(0, p - 50270);
+function sacrifice(salary, monthly) {
+  const pay = salary - monthly * 12;
+  const base = incomeTax(salary), now = incomeTax(pay);
+  const takeBase = salary - base.tax - ni(salary), takeNow = pay - now.tax - ni(pay);
+  return { ani: now.ani, paBack: now.pa - base.pa, takeHomeMonthly: (takeNow - takeBase) / 12 };
+}
+const gbp = n => (n < -0.5 ? '−' : '') + '£' + Math.round(Math.abs(n)).toLocaleString('en-GB');
+const SALARY = 110000;
+const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+
+/* ---------- Icons (Lucide outlines, as in the app) ---------- */
+const P = {
+  home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M9 22V12h6v10" /></>,
+  target: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>,
+  grid: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></>,
+  chart: <><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></>,
+  chat: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
+  turn: <><path d="m15 10 5 5-5 5" /><path d="M4 4v7a4 4 0 0 0 4 4h12" /></>,
+  newchat: <><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /><path d="M8 12h8" /><path d="M12 8v8" /></>,
+  up: <><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></>,
+  right: <path d="m9 18 6-6-6-6" />,
+  menu: <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>,
+};
+const Icon = ({ n, s = 22 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[n]}</svg>
+);
+
+/* ---------- Modules the chat hands off to ---------- */
+const MODULES = {
+  taxtrap: { name: '£100k tax trap', sub: 'Your salary, bonus and pension against the line', mark: '£' },
+  pension: { name: 'Pension', sub: 'Contributions modelled on your own pay', mark: 'P' },
+  kids: { name: 'Kids & family', sub: 'Childcare support at your income', mark: 'K' },
+  mortgage: { name: 'Mortgage', sub: 'Repayments at different rates', mark: 'M' },
+};
+
+/* ---------- Visual parts ---------- */
+function Rates() {
+  const rows = [['to £50k', 28], ['to £100k', 42], ['£100k–£125k', 62], ['above', 47]];
+  return (
+    <div className="card">
+      <div className="card-title">Tax and NI on each extra £1</div>
+      <div className="rates" role="img" aria-label="28p up to £50,270, 42p to £100,000, 62p from £100,000 to £125,140, 47p above">
+        {rows.map(([l, v]) => {
+          const on = v === 62;
+          return <React.Fragment key={l}>
+            <span className={`lab${on ? ' on' : ''}`}>{l}</span>
+            <span className={`bar${on ? ' on' : ''}`} style={{ width: (v / 62 * 100) + '%' }}></span>
+            <span className={`val${on ? ' on' : ''}`}>{v}p</span>
+          </React.Fragment>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Impact() {
+  const [m, setM] = useState(350);
+  const r = sacrifice(SALARY, m);
+  return (
+    <div className="card">
+      <div className="slider">
+        <div className="top"><label htmlFor="imp">Into pension by salary sacrifice</label><span className="num">{gbp(m)}/mo</span></div>
+        <input id="imp" type="range" min="0" max="1000" step="25" value={m} onChange={e => setM(+e.target.value)} />
+      </div>
+      <div className="pair">
+        <div className="tile"><span className="k">Into pension</span><span className="v">+{gbp(m)}</span><span className="k">a month</span></div>
+        <div className="tile"><span className="k">Take-home pay</span><span className="v">{gbp(r.takeHomeMonthly)}</span><span className="k">a month</span></div>
+      </div>
+      <div className="foot">Example salary £110,000. Allowance restored: <span className="num">{gbp(r.paBack)}</span> a year.</div>
+    </div>
+  );
+}
+
+function Lowers() {
+  const items = [
+    ['Pension by salary sacrifice', 'Taken off pay before it counts'],
+    ['Personal pension contributions', 'The gross amount comes off'],
+    ['Gift Aid donations', 'The grossed-up amount comes off'],
+  ];
+  return (
+    <div className="card">
+      <ul className="list">{items.map(([t, s], i) => <li key={t}><span className="n">{i + 1}</span><span>{t}<small>{s}</small></span></li>)}</ul>
+    </div>
+  );
+}
+
+function Versus() {
+  const a = ['Before tax and NI', 'Set up through payroll', 'Needs an employer scheme'];
+  const b = ['From take-home pay', '20% added by provider', 'Rest claimed on a tax return'];
+  return (
+    <div className="card">
+      <div className="vs">
+        <div><h4>Salary sacrifice</h4>{a.map(x => <p key={x}>{x}</p>)}</div>
+        <div><h4>Personal</h4>{b.map(x => <p key={x}>{x}</p>)}</div>
+      </div>
+    </div>
+  );
+}
+
+function Childcare() {
+  return (
+    <div className="card">
+      <span className="pill warn"><i></i>Example £110,000: £10,000 over</span>
+      <div className="pair">
+        <div className="tile"><span className="k">Tax-Free Childcare</span><span className="v">£2,000</span><span className="k">per child, per year</span></div>
+        <div className="tile"><span className="k">Funded hours</span><span className="v">30</span><span className="k">a week, term time</span></div>
+      </div>
+    </div>
+  );
+}
+
+function Mortgage() {
+  const [rate, setRate] = useState(4.6);
+  const pay = r => { const i = r / 1200, n = 264; return 320000 * i / (1 - Math.pow(1 + i, -n)); };
+  const now = pay(4.19), next = pay(rate);
+  return (
+    <div className="card">
+      <div className="slider">
+        <div className="top"><label htmlFor="mtg">Rate after the fix</label><span className="num">{rate.toFixed(2)}%</span></div>
+        <input id="mtg" type="range" min="3" max="7.5" step="0.05" value={rate} onChange={e => setRate(+e.target.value)} />
+      </div>
+      <div className="pair">
+        <div className="tile"><span className="k">Monthly now</span><span className="v">{gbp(now)}</span></div>
+        <div className="tile"><span className="k">At {rate.toFixed(2)}%</span><span className="v">{gbp(next)}</span></div>
+      </div>
+      <div className="foot">Example: £320,000 over 22 years, fixed at 4.19% now.</div>
+    </div>
+  );
+}
+
+const VISUALS = { rates: Rates, impact: Impact, lowers: Lowers, versus: Versus, childcare: Childcare, mortgage: Mortgage };
+
+/* ---------- Scripts: short bubbles, one visual, one module hand-off ---------- */
+const R = {
+  taper: {
+    parts: [
+      { t: 'Above <b>£100,000</b>, your tax-free allowance shrinks by £1 for every £2 earned. At <b>£125,140</b> it’s gone.' },
+      { v: 'rates' },
+      { t: 'So in that band, £1 of pay rise keeps about 38p.' },
+      { cta: 'taxtrap' },
+    ],
+    plain: 'Your first £12,570 is tax-free. Over £100k, that tax-free slice shrinks, so tax bites harder until it’s all gone.',
+    replies: [['What lowers it?', 'lowers'], ['Childcare too?', 'childcare'], ['In plain English', 'plain']],
+  },
+  lowers: {
+    parts: [
+      { t: 'HMRC checks <b>adjusted net income</b>, not salary. Three things bring it down:' },
+      { v: 'lowers' },
+      { t: 'In the £100k–£125k band, £1 into a pension by salary sacrifice costs about 38p of take-home pay.' },
+      { cta: 'pension' },
+    ],
+    plain: 'Money paid into a pension, or given to charity with Gift Aid, comes off the number HMRC checks.',
+    replies: [['Show £350 a month', 'impact'], ['Sacrifice vs personal?', 'versus'], ['In plain English', 'plain']],
+  },
+  impact: {
+    parts: [
+      { t: 'On £110,000, here’s £350 a month by salary sacrifice. Slide to try other amounts.' },
+      { v: 'impact' },
+      { t: 'Take-home falls by less than goes in. The gap is tax and NI not charged.' },
+      { cta: 'pension' },
+    ],
+    plain: '£350 goes into your pension, but your pay only drops by about £133, because tax never touches it.',
+    replies: [['Childcare too?', 'childcare'], ['Sacrifice vs personal?', 'versus']],
+  },
+  versus: {
+    parts: [
+      { t: 'Both get tax relief. The difference is when it arrives.' },
+      { v: 'versus' },
+      { t: 'Salary sacrifice also saves NI. Personal contributions don’t.' },
+      { cta: 'pension' },
+    ],
+    plain: 'Sacrifice: your employer pays in before tax. Personal: you pay in after tax and claim it back.',
+    replies: [['Show £350 a month', 'impact'], ['In plain English', 'plain']],
+  },
+  childcare: {
+    parts: [
+      { t: 'Childcare help has a hard line: <b>£100,000</b> adjusted net income, per parent.' },
+      { v: 'childcare' },
+      { t: 'A pound over and both stop. There’s no taper.' },
+      { cta: 'kids' },
+    ],
+    plain: 'Under £100k each, you get the help. A pound over, you don’t.',
+    replies: [['What lowers it?', 'lowers'], ['Show £350 a month', 'impact']],
+  },
+  mortgage: {
+    parts: [
+      { t: 'When a fix ends, the loan moves to the lender’s standard variable rate unless a new deal starts.' },
+      { v: 'mortgage' },
+      { t: 'Many lenders let you lock a new rate up to six months ahead.' },
+      { cta: 'mortgage' },
+    ],
+    plain: 'Your price promise ends that day. After it, the monthly bill can change.',
+    replies: [['What is the £100k trap?', 'taper']],
+  },
+  fallback: {
+    parts: [{ t: 'I can cover tax, pensions, childcare and mortgages. Try one of these.' }],
+    replies: [['What is the £100k tax trap?', 'taper'], ['£350 a month into my pension?', 'impact']],
+  },
+};
+const ROUTE_HINT = { avoid: 'Here’s what changes the figure HMRC checks.' };
+
+function route(text) {
+  const t = text.toLowerCase();
+  if (/avoid|reduce|lower|get under|beat/.test(t)) return 'lowers';
+  if (/350|take.?home/.test(t)) return 'impact';
+  if (/sacrifice|personal|relief at source/.test(t)) return 'versus';
+  if (/childcare|nursery|hours/.test(t)) return 'childcare';
+  if (/mortgage|fix/.test(t)) return 'mortgage';
+  if (/100k|100,000|tax trap|allowance|taper/.test(t)) return 'taper';
+  return 'fallback';
+}
+
+const STARTERS = [['What is the £100k tax trap?', 'taper'], ['£350 a month into my pension?', 'impact'], ['Salary sacrifice vs personal?', 'versus']];
+const GREETING = { from: 'c', t: 'Ask about tax, pensions, childcare or your mortgage. I’ll keep it short and point you to the module with your own figures.' };
+
+/* ---------- Chat screen ---------- */
+let seq = 0; const id = () => 'x' + (++seq);
+
+function useChat(onModule) {
+  const seeded = [
+    { id: id(), ...GREETING },
+    { id: id(), from: 'me', t: 'What is the £100k tax trap?' },
+    ...R.taper.parts.map(p => ({ id: id(), from: 'c', ...p })),
+  ];
+  const [msgs, setMsgs] = useState(seeded);
+  const [replies, setReplies] = useState(R.taper.replies);
+  const [typing, setTyping] = useState(false);
+  const last = useRef('taper');
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+
+  const play = useCallback((parts, nextReplies) => {
+    clear(); setReplies([]);
+    const fast = reduced();
+    let at = fast ? 0 : 250;
+    parts.forEach((p, i) => {
+      const wait = fast ? 0 : (p.t ? 650 : 400);
+      timers.current.push(setTimeout(() => setTyping(true), at));
+      at += wait;
+      timers.current.push(setTimeout(() => {
+        setTyping(false);
+        setMsgs(m => [...m, { id: id(), from: 'c', gap: i === 0, ...p }]);
+      }, at));
+      at += fast ? 0 : 180;
+    });
+    timers.current.push(setTimeout(() => setReplies(nextReplies || []), at + (fast ? 0 : 150)));
+  }, []);
+
+  const ask = useCallback((label, key) => {
+    let k = key || route(label);
+    setMsgs(m => [...m, { id: id(), from: 'me', t: label }]);
+    if (k === 'plain') {
+      const src = R[last.current];
+      play([{ t: src.plain || R.fallback.parts[0].t }], src.replies.filter(r => r[1] !== 'plain'));
+      return;
+    }
+    const r = R[k];
+    const parts = (!key && /avoid/.test(label.toLowerCase())) ? [{ t: ROUTE_HINT.avoid }, ...r.parts.slice(1)] : r.parts;
+    last.current = k;
+    play(parts, r.replies);
+  }, [play]);
+
+  const reset = () => { clear(); setTyping(false); setMsgs([{ id: id(), ...GREETING }]); setReplies(STARTERS); };
+  useEffect(() => clear, []);
+  return { msgs, replies, typing, ask, reset };
+}
+
+function ChatScreen({ chat, onModule }) {
+  const { msgs, replies, typing, ask } = chat;
+  const [draft, setDraft] = useState('');
+  const box = useRef(null);
+  useEffect(() => { const el = box.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: reduced() ? 'auto' : 'smooth' }); }, [msgs.length, typing, replies.length]);
+  const send = e => { e.preventDefault(); const t = draft.trim(); if (!t || typing) return; ask(t); setDraft(''); };
+  return (
+    <>
+      <div className="thread" ref={box} aria-live="polite">
+        {msgs.map((m, i) => {
+          const gap = i > 0 && msgs[i - 1].from !== m.from;
+          if (m.from === 'me') return <div key={m.id} className={`row me${gap ? ' gap' : ''}`}><div className="bubble">{m.t}</div></div>;
+          if (m.v) { const V = VISUALS[m.v]; return <div key={m.id} className="row"><V /></div>; }
+          if (m.cta) {
+            const mod = MODULES[m.cta];
+            return (
+              <div key={m.id} className="row">
+                <button className="cta" type="button" onClick={() => onModule(mod)}>
+                  <span className="ic">{mod.mark}</span>
+                  <span className="t"><b>Open {mod.name}</b><span>{mod.sub}</span></span>
+                  <Icon n="right" s={18} />
+                </button>
+              </div>
+            );
+          }
+          return <div key={m.id} className={`row${gap ? ' gap' : ''}`}><div className="bubble" dangerouslySetInnerHTML={{ __html: m.t }} /></div>;
+        })}
+        {typing && <div className="row"><div className="bubble"><span className="dots" aria-label="Candid is typing"><span className="dot"></span><span className="dot"></span><span className="dot"></span></span></div></div>}
+        {replies.length > 0 && !typing && (
+          <div className="next" role="group" aria-labelledby="next-label">
+            <span id="next-label" className="next-label">Ask next</span>
+            {replies.map(([l, k]) => <button key={l} className="suggest" type="button" onClick={() => ask(l, k)}><Icon n="turn" s={15} />{l}</button>)}
+          </div>
+        )}
+      </div>
+      <form className="composer" onSubmit={send}>
+        <label htmlFor="ask" style={{ position: 'absolute', left: -9999 }}>Ask a question</label>
+        <input id="ask" value={draft} onChange={e => setDraft(e.target.value)} placeholder="Ask about your money" autoComplete="off" />
+        <button className="send" type="submit" disabled={!draft.trim() || typing} aria-label="Send"><Icon n="up" s={20} /></button>
+      </form>
+    </>
+  );
+}
+
+/* ---------- Forecast: horizon feed sketch ---------- */
+const TODAY = new Date(2026, 10, 4);
+const EVENTS = [
+  { d: new Date(2027, 0, 31), title: 'Self Assessment deadline', tag: 'Tax', note: 'Higher-rate pension relief is claimed here', body: 'Personal pension contributions only get 20% relief automatically. Higher-rate relief for 2025/26 is claimed on the return due today.', ask: ['Sacrifice vs personal?', 'versus'], mod: 'pension' },
+  { d: new Date(2027, 1, 18), title: 'Childcare reconfirmation', tag: 'Kids', note: 'Every three months', body: 'Tax-Free Childcare asks you to confirm expected income is under £100,000. At your current inputs it is £10,000 over.', ask: ['Childcare too?', 'childcare'], mod: 'kids' },
+  { d: new Date(2027, 2, 31), title: 'Bonus paid', tag: 'Pay', note: 'From your inputs', body: 'A bonus counts towards adjusted net income for the whole tax year, so it can move you across £100,000.', ask: ['What is the £100k tax trap?', 'taper'], mod: 'taxtrap' },
+  { d: new Date(2027, 3, 5), title: 'Tax year ends', tag: 'Tax', note: 'Pension paid by today counts for 2026/27', body: 'Adjusted net income is measured over 6 April to 5 April. Salary sacrifice counts in the payday it’s deducted.', ask: ['What lowers it?', 'lowers'], mod: 'pension' },
+  { d: new Date(2027, 7, 31), title: 'Fixed rate ends', tag: 'Mortgage', note: 'From your inputs', body: 'The loan moves to the standard variable rate unless a new deal starts. New rates can usually be locked six months ahead.', ask: ['What happens when my fix ends?', 'mortgage'], mod: 'mortgage' },
+];
+const days = d => Math.round((d - TODAY) / 864e5);
+
+function ForecastScreen({ onAsk, onModule }) {
+  const [open, setOpen] = useState(0);
+  return (
+    <div className="feed">
+      <h3>Coming up</h3>
+      <p className="sub">Dates that change your figures, soonest first.</p>
+      {EVENTS.map((e, i) => {
+        const isOpen = open === i, mod = MODULES[e.mod];
+        return (
+          <div key={e.title} className={`ev${isOpen ? ' open' : ''}`}>
+            <div className="date" aria-hidden="true"><b>{e.d.getDate()}</b><span>{e.d.toLocaleString('en-GB', { month: 'short' })}</span></div>
+            <div>
+              <button className="evbtn" type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : i)}>
+                <span className="tag">{e.tag}</span>
+                <span className="t">{e.title}<em className="num">{days(e.d)} days</em></span>
+                <span className="m">{e.note}</span>
+              </button>
+              {isOpen && (
+                <div className="evbody">
+                  <p>{e.body}</p>
+                  <div className="acts"><button className="reply" type="button" onClick={() => onAsk(e.ask[0], e.ask[1])}>Ask in Chat</button></div>
+                  <button className="cta" type="button" onClick={() => onModule(mod)}>
+                    <span className="ic">{mod.mark}</span>
+                    <span className="t"><b>Open {mod.name}</b><span>{mod.sub}</span></span>
+                    <Icon n="right" s={18} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Shell ---------- */
+const TABS = [['home', 'Home', 'home'], ['progress', 'Progress', 'target'], ['modules', 'Modules', 'grid'], ['forecast', 'Forecast', 'chart'], ['chat', 'Chat', 'chat']];
+
+function App() {
+  const [tab, setTab] = useState('chat');
+  const [opened, setOpened] = useState(null);
+  const onModule = m => setOpened(m);
+  const chat = useChat();
+  const askFromFeed = (label, key) => { setTab('chat'); setTimeout(() => chat.ask(label, key), 60); };
+  const title = { chat: 'Chat', forecast: 'Forecast', home: 'Home', progress: 'Progress', modules: 'Modules' }[tab];
+
+  return (
+    <div className="stage">
+      <div className="phone">
+        <div className="status" aria-hidden="true"><span>9:41</span><span style={{ fontSize: 12 }}>5G</span></div>
+        <div className="topbar">
+          <button className="iconbtn" type="button" aria-label="Menu"><Icon n="menu" /></button>
+          <h2>{opened ? opened.name : title}</h2>
+          {tab === 'chat' && !opened
+            ? <button className="iconbtn" type="button" aria-label="New chat" onClick={chat.reset}><Icon n="newchat" /></button>
+            : <span></span>}
+        </div>
+
+        {opened ? (
+          <div className="placeholder">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+              <span>The {opened.name} module opens here, with the chat’s example inputs carried across.</span>
+              <button className="reply" type="button" onClick={() => setOpened(null)}>Back</button>
+            </div>
+          </div>
+        ) : tab === 'chat' ? <ChatScreen chat={chat} onModule={onModule} />
+          : tab === 'forecast' ? <ForecastScreen onAsk={askFromFeed} onModule={onModule} />
+          : <div className="placeholder">Not part of this mockup. Try Chat or Forecast.</div>}
+
+        <nav className="tabs" aria-label="Main">
+          {TABS.map(([k, l, ic]) => (
+            <button key={k} type="button" className={`tab${tab === k && !opened ? ' on' : ''}`} aria-current={tab === k ? 'page' : undefined}
+              onClick={() => { setOpened(null); setTab(k); }}>
+              <Icon n={ic} s={22} />{l}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <aside className="notes">
+        <h1>Chat, lighter</h1>
+        <p>Each answer is short bubbles, at most one visual, then a button into the module that holds the user’s own figures.</p>
+        <ul>
+          <li>Typing “how can I avoid the tax trap” gets a neutral list of what lowers adjusted net income.</li>
+          <li>“In plain English” re-says the last answer in one line.</li>
+          <li>The Forecast tab sketches the horizon feed: each date opens a short note, Ask in Chat, and the module.</li>
+        </ul>
+        <p style={{ color: '#6b6b6b', fontSize: 12.5 }}>Example inputs: salary £110,000. 2026/27 rates, England, Wales and NI. Scripted replies.</p>
+      </aside>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
