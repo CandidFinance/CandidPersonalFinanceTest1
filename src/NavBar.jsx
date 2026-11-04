@@ -17,7 +17,9 @@ import { FONT_SIZE, MUT, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, 
 // content so the wordmark left-aligns with the tiles below it.
 // `lead`: anything before the wordmark (the app's Account button).
 // `badge`: anything beside the wordmark (the app's Candid Premium crown).
-export function NavBar({ right, center, lead, badge, onLogoClick, light }) {
+// `wordmark={false}`: no "Candid." (the app's Home, where users know
+// they're in Candid); `lead` and `badge` sit together on the left.
+export function NavBar({ right, center, lead, badge, onLogoClick, light, wordmark = true }) {
   const wordmarkStyle = light
     ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
     : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
@@ -25,7 +27,7 @@ export function NavBar({ right, center, lead, badge, onLogoClick, light }) {
     <>
       <span style={{justifySelf:"start",display:"inline-flex",alignItems:"center",gap:"8px"}}>
         {lead}
-        {onLogoClick ? (
+        {!wordmark ? null : onLogoClick ? (
           <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
         ) : (
           <span style={wordmarkStyle}>Candid.</span>

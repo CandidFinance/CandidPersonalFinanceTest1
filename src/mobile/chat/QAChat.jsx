@@ -29,6 +29,7 @@ const WORD_MS = 55;           // between words as text builds
 const VISUAL_BUILD_MS = 1500; // a visual opening and its rows coming in
 const MODULE_MS = 700;
 const FRESH_MS = 4000;        // older messages show built (back from the lump sum)
+const STACK_SPRING = { type: "spring", stiffness: 420, damping: 36, mass: 0.9 }; // as the bubbles' own (ChatParts)
 let seq = 0;
 const key = () => `qa${++seq}`;
 
@@ -119,14 +120,34 @@ function Text({ text, build }) {
 export default function QAChat({ chat, d, m, onGoTo }) {
   const { msgs, typing, thinking, busy, next, ask, lastTopic } = chat;
   const [draft, setDraft] = useState("");
-  const bottom = useRef(null);
   const asked = msgs.some(msg => msg.from === "user");
-  useEffect(() => { if (asked) bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs.length, typing, thinking, busy, asked]);
+  // The page follows the newest message while the reader is at the bottom,
+  // so nothing new lands behind the message box; once they scroll up to
+  // read back, it stays where they are until they're back at the bottom.
+  // Only their own scrolling unpins it: the page's own smooth scroll
+  // passes through "not at the bottom" too.
+  const thread = useRef(null);
+  const pinned = useRef(true);
+  useEffect(() => {
+    let touched = 0;
+    const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 48;
+    // Keys only when they scroll the page, not typing in the message box.
+    const touch = e => { if (e.type !== "keydown" || !/^(INPUT|TEXTAREA)$/.test(e.target?.tagName)) touched = Date.now(); };
+    const onScroll = () => { if (atBottom()) pinned.current = true; else if (Date.now() - touched < 400) pinned.current = false; };
+    const follow = () => { if (pinned.current && !atBottom()) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }); };
+    const grows = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(follow);
+    if (grows && thread.current) grows.observe(thread.current);
+    const inputs = ["wheel", "touchmove", "keydown"];
+    inputs.forEach(e => window.addEventListener(e, touch, { passive: true }));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { grows?.disconnect(); inputs.forEach(e => window.removeEventListener(e, touch)); window.removeEventListener("scroll", onScroll); };
+  }, []);
 
   const send = e => {
     e.preventDefault();
     const text = draft.trim();
     if (!text || busy) return;
+    pinned.current = true;
     ask(text, matchTopic(text), "typed");
     setDraft("");
   };
@@ -141,39 +162,61 @@ export default function QAChat({ chat, d, m, onGoTo }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {msgs.map(msg => {
-          if (msg.from === "user") return <Bubble key={msg.key} from="user">{msg.text}</Bubble>;
-          if (msg.visual) return <motion.div key={msg.key} {...(fresh(msg) ? unfold : {})} style={{display:"flex",margin:"6px 0"}}><ChatVisual id={msg.visual} d={d} m={m} build={fresh(msg)}/></motion.div>;
-          if (msg.module) return (
-            <motion.div key={msg.key} {...(fresh(msg) ? rise : {})} style={{display:"flex",marginTop:"4px"}}>
-              <ModuleButton title={moduleTitle(msg.module)} sub={MODULE_SUB[msg.module]} onClick={() => open(msg.module)}/>
-            </motion.div>
-          );
-          return <Bubble key={msg.key} from="candid"><Text text={msg.text} build={fresh(msg)}/></Bubble>;
-        })}
-        {thinking && <Bubble from="candid" typing><Thinking/></Bubble>}
-        {typing && <Bubble from="candid" typing><Dots/></Bubble>}
-      </div>
-
-      {!busy && next.length > 0 && (
-        <motion.div {...rise}>
-          <AskNext items={next} label={asked ? "Ask next" : "Try asking"} onAsk={(text, id) => ask(text, id, asked ? "next" : "starter")}/>
+      {/* The thread fills the screen and sits at its foot, so the message
+          box is always just above the tab bar and the conversation builds
+          upwards from it: each new message lands at the bottom, nearest
+          the box, and pushes the earlier ones up. Its height is the screen
+          less the page's top padding and the room kept below the box; the
+          negative margin takes back the part of the page's bottom padding
+          that the box's own room already covers. From 1000px wide there's
+          no tab bar (MobileLayout), so the box sits near the bottom edge. */}
+      <style>{`
+        .qa-thread { display: flex; flex-direction: column; justify-content: flex-end;
+          min-height: calc(100vh - 16px - env(safe-area-inset-top, 0px) - 76px - env(safe-area-inset-bottom, 0px));
+          min-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - 76px - env(safe-area-inset-bottom, 0px));
+          margin-bottom: -44px; }
+        .qa-box { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+        @media (min-width: 1000px) {
+          .qa-thread { min-height: calc(100vh - 110px); min-height: calc(100dvh - 110px); margin-bottom: -32px; }
+          .qa-box { bottom: 24px; }
+        }
+      `}</style>
+      <div className="qa-thread" ref={thread}>
+        {/* Moves as one when a message is added, so the new one rises in
+            at the bottom with the rest, rather than appearing where the
+            last one was while that one slides up past it. */}
+        <motion.div layout="position" transition={STACK_SPRING} style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {msgs.map(msg => {
+            if (msg.from === "user") return <Bubble key={msg.key} from="user">{msg.text}</Bubble>;
+            if (msg.visual) return <motion.div key={msg.key} {...(fresh(msg) ? unfold : {})} style={{display:"flex",margin:"6px 0"}}><ChatVisual id={msg.visual} d={d} m={m} build={fresh(msg)}/></motion.div>;
+            if (msg.module) return (
+              <motion.div key={msg.key} {...(fresh(msg) ? rise : {})} style={{display:"flex",marginTop:"4px"}}>
+                <ModuleButton title={moduleTitle(msg.module)} sub={MODULE_SUB[msg.module]} onClick={() => open(msg.module)}/>
+              </motion.div>
+            );
+            return <Bubble key={msg.key} from="candid"><Text text={msg.text} build={fresh(msg)}/></Bubble>;
+          })}
+          {thinking && <Bubble from="candid" typing><Thinking/></Bubble>}
+          {typing && <Bubble from="candid" typing><Dots/></Bubble>}
         </motion.div>
-      )}
-      {/* Clear of the pinned message box and the tab bar below it. */}
-      <div ref={bottom} style={{scrollMarginBottom:"calc(150px + env(safe-area-inset-bottom, 0px))"}}/>
 
-      <form onSubmit={send}
-        style={{position:"sticky",bottom:"calc(76px + env(safe-area-inset-bottom, 0px))",marginTop:"16px",paddingTop:"10px",display:"flex",gap:"8px",alignItems:"center",background:`linear-gradient(180deg, rgba(250,247,240,0) 0%, ${CREAM} 30%)`}}>
-        <label htmlFor="chat-ask" style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)"}}>Ask a question</label>
-        <input id="chat-ask" value={draft} onChange={e => setDraft(e.target.value)} placeholder="Ask about your money" autoComplete="off" enterKeyHint="send"
-          style={{flex:1,minWidth:0,height:"46px",borderRadius:"100px",border:`1px solid ${FIELD_BORDER}`,background:WHITE,padding:"0 18px",fontSize:"16px",fontFamily:SANS,color:TEXT,boxSizing:"border-box"}}/>
-        <button type="submit" aria-label="Send" disabled={busy || !draft.trim()}
-          style={{width:"46px",height:"46px",flex:"none",borderRadius:"50%",border:"none",background:G,color:WHITE,display:"grid",placeItems:"center",cursor:busy || !draft.trim() ? "default" : "pointer",opacity:busy || !draft.trim() ? 0.35 : 1}}>
-          <ArrowUp size={20} aria-hidden="true"/>
-        </button>
-      </form>
+        {!busy && next.length > 0 && (
+          <motion.div {...rise}>
+            <AskNext items={next} label={asked ? "Ask next" : "Try asking"} onAsk={(text, id) => { pinned.current = true; ask(text, id, asked ? "next" : "starter"); }}/>
+          </motion.div>
+        )}
+
+        <form onSubmit={send} className="qa-box"
+          style={{position:"sticky",marginTop:"16px",paddingTop:"10px",display:"flex",gap:"8px",alignItems:"center",background:`linear-gradient(180deg, rgba(250,247,240,0) 0%, ${CREAM} 30%)`}}>
+          <label htmlFor="chat-ask" style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)"}}>Ask a question</label>
+          <input id="chat-ask" value={draft} onChange={e => setDraft(e.target.value)} placeholder="Ask about your money" autoComplete="off" enterKeyHint="send"
+            style={{flex:1,minWidth:0,height:"46px",borderRadius:"100px",border:`1px solid ${FIELD_BORDER}`,background:WHITE,padding:"0 18px",fontSize:"16px",fontFamily:SANS,color:TEXT,boxSizing:"border-box"}}/>
+          <button type="submit" aria-label="Send" disabled={busy || !draft.trim()}
+            style={{width:"46px",height:"46px",flex:"none",borderRadius:"50%",border:"none",background:G,color:WHITE,display:"grid",placeItems:"center",cursor:busy || !draft.trim() ? "default" : "pointer",opacity:busy || !draft.trim() ? 0.35 : 1}}>
+            <ArrowUp size={20} aria-hidden="true"/>
+          </button>
+        </form>
+      </div>
       <DotsKeyframes/>
       <SheenKeyframes/>
     </MotionConfig>

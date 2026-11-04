@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { reportStorageFailure } from "../../lib/storage.js";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
-import { Sparkles, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, HERO_TILE_BG } from "../../design-tokens.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { isLocked } from "../../lib/unlock.js";
@@ -23,7 +23,8 @@ import { pct, bondsIn, fromName, ratesDate, sectionLabel, primaryButton, textBut
 // afterwards. It never moves money.
 //
 // The panel sizes to its content, up to most of the screen, and minimises
-// (the handle, the chevron, a swipe down, or a tap on the page behind)
+// (on a phone the line at the top or a swipe down, on a wide screen the
+// X, or anywhere a tap on the page behind)
 // without losing its place. On a wide screen it floats as a card instead of
 // rising from the bottom edge. With nothing to raise, the button goes quiet:
 // smaller and muted, still there to open.
@@ -337,7 +338,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <button type="button" data-tour="assist" onClick={() => update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) })}
           aria-label={`Open Candid Assist${news ? ", something new" : ""}`}
           style={{
-            position: "fixed", zIndex: 4500, bottom: "calc(84px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
+            position: "fixed", zIndex: 4500, bottom: "calc(70px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             // Active: Home's hero wash, with more lift than a tile so it
             // reads as floating over the page.
@@ -362,17 +363,26 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               transition={reduceMotion ? { duration: 0 } : wide ? { duration: 0.2 } : { type: "spring", damping: 32, stiffness: 320 }}
               style={{ position: "fixed", zIndex: 5000, ...panelPosition, background: "#FBFAF6",
                 boxShadow: "0 -10px 40px rgba(22,47,36,0.18)", display: "flex", flexDirection: "column", fontFamily: SANS }}>
-              <div onPointerDown={e => dragControls.start(e)} style={{ touchAction: "none", padding: "8px 20px 10px", cursor: "grab", flexShrink: 0, borderBottom: "1px solid rgba(22,47,36,0.07)" }}>
-                <button type="button" onClick={minimise} aria-label="Minimise Candid Assist"
-                  style={{ display: "block", margin: "0 auto 8px", width: "44px", height: "5px", borderRadius: "3px", background: "rgba(22,47,36,0.2)", border: "none", padding: 0, cursor: "pointer" }}/>
+              {/* On a phone, the line at the top minimises it (tap or swipe
+                  down); on a wide screen, a plain X in the corner. */}
+              <div onPointerDown={wide ? undefined : e => dragControls.start(e)} style={{ touchAction: wide ? "auto" : "none", padding: wide ? "16px 16px 12px 22px" : "8px 20px 12px", cursor: wide ? "auto" : "grab", flexShrink: 0, borderBottom: "1px solid rgba(22,47,36,0.07)" }}>
+                {!wide && (
+                  // The line itself is 5px; the button around it is a full tap target.
+                  <button type="button" onClick={minimise} aria-label="Minimise Candid Assist"
+                    style={{ display: "block", margin: "-8px auto 0", padding: "10px 24px 12px", background: "none", border: "none", cursor: "pointer" }}>
+                    <span style={{ display: "block", width: "44px", height: "5px", borderRadius: "3px", background: "rgba(22,47,36,0.2)" }}/>
+                  </button>
+                )}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "15px", fontWeight: 700, color: G }}>
                     <Sparkles size={17} color={GOLD}/>Candid Assist
                   </span>
-                  <button type="button" onClick={minimise} aria-label="Minimise"
-                    style={{ background: "rgba(22,47,36,0.06)", border: "none", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <ChevronDown size={18} color={G}/>
-                  </button>
+                  {wide && (
+                    <button type="button" onClick={minimise} aria-label="Minimise Candid Assist"
+                      style={{ background: "none", border: "none", padding: "4px", display: "flex", cursor: "pointer", color: MUT }}>
+                      <X size={18} aria-hidden="true"/>
+                    </button>
+                  )}
                 </div>
               </div>
               <div ref={scrollRef} style={{ overflowY: "auto", padding: wide ? "18px 22px 22px" : "18px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>

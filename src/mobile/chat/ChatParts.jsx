@@ -58,15 +58,18 @@ export function Thinking() {
     </span>
   );
 }
+// A word's blur only lasts while it comes in (fill "backwards", ending on
+// no filter): one held at blur(0) can stay blurred in Safari, where the
+// bubble around it is moving.
 export const SheenKeyframes = () => <style>{`
 .chat-sheen{background:linear-gradient(90deg,${MUT} 0%,${MUT} 35%,${GOLD} 50%,${MUT} 65%,${MUT} 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:chatSheen 1.5s linear infinite;}
 .chat-sheen-icon{animation:chatGlint 1.5s ease-in-out infinite;}
 @keyframes chatSheen{from{background-position:100% 0;}to{background-position:-50% 0;}}
 @keyframes chatGlint{0%,100%{opacity:0.55;transform:scale(0.9) rotate(0deg);}50%{opacity:1;transform:scale(1.05) rotate(12deg);}}
-.chat-word{display:inline;animation:chatWord 0.4s ease-out both;}
+.chat-word{display:inline;animation:chatWord 0.4s ease-out backwards;}
 .chat-in{animation:chatIn 0.45s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:calc(var(--i, 0) * 120ms + 250ms);}
 .chat-grow{transform-origin:0 50%;animation:chatGrow 0.7s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:calc(var(--i, 0) * 140ms + 300ms);}
-@keyframes chatWord{from{opacity:0;filter:blur(4px);}to{opacity:1;filter:blur(0);}}
+@keyframes chatWord{from{opacity:0;filter:blur(4px);}to{opacity:1;filter:none;}}
 @keyframes chatIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 @keyframes chatGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
 @media (prefers-reduced-motion: reduce){.chat-sheen,.chat-sheen-icon,.chat-word,.chat-in,.chat-grow{animation:none;}.chat-sheen{background:none;color:${MUT};}}
