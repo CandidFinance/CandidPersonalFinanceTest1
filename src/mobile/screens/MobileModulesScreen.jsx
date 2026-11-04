@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useReducedMotion } from "framer-motion";
 import { childcareSupport } from "../../lib/childcare.js";
-import { Users, ChevronRight, Lock } from "lucide-react";
-import CardStack, { DARK, StillCard, arrow } from "../CardStack.jsx";
+import { Users, ChevronRight, Lock, X, TriangleAlert, Star } from "lucide-react";
+import { FrontCard, StillCard } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
-import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY, HAIRLINE, ROW_TILE } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY, HAIRLINE, ROW_TILE, SUCCESS, CRITICAL, WARNING_TEXT, HERO_TILE_BG_GREEN } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, ELSEWHERE } from "../statusLabel.js";
-import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
+import { notStarted, dormantModules, moduleOrder, isNewModule, MODULE_PITCH, MODULE_EXPLAINER, MODULE_DORMANT_LINE } from "../../lib/appEntry.js";
 import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
-import ModuleStartRow, { ROW_TITLE, ROW_ICON } from "../ModuleStartRow.jsx";
-import FilterMenu from "../FilterMenu.jsx";
+import { ROW_TITLE, ROW_ICON, moduleMeta, estimateText } from "../ModuleStartRow.jsx";
 import { kicker } from "../../components/dashboard/ProgressParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
@@ -20,12 +20,15 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { isLocked } from "../../lib/unlock.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
-// Mobile Modules screen. The modules they've started sit in a wallet stack
-// (CardStack.jsx, as on Home and Progress): a summary card in front (£ at
-// stake, saved, and how many are live, not started and need action), then
-// one card per live module, largest £ first, on-track ones with a tick.
-// Below: Still to explore (joins the wallet once answered), Not applicable,
-// and Coming soon. Mark as reviewed lives in each module (MobileModuleDeepDive).
+// Mobile Modules screen. One card at the top: the summary to start (£ at
+// stake, saved, and how many are live, not started and need action), or the
+// module picked in the grid of tiles below it (tapping that tile again, or
+// the card's close button, goes back). Every card takes the tallest one's
+// height, so the tiles never move. A module with answers logged has its tile
+// in colour (pale green once on track) and its card with its figures; one
+// not yet explored is muted, its card saying what it covers and what it can
+// show, with the way in. Then Coming soon. Mark as reviewed lives in each
+// module (MobileModuleDeepDive).
 
 // Two label/value insight tiles per module, reusing figures already computed
 // elsewhere (mm.amount, m.isaHeadroom, m.missedMatch, m.projectedPot) rather
@@ -80,16 +83,17 @@ function moduleInsights(mm, d, m) {
   }
 }
 
-// The tile Still to explore sits in, each module a row inside.
-// The sections under the wallet: each a tile, its heading inside, then
-// hairline rows. The heading and its padding as on Home's and Progress's
+// Coming soon: a tile, its heading inside, then hairline rows. The heading and its padding as on Home's and Progress's
 // tiles (ProgressParts.jsx Tile): small caps label, top left.
 const TILE = { ...ROW_TILE, padding:"16px 14px 4px", marginTop:"22px" };
 const SECTION = { ...kicker, marginBottom:"12px" };
 const ROWS = { display:"flex", flexDirection:"column" };
 const ROW = { display:"flex", alignItems:"flex-start", gap:"14px", width:"100%", textAlign:"left", background:"none", border:"none", borderTop:HAIRLINE, padding:"14px 0", fontFamily:"inherit" };
-// Each card behind shows this much of its top line (Home and Progress: 44).
-const PEEK = 39;
+// The module tiles: two across on a phone, three from a tablet up.
+const GRID_CSS = `
+.modules-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 22px; }
+@media (min-width: 640px) { .modules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+`;
 
 // A big figure on a card: £ in the serif, with its unit after in sans.
 function Figure({ t, value, unit, words = false }) {
@@ -100,16 +104,10 @@ function Figure({ t, value, unit, words = false }) {
   );
 }
 
-// The wallet's filter (FilterMenu.jsx), beside its arrows once there are
-// more than FILTER_FROM module cards. Optimised: the cards with the tick (on
-// track, or reviewed with under £50 left). One with nothing in it can't be
-// picked.
-const FILTER_FROM = 3;
-const FILTERS = [["all", "All"], ["reviewed", "Reviewed"], ["optimised", "Optimised"]];
 function OpenButton({ t, title, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      style={{margin:"6px 0 -6px",alignSelf:"flex-start",background:"none",border:"none",padding:"12px 0",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+      style={{margin:"auto 0 -6px",alignSelf:"flex-start",background:"none",border:"none",padding:"18px 0 12px",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
       Open {title}<ChevronRight size={14}/>
     </button>
   );
@@ -147,16 +145,14 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   // Not open to them yet (the £100k tax trap under £90,000): greyed, after
   // the rest, so they know it's there.
   const dormant = dormantModules(d);
-  const notApplicable = MODULE_META.filter(mm => statuses[mm.key]?.notApplicable);
   const live = moduleList.length + (propertyDone ? 1 : 0);
   const toExplore = waiting.length + dormant.length;
   const isReviewed = mm => completedModules.includes(mm.key);
   // On track (moduleStatus.js isOnTrack), or reviewed with under £50 left
-  // (reviewedDone): the card gets the tick and the green wash, and it's
-  // what the Optimised filter shows.
+  // (reviewedDone): its tile gets the tick.
   const isOptimised = mm => mm.onTrack || reviewedDone(mm, isReviewed(mm));
 
-  // The wallet's cards: a summary in front, then each live module.
+  // The top card: the summary, or a live module's card.
   const moduleCard = mm => {
     const onTrack = isOptimised(mm);
     const hasRec = mm.amount > 0;
@@ -196,7 +192,6 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     );
     return {
       key: mm.key, label: mm.title, done: onTrack, warn,
-      badge: mm.key === "cash" && cashBadge > 0 ? <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/> : null,
       // The top line, seen while the card is behind; the tick says on track.
       amount: hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : lead ? lead.short : savedLead ? `${fmtCompact(mm.banked)}/yr saved`
         : onTrack ? "" : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel(mm),
@@ -246,7 +241,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           </div>
         )}
         {/* The counts in a line, kept small so the figures above lead. */}
-        <p style={{fontSize:"13px",color:t.body,lineHeight:1.5,margin:"14px 0 0",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.5,margin:"auto 0 0",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
           {[[live, "live"], [toExplore, "not started"], [needActionCount, "needing action"]].map(([n, l], i) => (
             <span key={l}>{i ? ", " : ""}<b style={{fontWeight:700,color:t.figure}}>{n}</b> {l}</span>
           ))}
@@ -264,76 +259,183 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       </>
     ),
   };
-  // The filter: the summary stays in front whichever is on; Property (no £,
-  // never reviewed or on track) only under All. A filter left with nothing
-  // in it (a review undone, say) falls back to All, and stays there.
-  const [filter, setFilter] = useState("all");
-  const filterCounts = { all: live, reviewed: moduleList.filter(isReviewed).length, optimised: moduleList.filter(isOptimised).length };
-  const showFilter = live > FILTER_FROM;
-  const active = showFilter && filterCounts[filter] > 0 ? filter : "all";
-  useEffect(() => { if (active !== filter) setFilter(active); }, [active, filter]);
-  const shown = active === "reviewed" ? moduleList.filter(isReviewed) : active === "optimised" ? moduleList.filter(isOptimised) : moduleList;
-  const cards = [summary, ...shown.map(moduleCard), ...(active === "all" && propertyDone ? [propertyCard] : [])];
+  // The grid's tiles: every module offered, picks first, then any not open
+  // to them yet. A fixed order (not by £), so a module is always where they
+  // last found it.
+  const keys = [...moduleOrder(d), ...dormant];
+  const liveByKey = Object.fromEntries(moduleList.map(mm => [mm.key, mm]));
+  // Each tile's state. Live: answers logged (and Property's questions done),
+  // the tile in colour. The rest stay muted: not explored, not applicable
+  // (answered, but nothing in it applies), or not open yet.
+  const stateOf = key => key === "overview" ? "overview"
+    : dormant.includes(key) ? "dormant"
+    : liveByKey[key] || (key === "property" && propertyDone) ? "live"
+    : statuses[key]?.notApplicable ? "na"
+    : "unexplored";
 
-  return (
-    <div>
-      <h1 style={SR_ONLY}>Modules</h1>
-      {/* Before any module's answered: the summary card greyed, its figure
-          blank. No counts: they'd all be 0 bar Not started, which Still to
-          explore below already gives. */}
-      {live === 0 && (
-        <StillCard data-tour="modules-cards" label="Your modules" body={t => (
+  // The card on top: the overview, or the module whose tile was tapped.
+  // Tapping that tile again, or the card's close button, goes back.
+  const [selected, setSelected] = useState("overview");
+  const sel = keys.includes(selected) ? selected : "overview";
+  // A module that drops out of view clears the pick, so it doesn't come
+  // back picked if it returns.
+  useEffect(() => { if (selected !== sel) setSelected(sel); }, [selected, sel]);
+  // On a phone the card can be scrolled out of view by the time a tile
+  // further down is tapped: bring it back so they see it change.
+  const reduceMotion = useReducedMotion();
+  const cardRef = useRef(null);
+  const picked = useRef(false);
+  useEffect(() => {
+    if (!picked.current) return;
+    const el = cardRef.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+  }, [sel, reduceMotion]);
+  const pick = key => { picked.current = true; setSelected(key === sel ? "overview" : key); };
+
+  const cardFor = (key, on) => {
+    const state = stateOf(key);
+    if (state === "overview") return live > 0
+      ? <FrontCard fill on={on} label="Your modules" body={summary.body}/>
+      // Before any module's answered: the summary card greyed, its figure
+      // blank. No counts: they'd all be 0 bar Not started, which the muted
+      // tiles below already show.
+      : <StillCard fill label="Your modules" body={t => (
           <>
             <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
             <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's at stake shows here once a module is answered.</p>
           </>
-        )}/>
-      )}
-      {live > 0 && (
-        <section aria-label="Your modules" data-tour="modules-cards">
-          {/* Keyed on the cards it holds, so a new set (another filter, or
-              a module joining or leaving one) starts at the summary. */}
-          <CardStack key={cards.map(c => c.key).join()} cards={cards} peek={PEEK} turnLabels={["Show the previous module", "Show the next module"]}
-            controls={showFilter && <FilterMenu label="Filter modules" value={active} defaultValue="all" onChange={setFilter}
-              options={FILTERS.map(([key, label]) => ({ key, label, count: filterCounts[key] }))}/>}/>
-          {/* "Did you make the change?", under the wallet so a card behind
-              never hides it. */}
-          {set && (
-            <div style={{marginTop:"16px"}}>
-              {moduleList.map(mm => <BankConfirm key={mm.key} d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>)}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Answered, but nothing in it applies (Kids & family with no
-          children and none planned): greyed, and still there to change. */}
-      {notApplicable.length > 0 && (
-        <section style={TILE}>
-          <h2 style={SECTION}>Not applicable</h2>
-          <div style={ROWS}>
-          {notApplicable.map(mm => (
-            <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{...ROW,cursor:"pointer"}}>
-              <mm.icon {...ROW_ICON} color={MUT}/>
-              <span style={{...ROW_TITLE,flex:1,minWidth:0,color:MUT}}>{mm.title}</span>
-              <ChevronRight size={16} color={MUT} style={{flexShrink:0,alignSelf:"center"}}/>
+        )}/>;
+    const mm = moduleMeta(key);
+    if (state === "live") {
+      const c = key === "property" ? propertyCard : moduleCard(liveByKey[key]);
+      // The Cash rate news badge stays on its tile only.
+      return <FrontCard fill on={on} label={c.label} body={c.body}/>;
+    }
+    if (state === "dormant") return (
+      <StillCard fill label={mm.title} body={t => (
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.5,margin:"10px 0 0"}}>{MODULE_DORMANT_LINE[key]}</p>
+      )}/>
+    );
+    if (state === "na") return (
+      <StillCard fill label={mm.title} body={t => (
+        <>
+          <Figure t={{...t,figure:MUT}} value="Not applicable" words/>
+          {statuses[key]?.impactLabel && <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{statuses[key].impactLabel}</p>}
+          <OpenButton t={t} title={mm.title} onClick={() => onOpenModule(key)}/>
+        </>
+      )}/>
+    );
+    // Not explored yet: the card empty and muted, the way into its
+    // walk-through beside the blank figure (below it if there's no room),
+    // then what the module looks at and what it can show.
+    const estimate = key === "property" ? null : moduleEstimate(key, d, m);
+    const ex = MODULE_EXPLAINER[key];
+    return (
+      <StillCard fill label={mm.title} body={t => (
+        <>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"10px 12px",marginTop:"8px"}}>
+            <div style={{fontFamily:SERIF,fontSize:estimate ? "34px" : "var(--hero-fig)",fontWeight:700,color:MUT,opacity:estimate ? 0.8 : 0.5,lineHeight:1.05}}>{estimate ? estimateText(estimate) : "£–"}</div>
+            <button type="button" onClick={() => openRow(key)} aria-label={`Explore ${mm.title}`}
+              style={{display:"inline-flex",alignItems:"center",gap:"4px",background:G,color:WHITE,border:"none",borderRadius:"999px",padding:"11px 16px 11px 18px",fontSize:"14px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+              Explore<ChevronRight size={15}/>
             </button>
-          ))}
           </div>
-        </section>
-      )}
+          {estimate && <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>Estimate: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}</p>}
+          {ex && (
+            <dl style={{margin:"12px 0 0"}}>
+              {[["What it covers", ex.covers], ["What it can show", ex.shows]].map(([l, v]) => (
+                <div key={l} style={{padding:"10px 0 0",marginTop:l === "What it covers" ? 0 : "10px",borderTop:`1px solid ${t.rule}`}}>
+                  <dt style={{fontSize:"12px",fontWeight:700,color:G}}>{l}</dt>
+                  <dd style={{margin:"3px 0 0",fontSize:"13px",color:t.body,lineHeight:1.5}}>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </>
+      )}/>
+    );
+  };
 
-      {/* Modules with no answers yet, picks first, each opening its
-          walk-through; then any not open to them yet. */}
-      {toExplore > 0 && (
-        <section style={TILE}>
-          <h2 style={SECTION}>Still to explore</h2>
-          <div style={ROWS}>
-            {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={key === "property" ? null : moduleEstimate(key, d, m)} onOpen={openRow}/>)}
-            {dormant.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} dormant onOpen={onOpenModule}/>)}
+  // One indicator a tile at most: the pale green fill (on track, or reviewed
+  // with under £50 left, as the old wallet's cards), the warning icon (the
+  // £100k tax trap), or the £ at stake.
+  const indicator = key => {
+    const mm = liveByKey[key];
+    if (!mm || isOptimised(mm) || isLocked(d, key)) return null;
+    if (mm.warn) return <TriangleAlert size={15} strokeWidth={2.4} color={mm.warn === "red" ? CRITICAL : WARNING_TEXT} role="img" aria-label={statusLabel(mm)}/>;
+    if (mm.amount > 0) return <span style={{fontFamily:SERIF,fontSize:"13px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{fmtCompact(mm.amount)}{mm.amountIsLumpSum ? "" : "/yr"}</span>;
+    return null;
+  };
+
+  return (
+    <div>
+      <style>{GRID_CSS}</style>
+      <h1 style={SR_ONLY}>Modules</h1>
+      <section aria-label="Selected module" data-tour="modules-cards" ref={cardRef} style={{scrollMarginTop:"16px"}}>
+        {/* Every card in one grid cell, only the picked one showing, so the
+            card is always as tall as the tallest and the tiles below never
+            move. A hidden card is out of reach (no tabbing or tapping onto it, even
+            while it fades). */}
+        <div style={{display:"grid",position:"relative"}}>
+          {["overview", ...keys].map(key => {
+            const on = key === sel;
+            return (
+              <div key={key} aria-hidden={!on} style={{gridArea:"1 / 1",zIndex:on ? 1 : 0,pointerEvents:on ? "auto" : "none",opacity:on ? 1 : 0,visibility:on ? "visible" : "hidden",
+                transition:reduceMotion ? "none" : on ? "opacity 0.25s ease" : "opacity 0.25s ease, visibility 0s linear 0.25s"}}>
+                {cardFor(key, on)}
+              </div>
+            );
+          })}
+          {sel !== "overview" && (
+            <button type="button" onClick={() => setSelected("overview")} aria-label="Back to the overview" className="tap44"
+              style={{position:"absolute",top:"10px",right:"10px",zIndex:2,width:"30px",height:"30px",borderRadius:"50%",border:"none",display:"grid",placeItems:"center",cursor:"pointer",padding:0,
+                background:stateOf(sel) === "live" ? "rgba(255,255,255,0.12)" : "rgba(22,47,36,0.07)"}}>
+              <X size={16} strokeWidth={2.2} color={stateOf(sel) === "live" ? WHITE : G}/>
+            </button>
+          )}
+        </div>
+        {/* "Did you make the change?", whichever card is up, so the tiles
+            don't move as one's picked. */}
+        {set && (
+          <div style={{marginTop:"16px"}}>
+            {moduleList.map(mm => <BankConfirm key={mm.key} d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>)}
           </div>
-        </section>
-      )}
+        )}
+      </section>
+
+      {/* Every module as a tile: tapping one shows its card above. */}
+      <section aria-label="Modules" className="modules-grid">
+        {keys.map(key => {
+          const state = stateOf(key);
+          const mm = moduleMeta(key);
+          const muted = state !== "live";
+          const done = state === "live" && liveByKey[key] && isOptimised(liveByKey[key]);
+          const on = key === sel;
+          return (
+            <button key={key} type="button" onClick={() => pick(key)} aria-pressed={on}
+              style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",minHeight:"112px",padding:"18px 12px 14px",textAlign:"center",fontFamily:"inherit",cursor:"pointer",
+                borderRadius:RADIUS_CARD,background:done ? HERO_TILE_BG_GREEN : muted ? "rgba(22,47,36,0.04)" : WHITE,
+                border:`1px solid ${done ? "rgba(47,148,97,0.45)" : muted ? "transparent" : "rgba(22,47,36,0.08)"}`,
+                boxShadow:on ? `inset 0 0 0 2px ${G}` : "none",transition:"box-shadow 0.2s, background-color 0.2s"}}>
+              <span style={{position:"absolute",top:"10px",right:"10px",display:"inline-flex",alignItems:"center",gap:"6px"}}>
+                {key === "cash" && state === "live" && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
+                {state === "dormant" ? <Lock size={14} color={MUT} role="img" aria-label="Not open yet"/> : indicator(key)}
+              </span>
+              <span style={{position:"relative",display:"flex",opacity:muted ? 0.55 : 1}}>
+                <mm.icon size={34} strokeWidth={1.5} color={muted ? MUT : done ? SUCCESS : G}/>
+                {isNewModule(key) && (
+                  <span role="img" aria-label="New" style={{position:"absolute",top:"-5px",right:"-9px",display:"flex"}}>
+                    <Star size={10} color={GOLD} fill={GOLD} strokeWidth={2}/>
+                  </span>
+                )}
+              </span>
+              <span style={{fontSize:"14px",fontWeight:600,lineHeight:1.3,color:muted ? MUT : TEXT}}>
+                {mm.title}{done && <span style={SR_ONLY}>, on track</span>}
+              </span>
+            </button>
+          );
+        })}
+      </section>
 
       <section style={TILE}>
       <h2 style={SECTION}>Coming soon</h2>

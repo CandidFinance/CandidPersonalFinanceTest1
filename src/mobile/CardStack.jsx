@@ -241,13 +241,33 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
 // before there's anything to fill it (Home before the score, Modules before
 // a module is answered). Nothing to turn, so no arrows. `label`: its top
 // line. `body`: t => content in theme t, as a stack's card.
-export function StillCard({ label, body, ...rest }) {
+// `fill`: as tall as its container (Modules, where every card takes the
+// tallest one's height).
+export function StillCard({ label, body, fill = false, ...rest }) {
   return (
-    <div className="card-stack" {...rest}>
+    <div className="card-stack" {...rest} style={{...rest.style,...(fill && {height:"100%"})}}>
       <style>{CSS}</style>
-      <div style={{background:LIGHT.bg,border:LIGHT.border,boxShadow:LIGHT.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px"}}>
+      <div style={{background:LIGHT.bg,border:LIGHT.border,boxShadow:LIGHT.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",...(fill && {height:"100%",boxSizing:"border-box",display:"flex",flexDirection:"column"})}}>
         <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:LIGHT.label,minHeight:"18px"}}>{label}</div>
         {body(LIGHT)}
+      </div>
+    </div>
+  );
+}
+
+// One card on its own, in the front card's dark slick (its sheen sweeps
+// once as it mounts): Modules' top card, which changes with the tile picked
+// below it rather than turning. `label`, `badge` and `body` as a stack's card.
+// `on`: the card's showing (its sheen sweeps each time it comes on). `fill`
+// as StillCard.
+export function FrontCard({ label, badge = null, body, on = true, fill = false, ...rest }) {
+  return (
+    <div className="card-stack" {...rest} style={{...rest.style,...(fill && {height:"100%"})}}>
+      <style>{CSS}</style>
+      <div className="card-stack-card" style={{background:LIGHT.bg,border:DARK.border,boxShadow:DARK.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",display:"flex",flexDirection:"column",...(fill && {height:"100%",boxSizing:"border-box"})}}>
+        <div className={`card-stack-dark${on ? " on" : ""}`} aria-hidden="true"/>
+        <div style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:DARK.label,minHeight:"18px"}}>{label}{badge}</div>
+        {body(DARK)}
       </div>
     </div>
   );
