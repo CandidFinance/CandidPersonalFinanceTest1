@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
@@ -75,6 +75,14 @@ export default function MobileForecastScreen({ d, m }) {
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
   const [view, setView] = useState(0); // which of VIEWS is showing
   const viewMoved = useRef(false); // nothing announced until the first switch
+  // The Surplus lines taken off the graph (by tapping their row below), so
+  // two can be compared on their own. All on to start with.
+  const [hiddenLines, setHiddenLines] = useState(() => new Set());
+  const toggleLine = label => setHiddenLines(h => {
+    const next = new Set(h);
+    if (!next.delete(label)) next.add(label);
+    return next;
+  });
   // A lump sum today is a subscriber feature (as Add a goal's rule:
   // subscribers, and anyone from before the paywall). For anyone else the
   // pill is locked, and a tap opens Candid Premium's sheet, as the crown does.
@@ -114,12 +122,13 @@ export default function MobileForecastScreen({ d, m }) {
   // stack's does (CardStack.jsx); the browser cancels the pointer when it
   // takes an up or down drag as a page scroll. Touch and pen only: a mouse
   // drag selects text, and the dots are there for a mouse. Not from the
-  // horizon line or a field, which take their own drags, nor while a ?'s
-  // card is open (a drag on its backdrop is to close it).
+  // horizon line, a field or the Surplus graph (a drag along it reads each
+  // year), which take their own drags, nor while a ?'s card is open (a drag
+  // on its backdrop is to close it).
   const swipe = useRef(null), swipedAt = useRef(0);
   const onPointerDown = e => {
     const open = e.currentTarget.querySelector("[role=dialog]");
-    swipe.current = open || e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input") ? null : { x: e.clientX, y: e.clientY };
+    swipe.current = open || e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input, [data-scrub]") ? null : { x: e.clientX, y: e.clientY };
   };
   const onPointerUp = e => {
     if (!swipe.current) return;
@@ -164,7 +173,7 @@ export default function MobileForecastScreen({ d, m }) {
         <motion.div key={view} initial={viewMoved.current ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
           {view === 0
             ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={chartRef} chartWidth={chartWidth}/>
-            : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} chartRef={chartRef} chartWidth={chartWidth}/>}
+            : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} hidden={hiddenLines} chartRef={chartRef} chartWidth={chartWidth}/>}
         </motion.div>
 
         {/* The horizon sets both views, so it sits below them. */}
@@ -180,7 +189,7 @@ export default function MobileForecastScreen({ d, m }) {
           {view === 0
             ? <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
                 showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/>
-            : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip}/>}
+            : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip} hidden={hiddenLines} onToggle={toggleLine} canHide={monthly > 0 || lump > 0}/>}
         </section>
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0"}}>Estimates from your answers, not promises: growth isn't guaranteed.</p>
 
@@ -215,6 +224,8 @@ const signed = v => `${v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
 // reads as a line going somewhere rather than one that stops.
 const CREAM_SOFT = "rgba(250,247,240,0.7)";
 const CREAM_FAINT = "rgba(250,247,240,0.35)";
+// Behind a year's readout on the Surplus graph: the band's own dark green.
+const READ_BG = "rgba(14,34,25,0.9)";
 
 // The labelled years: an even, round step (four or five across the
 // horizon, each at least LABEL_GAP px apart), plus the horizon itself,
@@ -474,28 +485,80 @@ function LockedLumpPill({ onClick }) {
 // an axis from Now to the horizon's year, each line marked on the labelled
 // years, ending in a dot and running on to the right edge, fading. Not to the left: nothing has gone
 // in before today. A line that stops before the horizon (a student loan
-// cleared or written off) ends at its dot there.
-function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, chartRef, chartWidth }) {
+// cleared or written off) ends at its dot there. A line whose row below is
+// tapped off isn't drawn, and the rest are scaled to fill the graph.
+// Hovering, or touching and dragging along, the graph reads one year: a
+// guide at that year, a marker on each line and its £ beside it.
+function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidden, chartRef, chartWidth }) {
   const id = `sp${svgId(useId())}`;
   const f = bandFrame(chartWidth, horizon);
   const { W, PT, axisY, sx, year0 } = f;
   const putIn = monthly * 12 * horizon + lump;
   // Only the places the estimates below list at this horizon.
   const listed = new Set(options.map(o => o.label));
-  const lines = series.series.filter(s => listed.has(s.label)).map(s => {
+  const lines = series.series.filter(s => listed.has(s.label) && !hidden.has(s.label)).map(s => {
     // Stops before the horizon, as the series worked out to the horizon
     // alone would say (one that stops on it runs on, flat).
     const stop = s.termYear != null && s.termYear < horizon ? s.termYear : null;
     return { label: s.label, color: FORECAST_COLORS[s.label] || CREAM_SOFT, values: s.values, end: stop ?? horizon, runs: stop == null };
   });
+  const allHidden = listed.size > 0 && lines.length === 0 && putIn > 0;
   // Scaled to the years up to the horizon, from £0; a run that would leave
   // the top is held there.
   const yMax = Math.max(0, ...lines.flatMap(l => l.values.slice(0, l.end + 1)));
   const empty = yMax <= 0;
+  // The year being read, and whether the arrow keys moved it there (only
+  // then is it read out: hovering would read out every year passed).
+  const [reading, setReading] = useState(null);
+  const at = !empty && reading && reading.year <= horizon ? reading.year : null;
+  const yearAt = e => {
+    const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+    return Math.max(0, Math.min(horizon, Math.round((x - f.x0) / f.perYear)));
+  };
+  // A mouse reads as it moves and lets go as it leaves; a finger's reading
+  // stays after it lifts, until a tap anywhere else.
+  const onScrub = e => {
+    if (e.type === "pointermove" && e.pointerType !== "mouse" && !e.buttons) return; // a pen hovering
+    const year = yearAt(e);
+    setReading(r => r && r.year === year && !r.keys ? r : { year, keys: false });
+  };
+  const reads = at != null;
+  useEffect(() => {
+    if (!reads) return;
+    const away = e => { if (!e.target.closest?.("[data-scrub]")) setReading(null); };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [reads]);
+  // A new horizon starts with nothing read.
+  useEffect(() => setReading(null), [horizon]);
+  const onKeyDown = e => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    let year;
+    if (step) year = Math.max(0, Math.min(horizon, (at ?? (step > 0 ? -1 : horizon + 1)) + step));
+    else if (e.key === "Home") year = 0;
+    else if (e.key === "End") year = horizon;
+    else if (e.key === "Escape" && at != null) { setReading(null); e.preventDefault(); return; }
+    else return;
+    e.preventDefault();
+    setReading({ year, keys: true });
+  };
+  const yearName = y => y === 0 ? "Now" : String(year0 + y);
   const sy = v => PT + (1 - v / (yMax || 1)) * (axisY - 10 - PT);
   const syRun = v => Math.max(PT - 10, sy(v));
   const path = (l, from, to, y = sy) => `M${l.values.slice(from, to + 1).map((v, k) => `${sx(from + k).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}`;
   const rightEnd = Math.min(series.years.length - 1, f.runTo);
+  // Each line reaching the year read, its £ beside the guide: on the right
+  // of it, or the left near the right edge. Labels go in the order the
+  // lines sit, each nudged off its line only as far as keeps them apart.
+  const readout = at == null ? [] : lines.filter(l => at <= l.end)
+    .map(l => ({ label: l.label, color: l.color, v: l.values[at], y: sy(l.values[at]) }))
+    .sort((a, b) => a.y - b.y);
+  const GAP = 17, top = PT, bottom = axisY - 9;
+  readout.forEach((r, k) => { r.ly = Math.max(r.y, k ? readout[k - 1].ly + GAP : top); });
+  for (let k = readout.length - 1; k >= 0; k--) {
+    readout[k].ly = Math.min(readout[k].ly, k === readout.length - 1 ? bottom : readout[k + 1].ly - GAP);
+  }
+  const onLeft = at != null && sx(at) > W - 120;
   return (
     <>
       <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px",marginTop:"6px"}}>
@@ -507,12 +570,21 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, char
           By {year0 + horizon}: {lines.map(l => `${FORECAST_SHORT_LABEL[l.label] || l.label} ${fmt(l.values[l.end])}${l.end < horizon ? ` (stops in ${year0 + l.end})` : ""}`).join(", ")}.
         </p>
       )}
-      <div ref={chartRef} style={{margin:"8px -20px 0",position:"relative"}}>
+      <div ref={chartRef} data-scrub={empty ? undefined : ""} tabIndex={empty ? undefined : 0} role={empty ? undefined : "group"}
+        aria-label={empty ? undefined : "Surplus graph. Left and right arrow keys read each year."}
+        onPointerDown={empty ? undefined : onScrub} onPointerMove={empty ? undefined : onScrub}
+        onPointerLeave={e => { if (e.pointerType === "mouse") setReading(null); }} onKeyDown={empty ? undefined : onKeyDown} onBlur={() => setReading(null)}
+        className="surplus-scrub" style={{margin:"8px -20px 0",position:"relative",touchAction:"pan-y",outline:"none",cursor:empty ? undefined : "crosshair"}}>
+        <style>{`.surplus-scrub:focus-visible { box-shadow: inset 0 0 0 2px ${CREAM_SOFT}; border-radius: 12px; }`}</style>
         {empty && (
           <p style={{position:"absolute",left:f.x0 + 12,right:BAND_INSET + 12,top:PT,bottom:f.H - axisY + 12,margin:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"13.5px",lineHeight:1.45,color:CREAM_SOFT}}>
-            {lumpLocked ? "Add an amount each month to see where it could grow." : "Add an amount each month, or one-off, to see where it could grow."}
+            {allHidden ? "Every line is hidden. Tap a name below to show it again."
+              : lumpLocked ? "Add an amount each month to see where it could grow." : "Add an amount each month, or one-off, to see where it could grow."}
           </p>
         )}
+        <div aria-live="polite" style={SR_ONLY}>
+          {at != null && reading.keys ? `${yearName(at)}: ${readout.map(r => `${FORECAST_SHORT_LABEL[r.label] || r.label} ${fmt(r.v)}`).join(", ") || "no line reaches this year"}` : ""}
+        </div>
         <svg width={W} height={f.H} viewBox={`0 0 ${W} ${f.H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
           <defs>{lines.map((l, i) => <RunFade key={l.label} id={`${id}r${i}`} f={f} color={l.color}/>)}</defs>
           <BandAxis f={f} horizon={horizon}/>
@@ -526,6 +598,24 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, char
               <circle cx={sx(l.end)} cy={sy(l.values[l.end])} r="4.5" fill={l.color}/>
             </g>
           ))}
+          {at != null && (
+            <g style={{pointerEvents:"none"}}>
+              <line x1={sx(at)} x2={sx(at)} y1={PT - 8} y2={axisY} stroke={CREAM_SOFT} strokeWidth="1" strokeDasharray="2 3"/>
+              <text x={sx(at)} y={PT - 13} textAnchor="middle" fill={CREAM} fontSize="11" fontWeight="800" fontFamily={SANS}>{yearName(at)}</text>
+              {readout.map(r => <circle key={r.label} cx={sx(at)} cy={r.y} r="5" fill={r.color} stroke={READ_BG} strokeWidth="2"/>)}
+              {readout.map(r => {
+                const text = fmtK1(r.v), w = 21 + text.length * 6.4;
+                const x = onLeft ? sx(at) - 10 - w : sx(at) + 10;
+                return (
+                  <g key={r.label} transform={`translate(${x.toFixed(1)},${(r.ly - 8).toFixed(1)})`}>
+                    <rect width={w} height="16" rx="8" fill={READ_BG}/>
+                    <circle cx="8" cy="8" r="3.5" fill={r.color}/>
+                    <text x="15" y="12" fill={CREAM} fontSize="11" fontWeight="700" fontFamily={SANS}>{text}</text>
+                  </g>
+                );
+              })}
+            </g>
+          )}
         </svg>
       </div>
     </>
@@ -566,8 +656,10 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
 }
 
 // Below the band while Surplus is up: each place's low, mid and high
-// estimate at the horizon, its ? popping out its assumptions.
-function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip }) {
+// estimate at the horizon, its ? popping out its assumptions. Tapping a
+// place's name takes its line off the graph or puts it back: its dot
+// hollow while it's off.
+function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip, hidden, onToggle, canHide }) {
   const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
   const colHead = { fontSize:"9.5px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
   return (
@@ -580,15 +672,25 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
           <span style={colHead}>High</span>
         </div>
       </div>
+      {/* Only once there are lines to hide. */}
+      {canHide && <p style={{fontSize:"11.5px",color:t.body,lineHeight:1.4,margin:"-4px 0 4px"}}>Tap a name to hide or show its line.</p>}
       {forecast.options.map((o,i) => {
         const isOpen = openTip === o.label;
         const a = assumptions[o.label];
+        const shown = !hidden.has(o.label);
+        const color = FORECAST_COLORS[o.label] || MUT;
         return (
           <div key={o.label} style={{...anchor,padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":`1px solid ${t.rule}`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
-                <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                <span style={{fontSize:"13px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
+                {/* The 44px tap height reaches into the row's padding. */}
+                <button type="button" onClick={() => onToggle(o.label)} aria-pressed={shown}
+                  style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0,minHeight:"44px",margin:"-12px 0",padding:0,background:"none",border:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+                  <span style={{width:"8px",height:"8px",boxSizing:"border-box",borderRadius:"50%",background:shown ? color : "transparent",border:`1.5px solid ${color}`,display:"inline-block",flexShrink:0,transition:"background 0.15s"}}/>
+                  <span style={{fontSize:"13px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                    {FORECAST_SHORT_LABEL[o.label]||o.label}<span style={SR_ONLY}>, line on the graph</span>
+                  </span>
+                </button>
                 {a && <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
