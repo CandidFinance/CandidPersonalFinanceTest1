@@ -281,6 +281,10 @@ export const MODULE_ACCENT_MUTED = { bg: "rgba(22,47,36,0.06)", fg: "#8a8a8a" };
 // A module not built yet: a flat grey tile with its icon on white, so it
 // reads apart from one not started (a pale white tile, its icon on grey).
 export const MODULE_SOON_TILE = { bg: "#ECEAE3", chip: "#FFFFFF", fg: "#9B9B9B" };
+// A module not live yet (not started, not open, not applicable): white at
+// 60% over CREAM, and its art's panel rgba(22,47,36,0.06) over that, both
+// made opaque so the layers of a Modules tile don't stack darker.
+export const MODULE_QUIET_TILE = { bg: "#FBF9F5", panel: "#EEEDE9" };
 // Modules' top band, behind the title and the hero card: brand green
 // washing into gold, pale enough for dark text.
 export const MODULES_BAND_BG = "linear-gradient(160deg, #D9EADF 0%, #E9EEDB 50%, #F5E6C8 100%)";

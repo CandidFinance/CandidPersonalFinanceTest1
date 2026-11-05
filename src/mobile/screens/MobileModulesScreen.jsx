@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { Users, ChevronRight, Lock, Star, Sprout, Sunset, PieChart, KeyRound, ScrollText, Globe } from "lucide-react";
+import { ChevronRight, Lock, Star } from "lucide-react";
 import { FrontCard, StillCard } from "../CardStack.jsx";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_ACCENTS, MODULE_ACCENT_MUTED, MODULE_SOON_TILE } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE } from "../../design-tokens.js";
 import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -21,10 +21,10 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 // and one card: what's at stake a year across the live modules, and what's
 // been saved with a bar splitting the two, as on Home. Below, on the page's
 // cream, how many are live, not started and need action in a small line,
-// then every module as a tile: its title, an arrow, its icon on a square of
-// its own colour, and its £ at stake (or where it stands). Tapping a tile
-// opens the module. Last, muted, the modules coming soon: tapping one pops
-// open what it will cover. Mark as reviewed lives in each module
+// then every module as a tile: its title, an arrow, its illustration on a
+// panel of its own colour, and its £ at stake (or where it stands) in a tab
+// cut into that panel; grey until it's live. Tapping a tile opens the module.
+// Last, the modules coming soon: tapping one pops open what it will cover. Mark as reviewed lives in each module
 // (MobileModuleDeepDive).
 
 // The band and sheet: ScreenBand.jsx. The tiles: two across on a phone,
@@ -52,20 +52,54 @@ function Figure({ t, value, unit }) {
 // rest, whose tap pops open what it will cover. Neutral: what it will look
 // at, not what to do.
 const COMING_SOON = [
-  { key:"households",  title:"Households",  icon:Users,      description:"Two people, one plan. Marriage or a civil partnership changes the picture, from shared allowances to how you hold savings and investments." },
-  { key:"eis",         title:"EIS/SEIS",    icon:Sprout,     description:"Shares in early-stage companies: the income tax relief on them (30% under EIS, 50% under SEIS), and how gains and losses on them are taxed." },
-  { key:"retirement",  title:"Retirement",  icon:Sunset,     description:"When you could stop work, and the income you'd have: your pensions, the State Pension and your savings together, and the tax on drawing them." },
-  { key:"rsus",        title:"RSUs",        icon:PieChart,   description:"Shares from your employer: the income tax and National Insurance when they vest, and Capital Gains Tax on any rise once you hold them." },
-  { key:"mortgages",   title:"Mortgages",   icon:KeyRound,   description:"Your rate, term and balance: what a remortgage or paying extra each month would change over the life of the loan." },
-  { key:"inheritance", title:"Inheritance", icon:ScrollText, description:"Inheritance Tax on what you'd leave: the nil-rate bands, gifts and how they're counted, and unused pensions, which count from April 2027." },
-  { key:"offshore",    title:"Offshore",    icon:Globe,      description:"Money, property or income held outside the UK: how it's taxed here, and what has to be reported." },
+  { key:"households",  title:"Households",  description:"Two people, one plan. Marriage or a civil partnership changes the picture, from shared allowances to how you hold savings and investments." },
+  { key:"eis",         title:"EIS/SEIS",    description:"Shares in early-stage companies: the income tax relief on them (30% under EIS, 50% under SEIS), and how gains and losses on them are taxed." },
+  { key:"retirement",  title:"Retirement",  description:"When you could stop work, and the income you'd have: your pensions, the State Pension and your savings together, and the tax on drawing them." },
+  { key:"rsus",        title:"RSUs",        description:"Shares from your employer: the income tax and National Insurance when they vest, and Capital Gains Tax on any rise once you hold them." },
+  { key:"mortgages",   title:"Mortgages",   description:"Your rate, term and balance: what a remortgage or paying extra each month would change over the life of the loan." },
+  { key:"inheritance", title:"Inheritance", description:"Inheritance Tax on what you'd leave: the nil-rate bands, gifts and how they're counted, and unused pensions, which count from April 2027." },
+  { key:"offshore",    title:"Offshore",    description:"Money, property or income held outside the UK: how it's taxed here, and what has to be reported." },
 ];
+// Each tile's illustration (public/tile-illustrations, 300 × 244) and the
+// colour of the panel drawn in it, which the tile carries on below the art
+// to its foot.
+const TILE_ART = {
+  cash:         ["cash", "#DDF1E4"],
+  investments:  ["investments", "#E9E4FA"],
+  pension:      ["pension", "#DFEAFA"],
+  studentLoan:  ["student-loan", "#FAEBD2"],
+  kids:         ["kids-family", "#FBE3DD"],
+  taxTrap:      ["100k-tax-trap", "#D9F0EE"],
+  property:     ["property", "#F5E2EE"],
+  mortgage:     ["mortgages", "#E4E9EF"],
+  personalLoan: ["personal-loan", "#E2E6F8"],
+  households:   ["households", "#FBE0E6"],
+  eis:          ["eis-seis", "#ECF0D6"],
+  retirement:   ["retirement", "#FCE5D3"],
+  rsus:         ["rsus", "#F1E2F7"],
+  mortgages:    ["mortgages", "#E4E9EF"],
+  inheritance:  ["inheritance", "#EEE7DE"],
+  offshore:     ["offshore", "#D8EEF5"],
+};
+// The art rides up into the space under the title (the SVG's top is clear
+// bar the art's tips), and stops ART_GAP above the foot's tab (in the tile's own colour), which is
+// cut into the panel's bottom left: FOOT_H tall, its corners rounded into
+// the panel by fillet().
+const ART_RAISE = 14, ART_GAP = 6, FOOT_H = 20.8;
+const fillet = bg => ({ position:"absolute", width:"10px", height:"10px", background:`radial-gradient(circle at 100% 0, transparent 9.5px, ${bg} 10px)` });
+// A tile's look by state. Live: in colour, on white. Coming soon: the art in
+// grey on a white panel, the tile warm grey. Not live yet (not started, not
+// open, not applicable): the art in grey on a faint panel, the tile pale.
+// The grey art is <name>-soon.svg / <name>-not-live.svg beside each SVG.
+const TILE_LOOK = {
+  live:  { bg:"#fff", shadow:"0 2px 10px rgba(22,47,36,0.06)", title:G, art:"" },
+  soon:  { bg:MODULE_SOON_TILE.bg, shadow:"none", title:TEXT, art:"-soon", panel:MODULE_SOON_TILE.chip },
+  quiet: { bg:MODULE_QUIET_TILE.bg, shadow:"none", title:MUT, art:"-not-live", panel:MODULE_QUIET_TILE.panel },
+};
 const SOON_BY_KEY = Object.fromEntries(COMING_SOON.map(s => [s.key, s]));
 // Its pop-open card, centred on the screen rather than hung off a half-width
 // tile.
 const POP = { position:"fixed", inset:0, margin:"auto", height:"fit-content", width:"min(340px, calc(100vw - 40px))", transformOrigin:"center", padding:"18px 20px 20px" };
-// A tile's foot: one line, cut short with … rather than wrapping.
-const FOOT = { display:"block", fontSize:"13px", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" };
 
 export default function MobileModulesScreen({ d, m, set, statuses, insights, completedModules, onOpenModule, onOpenProperty }) {
   // Best rates moved for them since the last visit: a red badge on the Cash
@@ -192,44 +226,46 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           {keys.map(key => {
             const state = stateOf(key);
             const mm = SOON_BY_KEY[key] || moduleMeta(key);
-            const muted = state !== "live";
-            // Coming soon: flat grey with the icon on white, apart from the
-            // pale white of one not started or not open yet.
-            const isSoon = state === "soon";
-            const accent = isSoon ? { bg: MODULE_SOON_TILE.chip, fg: MODULE_SOON_TILE.fg } : muted ? MODULE_ACCENT_MUTED : MODULE_ACCENTS[key] || MODULE_ACCENT_MUTED;
             const v = tileValue(key, state);
+            const look = TILE_LOOK[state === "live" ? "live" : state === "soon" ? "soon" : "quiet"];
+            // A module with no art yet gets a blank panel, not a crashed screen.
+            const [name, livePanel] = TILE_ART[key] || [];
+            const panel = look.panel || livePanel || MODULE_QUIET_TILE.panel;
             const Tag = state === "dormant" ? "div" : "button";
             return (
               <Tag key={key} className="modules-tile" {...(Tag === "button" && { type: "button", onClick: () => state === "soon" ? setSoon(key) : openRow(key), ...(state === "soon" && { "aria-haspopup": "dialog" }) })}
-                style={{display:"flex",flexDirection:"column",alignItems:"stretch",minHeight:"148px",padding:"14px 14px 14px 16px",textAlign:"left",fontFamily:"inherit",cursor:Tag === "button" ? "pointer" : "default",boxSizing:"border-box",
-                  borderRadius:"20px",background:isSoon ? MODULE_SOON_TILE.bg : muted ? "rgba(255,255,255,0.6)" : "#fff",border:isSoon ? "1px solid transparent" : "1px solid rgba(22,47,36,0.07)",boxShadow:muted ? "none" : "0 1px 3px rgba(22,47,36,0.05)"}}>
-                <span style={{display:"flex",alignItems:"flex-start",gap:"6px"}}>
-                  <span style={{flex:1,minWidth:0,fontSize:"15px",fontWeight:700,lineHeight:1.25,color:muted ? MUT : TEXT}}>{mm.title}</span>
+                style={{display:"flex",flexDirection:"column",alignItems:"stretch",aspectRatio:"1 / 1",minWidth:0,padding:"12px",textAlign:"left",fontFamily:"inherit",cursor:Tag === "button" ? "pointer" : "default",boxSizing:"border-box",
+                  borderRadius:"14px",background:look.bg,border:0,boxShadow:look.shadow,overflow:"hidden"}}>
+                <span style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:"6px",height:"20px"}}>
+                  <span style={{flex:1,minWidth:0,fontSize:"14px",fontWeight:600,lineHeight:1.25,color:look.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{mm.title}</span>
                   {key === "cash" && state === "live" && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
                   {state === "dormant"
-                    ? <Lock size={15} color={MUT} style={{flexShrink:0,marginTop:"2px"}} aria-hidden="true"/>
-                    : <ChevronRight size={18} strokeWidth={2.2} color={muted ? MUT : G} style={{flexShrink:0,marginRight:"-4px"}} aria-hidden="true"/>}
+                    ? <Lock size={15} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>
+                    : <ChevronRight size={16} strokeWidth={2} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>}
                 </span>
-                <span style={{position:"relative",alignSelf:"flex-start",display:"grid",placeItems:"center",width:"64px",height:"64px",borderRadius:"18px",background:accent.bg,marginTop:"12px"}}>
-                  <mm.icon size={32} strokeWidth={1.9} color={accent.fg} aria-hidden="true"/>
+                {/* The art, its panel carried on to the tile's foot, and the
+                    £ or where it stands in a white tab cut into the panel. */}
+                <span style={{position:"relative",display:"flex",flexDirection:"column",flex:1,marginTop:`-${ART_RAISE}px`}}>
+                  {name
+                    ? <img src={`/tile-illustrations/${name}${look.art}.svg`} alt="" width="300" height="244" draggable="false" style={{position:"relative",zIndex:1,display:"block",width:"100%",height:"auto"}}/>
+                    : <span style={{display:"block",aspectRatio:"300 / 244"}}/>}
+                  <span style={{flex:1,marginTop:"-16px",background:panel,borderRadius:"0 0 8px 8px"}}/>
+                  <span style={{position:"absolute",zIndex:1,left:0,right:0,bottom:0,height:`${FOOT_H + ART_GAP}px`,background:panel,borderRadius:"0 0 8px 8px"}}/>
+                  <span style={{position:"absolute",zIndex:2,left:0,bottom:0,maxWidth:"calc(100% - 10px)",background:look.bg,borderRadius:"0 10px 0 0",padding:"3.8px 9px 0 0",fontSize:"13px",fontWeight:700,lineHeight:"17px",
+                    color:v.figure ? (v.color || (v.muted ? MUT : G)) : (v.noteColor || MUT)}}>
+                    <span style={{...fillet(look.bg),right:"-10px",bottom:0}}/>
+                    <span style={{...fillet(look.bg),left:0,top:"-10px"}}/>
+                    <span style={{display:"block",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                      {v.figure ? <>{v.figure}{v.unit.startsWith("/") ? "" : " "}{v.unit}</> : v.note}
+                    </span>
+                  </span>
                   {isNewModule(key) && (
-                    <span role="img" aria-label="New" style={{position:"absolute",top:"-4px",right:"-4px",display:"flex"}}>
+                    <span role="img" aria-label="New" style={{position:"absolute",zIndex:3,top:`${ART_RAISE + 4}px`,right:0,display:"flex"}}>
                       <Star size={13} color={GOLD} fill={GOLD} strokeWidth={2}/>
                     </span>
                   )}
                 </span>
-                {/* The figure in the tile's own sans, as "On track" (a tile's
-                    £ is a status here, not a headline: the serif's for the
-                    hero card). */}
-                <span style={{marginTop:"auto",paddingTop:"12px"}}>
-                  {v.figure && (
-                    <span style={{...FOOT,fontWeight:700,color:v.color || (v.muted ? MUT : G)}}>
-                      {v.figure}{v.unit.startsWith("/") ? "" : " "}{v.unit}
-                    </span>
-                  )}
-                  {v.note && <span style={{...FOOT,fontWeight:v.noteColor ? 700 : 500,color:v.noteColor || MUT}}>{v.note}</span>}
-                  {v.sr && <span style={SR_ONLY}>, {v.sr}</span>}
-                </span>
+                {v.sr && <span style={SR_ONLY}>, {v.sr}</span>}
               </Tag>
             );
           })}
