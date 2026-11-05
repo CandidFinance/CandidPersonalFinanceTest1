@@ -15,13 +15,13 @@ import {
   ISA_ALLOWANCE, PERSONAL_ALLOWANCE, HIGHER_RATE_THRESHOLD, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD,
   INCOME_TAX_RATES, SCOTTISH_BANDS, SCOTTISH_ADVANCED, SCOTTISH_TOP, CGT_ANNUAL_ALLOWANCE, DIVIDEND_ALLOWANCE,
 } from "./tax.js";
-import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps, pensionAccessAge } from "./pension.js";
 import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./moduleStatus.js";
 import { moduleAnswered } from "./appEntry.js";
 import { borrowingInputs } from "./borrowing.js";
 import { readinessMissing } from "./propertyReadiness.js";
 import { taxTrap, thisTaxYear, TRAP_NEAR, TRAP_EDGE } from "./taxTrap.js";
-import { fmt } from "./format.js";
+import { fmt, fmtK1 } from "./format.js";
 
 const n = v => Math.max(0, +v || 0);
 
@@ -244,6 +244,76 @@ export function netWorthPicture(d, m) {
   const netWorth = Math.round(+m.netWorth || 0);
   const totalDebt = Math.round(n(m.totalLiabilities));
   return { parts, debts, netWorth, totalDebt, grossAssets: netWorth + totalDebt };
+}
+
+// A line for each part of net worth and each debt, from figures already
+// worked out (calcMetrics): what the number alone doesn't say. Facts about
+// their own figures, never what to do with them. null where there's
+// nothing to add.
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export function worthNotes(d, m) {
+  const notes = {};
+  // Cash: the interest it earns at their rates, and at today's best ones
+  // (annualYieldGap, as the Cash module's £).
+  const earn = Math.round(n(m.cash) * n(m.effectiveSavingsRate) / 100);
+  const gap = Math.round(n(m.annualYieldGap));
+  // Premium Bonds are in the tile's figure but earn prizes, not interest,
+  // so the line says which part the interest is on.
+  const bonds = n(m.bonds);
+  const onCash = bonds > 0 ? ` on ${fmtK1(m.cash)}` : "";
+  if (n(m.cash) > 0) {
+    notes.cash = (gap >= 50
+      ? `Earning ${fmt(earn)} a year in interest${onCash}, or ${fmt(earn + gap)} at today's best rates.`
+      : `Earning ${fmt(earn)} a year in interest${onCash}.`) + (bonds > 0 ? ` Plus ${fmtK1(bonds)} in Premium Bonds.` : "");
+  } else if (bonds > 0) notes.cash = "All in Premium Bonds.";
+  // Investments: how much is in ISAs and how much outside, with its gains.
+  const unwrapped = n(d.unwrappedValue), gains = n(d.unrealisedGains);
+  const inIsa = netWorthPicture(d, m).parts.find(p => p.id === "investments").value - Math.round(unwrapped);
+  const gainsSaid = gains > 0 ? `, ${fmtK1(gains)} of it gains` : "";
+  if (unwrapped > 0 && inIsa > 0) notes.investments = `${fmtK1(inIsa)} in ISAs, ${fmtK1(unwrapped)} outside${gainsSaid}.`;
+  else if (unwrapped > 0) notes.investments = `All outside an ISA${gainsSaid}.`;
+  else if (inIsa > 0) notes.investments = "All in ISAs, free of tax on growth and income.";
+  // Pension: the pot at their retirement age in today's money (projectedPot),
+  // or a final salary scheme's income.
+  const age = +d.age || 0, retireAge = age + (+m.years || 0);
+  if (d.pensionKind === "db" && n(d.dbPensionIncome) > 0) notes.pension = `Plus a final salary pension of ${fmt(d.dbPensionIncome)} a year.`;
+  else if (age > 0 && retireAge > age && n(m.projectedPot) > 0) notes.pension = `${fmtK1(m.projectedPot)} by ${retireAge} at this rate, in today's money.`;
+  // The home: how much of it is theirs.
+  if (m.ltv != null) notes.home = `${100 - m.ltv}% yours, ${m.ltv}% on the mortgage.`;
+  else if (n(m.propertyEquity) > 0) notes.home = "Owned outright.";
+  // The debts: how each is going.
+  if (d.hasMortgage === "yes" && d.fixExpiryMonth && d.fixExpiryYear && m.daysToFixExpiry > 0) {
+    notes.mortgage = `Fixed rate ends ${MONTH_SHORT[+d.fixExpiryMonth - 1]} ${d.fixExpiryYear}.`;
+  }
+  if (n(m.loanBal) > 0) {
+    notes.studentLoan = !(n(m.annualRepayment) > 0) ? "Nothing to repay at this pay."
+      : m.willClear ? `Repaying ${fmt(m.annualRepayment)} a year, on course to clear before write-off.`
+      : `Repaying ${fmt(m.annualRepayment)} a year, with the rest written off at the end of the plan.`;
+  }
+  const months = m.personalLoanPayoffMonths;
+  if (months > 0) notes.personalLoan = `Cleared in ${months} ${months === 1 ? "month" : "months"} at these repayments.`;
+  return notes;
+}
+
+// The same assets by when they can be used: available now (cash and
+// investments), the pension from its access age, a Lifetime ISA from 60,
+// and the home, which only becomes cash by selling or borrowing against
+// it. Together they're the same gross assets as the parts.
+export function worthByAccess(d, m) {
+  const { parts } = netWorthPicture(d, m);
+  const part = id => parts.find(p => p.id === id).value;
+  const lisa = Math.min(part("investments"), Math.round(n(d.isaPrevLISA) + n(d.isaThisYearLISA)));
+  const age = +d.age || 0, from = pensionAccessAge(d);
+  const now = part("cash") + part("investments") - lisa;
+  const runway = n(d.monthlyExpenses) > 0 ? Math.floor(now / n(d.monthlyExpenses)) : 0;
+  return [
+    { id: "now", label: "Available now", value: now,
+      note: runway >= 1 ? `${runway} ${runway === 1 ? "month" : "months"} of spending, in cash and investments.` : "Cash and investments." },
+    { id: "pension", label: "Pension", value: part("pension"),
+      note: !age ? `From age ${from}.` : age >= from ? "Open to you now, up to a quarter of it tax-free." : `From ${from}, in ${from - age} ${from - age === 1 ? "year" : "years"}.` },
+    { id: "lisa", label: "Lifetime ISA", value: lisa, note: age >= 60 ? "Open to you now." : "From 60, or sooner towards a first home." },
+    { id: "home", label: "Home", value: part("home"), note: "Cash only by selling it or borrowing against it." },
+  ].filter(g => g.value > 0);
 }
 
 // ── Income against the tax bands ───────────────────────────────────────

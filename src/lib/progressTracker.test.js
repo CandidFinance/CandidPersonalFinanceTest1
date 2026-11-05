@@ -5,7 +5,7 @@ import { ISA_ALLOWANCE, CGT_ANNUAL_ALLOWANCE, DIVIDEND_ALLOWANCE } from "./tax.j
 import {
   buildProgressSnapshot, targetRows, annualGoals, netWorthPicture, incomeBands, incomePosition,
   goalVaults, withVault, withoutVault, poundsInput, loanOverpaidAfter, newlyReachedGoals, markGoalsSeen, goalsToCelebrate, sortGoals,
-  withAllowanceGoal,
+  withAllowanceGoal, worthNotes, worthByAccess,
 } from "./progressTracker.js";
 
 const answered = keys => ({ selectedModules: keys, answeredModules: keys });
@@ -177,6 +177,40 @@ test("with a mortgage, the home counts at its full value and the mortgage is a d
   assert.equal(nw.totalDebt, 180000);
   assert.equal(nw.netWorth, Math.round(m.netWorth));
   assert.equal(nw.grossAssets - nw.totalDebt, nw.netWorth);
+});
+
+test("by access, the same gross assets: cash and investments now, the pension from its access age, a Lifetime ISA from 60, the home", () => {
+  const d = { ...base, age: "38", isaPrevLISA: "4000", hasMortgage: "yes", mortgageBalance: "180000", propertyEquity: "70000" };
+  const m = calcMetrics(d);
+  const groups = worthByAccess(d, m);
+  const byId = Object.fromEntries(groups.map(g => [g.id, g.value]));
+  assert.equal(byId.now, 12000 + 10000 + 15000 + 4000 + 3000 - 4000);
+  assert.equal(byId.lisa, 4000);
+  assert.equal(byId.pension, 40000);
+  assert.equal(byId.home, 250000);
+  assert.equal(groups.reduce((s, g) => s + g.value, 0), netWorthPicture(d, m).grossAssets);
+  assert.equal(groups.find(g => g.id === "pension").note, "From 57, in 19 years.");
+  assert.equal(groups.find(g => g.id === "now").note, "20 months of spending, in cash and investments.");
+  assert.equal(worthByAccess({ ...d, age: "60" }, calcMetrics({ ...d, age: "60" })).find(g => g.id === "pension").note, "Open to you now, up to a quarter of it tax-free.");
+  assert.equal(worthByAccess({ ...d, age: "60" }, calcMetrics({ ...d, age: "60" })).find(g => g.id === "lisa").note, "Open to you now.");
+});
+
+test("each part's line says something its figure doesn't, and none where there's nothing to add", () => {
+  const d = { ...base, age: "38", unwrappedValue: "3000", unrealisedGains: "1200", hasMortgage: "yes", mortgageBalance: "180000", propertyEquity: "70000",
+    fixExpiryMonth: "3", fixExpiryYear: "2028" };
+  const m = calcMetrics(d);
+  const notes = worthNotes(d, m);
+  assert.match(notes.cash, /^Earning £540 a year in interest/);
+  assert.equal(notes.investments, "£25.0k in ISAs, £3.0k outside, £1.2k of it gains.");
+  assert.match(notes.pension, /^£[\d.]+k by 65 at this rate, in today's money\.$/);
+  assert.equal(notes.home, "28% yours, 72% on the mortgage.");
+  assert.equal(notes.mortgage, "Fixed rate ends Mar 2028.");
+  assert.equal(notes.studentLoan, undefined);
+  const ended = { ...d, fixExpiryYear: "2025" };
+  assert.equal(worthNotes(ended, calcMetrics(ended)).mortgage, undefined);
+  const withBonds = { ...d, premiumBonds: "20000" };
+  assert.match(worthNotes(withBonds, calcMetrics(withBonds)).cash, /^Earning £540 a year in interest on £12\.0k.* Plus £20\.0k in Premium Bonds\.$/);
+  assert.equal(worthNotes({ ...base, unwrappedValue: "0" }, calcMetrics({ ...base, unwrappedValue: "0" })).investments, "All in ISAs, free of tax on growth and income.");
 });
 
 test("the bands put the 60% trap between £100,000 and £125,140; in Scotland the trap is 67.5%", () => {
