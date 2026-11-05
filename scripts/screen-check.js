@@ -16,6 +16,8 @@
 import { preview } from "vite";
 import { chromium } from "playwright";
 import { existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 if (!existsSync("dist/app-shell.html")) {
   console.error("No build in dist/. Run `npm run build` first, or `npm run verify`.");
@@ -147,22 +149,39 @@ try {
       // Chat: past the way in (chatStart.js: "Ask a question", or "Just
       // exploring" from scratch) to a starter question, answered through to
       // its module button, then the lump-sum conversation and back.
+      // Once in a while (Nov 2026, not yet caught) the way in never shows. So
+      // that the next time says why: a screenshot and what's on screen, then
+      // one reload. Listed as a problem even when the reload brings it, as a
+      // real user only gets the first open. False when it never shows.
       const toStarters = async () => {
         const ask = page.getByRole("button", { name: "Ask a question" });
-        await ask.or(page.getByRole("button", { name: "Just exploring" })).first().waitFor({ timeout: 20000 }).catch(() => {});
+        const explore = page.getByRole("button", { name: "Just exploring" });
+        const wayIn = () => ask.or(explore).first().waitFor({ timeout: 20000 }).then(() => true, () => false);
+        if (!(await wayIn())) {
+          const shot = join(tmpdir(), `candid-chat-stuck-${name}-${Date.now()}.png`);
+          await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
+          const seen = await page.evaluate(() => ({
+            dialogs: [...document.querySelectorAll("[role=dialog]")].map(e => e.innerText.replace(/\s+/g, " ").slice(0, 80)),
+            buttons: [...document.querySelectorAll("button")].map(b => b.innerText.trim()).filter(Boolean).slice(0, 12),
+            end: document.body.innerText.replace(/\s+/g, " ").slice(-300),
+          })).catch(() => null);
+          await page.reload();
+          const second = await wayIn();
+          problems.push(`${name} ${r}: the chat's way in didn't show within 20s, ${second ? "but did after a reload" : "nor after a reload"}. Screenshot ${shot}. On screen: ${JSON.stringify(seen)}`);
+          if (!second) return false;
+        }
         if (await ask.count()) await ask.click();
-        else { await page.getByRole("button", { name: "Just exploring" }).click(); await page.getByRole("button", { name: "Done" }).click(); }
+        else { await explore.click(); await page.getByRole("button", { name: "Done" }).click(); }
+        return true;
       };
-      if (!broken && r === "/app/chat") {
-        await toStarters();
+      if (!broken && r === "/app/chat" && await toStarters()) {
         await page.getByRole("button", { name: "What is the £100k tax trap?" }).click({ timeout: 15000 });
         await page.locator("[data-chat-module]").waitFor({ timeout: 15000 }).catch(() => problems.push(`${name} ${r}: the tax trap answer didn't reach its module button`));
         broken = await check(`${r} (answer)`);
         // Ask next shows once the answer has finished building.
         if (!broken) await page.getByRole("button", { name: /Childcare too\?/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${name} ${r}: the answer's Ask next follow-ups are missing`));
-        if (!broken) {
-          await page.goto(base + r);
-          await toStarters();
+        if (!broken) await page.goto(base + r);
+        if (!broken && await toStarters()) {
           await page.getByRole("button", { name: /lump sum/ }).click({ timeout: 15000 });
           await page.getByRole("button", { name: "All topics" }).waitFor({ timeout: 3000 }).catch(() => problems.push(`${name} ${r}: the lump sum didn't open`));
           broken = await check(`${r} (lump sum)`);
