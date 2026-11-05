@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
+import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
@@ -8,22 +9,25 @@ import { fmt, fmtK1 } from "../../lib/format.js";
 import { taxYearOf, taxYearShort } from "../../lib/taxYear.js";
 import { hasAccess, withFeatureUsed } from "../../lib/entitlement.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
-import CardStack, { DARK } from "../../mobile/CardStack.jsx";
+import { DARK, LIGHT, WARN } from "../../mobile/CardStack.jsx";
 import Alert from "../../mobile/AlertBox.jsx";
 import FilterMenu from "../../mobile/FilterMenu.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
-import { SCREEN_TITLE } from "../../mobile/ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption } from "../../mobile/ScreenBand.jsx";
 import {
   G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
-import { Tile, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
+import { kicker, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
 
-// The Progress tab (/app/progress): three cards in a wallet stack, as on
-// Home (CardStack.jsx): net worth and what it's made of, how this tax
-// year's goals are going, and where income sits against the £100k trap.
-// Below them, the goals themselves with any goal pots. The figures come
+// The Progress tab (/app/progress): a light band (ScreenBand.jsx) with
+// three views, swiped between or picked by the dots, each a figure and a
+// picture drawn straight on it: net worth and what it's made of, how this
+// tax year's goals are going, and where income sits against the £100k trap
+// (on that view the band turns red in the trap, amber near it). On the
+// cream below, the goals themselves with any goal pots, or under the Tax
+// shield its details. The figures come
 // from src/lib/progressTracker.js, built from the same metrics as Home and
 // the modules; targets set here are saved inputs (`set`) like any other
 // answer.
@@ -85,32 +89,54 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
     onOpenModule?.("taxTrap");
   };
 
-  // Net worth leads. Each card's top line shows while it's behind.
-  const cards = [
-    { key: "netWorth", label: "Net worth", amount: `${netWorth.netWorth < 0 ? "−" : ""}${fmtK1(netWorth.netWorth)}`,
-      body: t => <NetWorth picture={netWorth} t={t}/> },
-    { key: "goals", label: `Goals ${taxYearShort(taxYear)}`, amount: annual.total ? `${annual.pct}%` : "",
-      body: t => <AnnualGoals annual={annual} t={t}/> },
-    { key: "taxShield", label: "Tax shield", amount: shieldLine(income), amountSans: true, warn: WARN_ZONE[income.zone],
-      body: t => <TaxShield income={income} t={t} onOpenTrap={openTrap}/> },
+  // The band's views, net worth first, each its figure and picture drawn
+  // straight on the band, with the words on the cream below: the goals
+  // under Net worth and Goals, the Tax shield's details in their place. The
+  // band is light, but red or amber on the Tax shield while income is in
+  // the £100k trap or near it; from the other views, the Tax shield's dot
+  // says so. The goals stay put, only hidden, under the Tax shield, so an
+  // editor open in one keeps what's typed in it.
+  const views = [
+    { key: "netWorth", label: "Net worth", body: t => <NetWorth picture={netWorth} t={t}/> },
+    { key: "goals", label: `Goals ${taxYearShort(taxYear)}`, body: t => <AnnualGoals annual={annual} t={t}/> },
+    { key: "taxShield", label: "Tax shield", body: t => <ShieldBand income={income} t={t}/> },
   ];
+  const SHIELD = views.findIndex(v => v.key === "taxShield");
+  const { view, showView, moved, bandProps } = useBandViews(views.length);
+  const warn = WARN_ZONE[income.zone];
+  const tone = view === SHIELD && warn ? warn : "light";
+  const t = BAND_T[tone];
+  const fade = { key: view, initial: moved ? { opacity: 0 } : false, animate: { opacity: 1 }, transition: { duration: 0.25 } };
 
   return (
     <div>
       <style>{GOALS_CSS}</style>
-      <h1 style={{...SCREEN_TITLE,color:G}}>Progress</h1>
-
-      <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+      <ScreenBand tone={tone} {...bandProps}>
+        <h1 style={{...SCREEN_TITLE,color:G,margin:"0 0 4px"}}>Progress</h1>
         <section aria-label="Your figures" data-tour="progress-cards">
-          <CardStack cards={cards}/>
+          <BandViewCaption views={views.map(v => v.label)} view={view} moved={moved} onPick={showView} ink={t.figure} soft={t.label} faint={t.dot}
+            marks={warn && { [SHIELD]: { color: WARN[warn].icon, note: income.zone === "in" ? "in the £100k trap" : "near the £100k trap" } }}/>
+          <motion.div {...fade}>{views[view].body(t)}</motion.div>
         </section>
+      </ScreenBand>
 
+      <ScreenSheet>
+        {view === SHIELD && (
+          <motion.section {...fade} aria-label="Tax shield details">
+            <ShieldDetails income={income} t={SHEET_T} onOpenTrap={openTrap}/>
+          </motion.section>
+        )}
         {/* Add a goal first, then the goals in the order picked: as built,
             the user's pots (newest first) then this tax year's goals from the
-            modules (sortGoals). */}
-        <Tile title="Goals" tour="progress-goals"
-          action={<FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>}>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"20px"}}>
+            modules (sortGoals). Each goal its own tile on the cream. */}
+        <section data-tour="progress-goals" aria-labelledby="progress-goals-title" hidden={view === SHIELD}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",padding:"0 2px"}}>
+            <h2 id="progress-goals-title" style={kicker}>Goals</h2>
+            <div style={{height:0,display:"flex",alignItems:"center"}}>
+              <FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"16px"}}>
             <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
               onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); if (hasAccess()) set("subscriberFeaturesUsed", withFeatureUsed(d, "addGoal")); setExpanded(null); }}/>
             {sortGoals(goals, sortBy).map(({ vault: v, row }) => {
@@ -131,16 +157,28 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
               );
             })}
           </div>
-        </Tile>
-      </div>
+        </section>
+      </ScreenSheet>
     </div>
   );
 }
 
-// ── The stack's cards ──────────────────────────────────────────────────
-// Each drawn in the colours `t` it's wearing (CardStack.jsx): DARK in front.
+// ── The band's views ───────────────────────────────────────────────────
+// Each drawn in the colours `t` of the band (BAND_T).
 
-// A card's lead figure, in the serif at the stack's size, with its unit.
+// The band's colours: the wallet stack's light card colours (CardStack.jsx),
+// or its red or amber warning ones, each with the small text a step darker,
+// so it stays over 4.5:1 on the band's deepest corner, a firmer track, and
+// `dot` for the caption's other dots.
+const BAND_T = {
+  light: { ...LIGHT, label: "#585858", body: "#585858", track: "rgba(22,47,36,0.12)", dot: "rgba(22,47,36,0.25)" },
+  red: { ...WARN.red, body: "#7a4a43", track: "rgba(142,42,31,0.14)", dot: "rgba(142,42,31,0.28)" },
+  amber: { ...WARN.amber, body: "#75583f", track: "rgba(134,74,15,0.14)", dot: "rgba(134,74,15,0.28)" },
+};
+// The cream sheet's, as Forecasts' details below its band.
+const SHEET_T = LIGHT;
+
+// A view's lead figure, in the serif at the band's size, with its unit.
 const heroFig = t => ({ fontFamily:SERIF, fontSize:"var(--hero-fig)", fontWeight:700, color:t.figure, lineHeight:1, letterSpacing:"-0.01em", marginTop:"8px" });
 const unit = { fontFamily:SANS, fontSize:"0.32em", fontWeight:600, marginLeft:"5px", letterSpacing:0, whiteSpace:"nowrap" };
 const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
@@ -219,21 +257,13 @@ function Donut({ parts, dim, onPoint, track, size = 120, stroke = 15 }) {
 // Average progress across this tax year's goals below (the modules'; pots
 // have their own dates), as a ring that fills to it, with the figure plain
 // inside and how many are reached. With none to measure yet, an empty ring.
-// On a phone the ring is larger with the text under it, filling the card
-// to the stack's height; on desktop, the ring beside the text.
 const GOALS_CSS = `
-.progress-goals { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 14px; text-align: center; --ring: 168px; }
-@media (min-width: 1000px) { .progress-goals { flex-direction: row; gap: 18px; margin-top: 12px; text-align: left; --ring: 104px; } }
+.progress-goals { display: flex; justify-content: center; margin-top: 14px; --ring: 168px; }
 `;
 function AnnualGoals({ annual, t }) {
   return (
     <div className="progress-goals">
       <Ring pct={annual.total ? annual.pct : null} hits={annual.hits} total={annual.total} t={t}/>
-      <p style={{...cardText(t),margin:0}}>
-        {annual.total
-          ? "Average progress across this tax year's goals, to 5 April. Each goal is listed below."
-          : "This tax year's goals are measured here once the modules they come from are answered."}
-      </p>
     </div>
   );
 }
@@ -406,26 +436,40 @@ function OverpaymentEditor({ row, set, onDone }) {
 
 // ── Income against the £100k trap ──────────────────────────────────────
 
-// Behind, the Tax shield card warns: red in the trap, amber within £5,000
-// of it (progressTracker.js incomePosition's zone).
+// The Tax shield's band, and its dot from the other views, warn: red in
+// the trap, amber within £5,000 of it (progressTracker.js incomePosition's
+// zone).
 const WARN_ZONE = { in: "red", edge: "amber" };
 
-// The Tax shield's top line: where income sits against £100,000.
-function shieldLine(income) {
-  if (income.zone === "none") return "Pay not entered";
-  if (income.zone === "in") return `${fmt(income.trap?.over ?? income.income - 100000)} into the £100k trap`;
-  if (income.gap === 0) return "At the £100k trap";
-  if (income.zone === "clear") return "Safe from £100k trap";
-  return `${fmt(income.gap)} from the £100k trap`;
+// On the band: the one figure that says where income sits against the
+// trap (in it, the extra tax it costs a year; otherwise how far below
+// £100,000), then the bands with a marker at their income.
+function ShieldBand({ income, t }) {
+  if (income.zone === "none") {
+    return <div style={{...heroFig(t),color:t.body,opacity:0.5}}>£–</div>;
+  }
+  const { trap, gap } = income;
+  return (
+    <>
+      {income.zone === "in"
+        ? trap
+          ? <div style={heroFig(t)}>{fmt(trap.tax)}<span style={unit}>more tax a year</span></div>
+          : <div style={heroFig(t)}>{fmt(income.income - 100000)}<span style={unit}>over £100k</span></div>
+        : gap === 0
+          ? <div style={heroFig(t)}>£100,000<span style={unit}>the trap's edge</span></div>
+          : <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>{income.zone === "clear" ? "below £100k" : "to £100k"}</span></div>}
+      <BandTrack income={income} t={t}/>
+    </>
+  );
 }
 
-// Leads with where income sits against the trap and what it costs, or
-// would cost, as figures rather than an instruction; in the trap or within
-// £5,000 of it, in a red or amber alert. Then the bands with a marker at
-// their income, and adjusted net income, explained, as the small print.
-function TaxShield({ income, t, onOpenTrap }) {
+// On the cream below: what the band's figure means, as figures rather than
+// an instruction; in the trap or within £5,000 of it, in a red or amber
+// alert. Then adjusted net income, explained, as the small print, what a
+// pension contribution would do, and the way into the trap's module.
+function ShieldDetails({ income, t, onOpenTrap }) {
   if (income.zone === "none") {
-    return <p style={cardText(t)}>Where your income sits against the £100k trap shows here once your pay is entered.</p>;
+    return <p style={{...cardText(t),margin:0}}>Where your income sits against the £100k trap shows here once your pay is entered.</p>;
   }
   const { trap, gap, perThousand, rise } = income;
   const trapRate = income.bands.find(b => b.name === "£100k tax trap").rateLabel;
@@ -437,34 +481,28 @@ function TaxShield({ income, t, onOpenTrap }) {
   return (
     <>
       {income.zone === "in" ? !trap ? (
-        <p style={cardText(t)}>{fmt(income.income - 100000)} over £100,000, where the Personal Allowance is withdrawn.</p>
+        <p style={{...cardText(t),margin:0}}>{fmt(income.income - 100000)} over £100,000, where the Personal Allowance is withdrawn.</p>
       ) : (
         <Alert tone="red" t={t} title={trap.aboveTaper ? "Your Personal Allowance is gone" : `You're in the ${trap.rateLabel} tax trap`}>
-          <div style={heroFig(t)}>{fmt(trap.tax)}<span style={unit}>a year</span></div>
           <p style={cardText(t)}>
             {trap.aboveTaper
-              ? `More tax, as over £125,140 all ${fmt(trap.allowanceLost)} of your Personal Allowance is withdrawn.`
-              : `More tax, as ${fmt(trap.over)} over £100,000 withdraws ${fmt(trap.allowanceLost)} of your Personal Allowance.`}
+              ? `${fmt(trap.tax)} more tax a year, as over £125,140 all ${fmt(trap.allowanceLost)} of your Personal Allowance is withdrawn.`
+              : `${fmt(trap.tax)} more tax a year, as ${fmt(trap.over)} over £100,000 withdraws ${fmt(trap.allowanceLost)} of your Personal Allowance.`}
             {trap.childcareLost > 0 && ` ${fmt(trap.childcareLost)} a year of childcare support stops too.`}
           </p>
         </Alert>
       ) : income.zone === "edge" ? (
         <Alert tone="amber" t={t} title={gap > 0 ? `Within ${fmt(TRAP_EDGE)} of the ${trapRate} tax trap` : `At £100,000, the edge of the ${trapRate} tax trap`}>
-          {gap > 0 && <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>to £100k</span></div>}
           <p style={cardText(t)}>{past}{more}</p>
         </Alert>
       ) : (
-        <>
-          <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>{income.zone === "near" ? "to £100k" : "below £100k"}</span></div>
-          <p style={cardText(t)}>
-            {income.zone === "near" ? `${past}${more}`
-              : `Clear of £100,000, where each £1,000 more starts costing ${fmt(perThousand.trap)} in income tax rather than ${fmt(perThousand.now)}.`}
-          </p>
-        </>
+        <p style={{...cardText(t),margin:0}}>
+          {income.zone === "near" ? `${past}${more}`
+            : `Clear of £100,000, where each £1,000 more starts costing ${fmt(perThousand.trap)} in income tax rather than ${fmt(perThousand.now)}.`}
+        </p>
       )}
-      <BandTrack income={income} t={t}/>
-      <p style={{fontSize:"12px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>
-        <span style={{fontWeight:700,color:t.figure}}>{fmt(income.income)}</span> adjusted net income this tax year, which the trap is measured on: taxable income less pension contributions and Gift Aid.{income.scottish ? " Scottish rates on pay." : ""}
+      <p style={{fontSize:"12px",color:t.body,lineHeight:1.45,margin:"12px 0 0"}}>
+        <span style={{fontWeight:700,color:t.figure}}>{fmt(income.income)}</span> adjusted net income this tax year, the gold marker above, which the trap is measured on: taxable income less pension contributions and Gift Aid.{income.scottish ? " Scottish rates on pay." : ""}
       </p>
       {pension && (
         <p style={{...cardText(t),fontSize:"12.5px"}}>

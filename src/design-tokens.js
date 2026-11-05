@@ -288,6 +288,11 @@ export const MODULE_QUIET_TILE = { bg: "#FBF9F5", panel: "#EEEDE9" };
 // Modules' top band, behind the title and the hero card: brand green
 // washing into gold, pale enough for dark text.
 export const MODULES_BAND_BG = "linear-gradient(160deg, #D9EADF 0%, #E9EEDB 50%, #F5E6C8 100%)";
+// The same band warning, red or amber: Progress's while income is over
+// £100,000 (red) or within £5,000 of it (amber), as the Tax shield card's
+// wash was in the wallet stack.
+export const BAND_BG_RED = "linear-gradient(160deg, #F4D3CC 0%, #F7DED6 50%, #F8E6DC 100%)";
+export const BAND_BG_AMBER = "linear-gradient(160deg, #FBE2C6 0%, #FAE8D3 50%, #F8EBDA 100%)";
 
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments

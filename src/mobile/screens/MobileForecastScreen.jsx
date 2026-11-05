@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption } from "../ScreenBand.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
@@ -73,8 +73,8 @@ export default function MobileForecastScreen({ d, m }) {
   const [lumpSum, setLumpSum] = useState(null);
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
-  const [view, setView] = useState(0); // which of VIEWS is showing
-  const viewMoved = useRef(false); // nothing announced until the first switch
+  // Which of VIEWS is showing (ScreenBand.jsx).
+  const { view, showView, moved: viewMoved, bandProps } = useBandViews(VIEWS.length);
   // The Surplus lines taken off the graph (by tapping their row below), so
   // two can be compared on their own. All on to start with.
   const [hiddenLines, setHiddenLines] = useState(() => new Set());
@@ -113,64 +113,13 @@ export default function MobileForecastScreen({ d, m }) {
   const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon + extraYears, lump), [d, m, monthly, horizon, extraYears, lump]);
   const netWorthRows = trajectory.slice(0, horizon + 1);
 
-  const showView = i => {
-    if (i === view) return;
-    viewMoved.current = true;
-    setView(i);
-  };
-  // A mostly sideways drag on the band switches the view, as the card
-  // stack's does (CardStack.jsx); the browser cancels the pointer when it
-  // takes an up or down drag as a page scroll. Touch and pen only: a mouse
-  // drag selects text, and the dots are there for a mouse. Not from the
-  // horizon line, a field or the Surplus graph (a drag along it reads each
-  // year), which take their own drags, nor while a ?'s card is open (a drag
-  // on its backdrop is to close it).
-  const swipe = useRef(null), swipedAt = useRef(0);
-  const onPointerDown = e => {
-    const open = e.currentTarget.querySelector("[role=dialog]");
-    swipe.current = open || e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input, [data-scrub]") ? null : { x: e.clientX, y: e.clientY };
-  };
-  const onPointerUp = e => {
-    if (!swipe.current) return;
-    const dx = e.clientX - swipe.current.x, dy = e.clientY - swipe.current.y;
-    swipe.current = null;
-    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) {
-      swipedAt.current = Date.now();
-      showView((view + (dx < 0 ? 1 : -1) + VIEWS.length) % VIEWS.length);
-    }
-  };
-  // A swipe that ends on a button isn't also a tap. Only the click straight
-  // after it: a touch swipe often fires none, and a later tap or key press
-  // must still work.
-  const onClickCapture = e => {
-    if (Date.now() - swipedAt.current > 400) return;
-    swipedAt.current = 0;
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   return (
     <div>
-      <ScreenBand tone="dark" onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => { swipe.current = null; }}
-        onClickCapture={onClickCapture} style={{touchAction:"pan-y"}}>
+      <ScreenBand tone="dark" {...bandProps}>
         <h1 style={{...SCREEN_TITLE,color:CREAM,margin:"0 0 4px"}}>Forecasts</h1>
-        {/* The view's name, with a dot for each view at the other end (the
-            dots' 44px tap height overlapping what's below). */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"-12px"}}>
-          <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:CREAM_SOFT}}>{VIEWS[view]}</div>
-          <div style={{display:"flex",marginRight:"-10px"}}>
-            {VIEWS.map((label, i) => (
-              <button key={label} type="button" onClick={() => showView(i)} aria-label={`Show ${label}`} aria-pressed={i === view}
-                style={{width:"28px",height:"44px",background:"none",border:0,padding:0,cursor:"pointer",display:"grid",placeItems:"center"}}>
-                <span style={{width:"7px",height:"7px",borderRadius:"50%",background:i === view ? CREAM : CREAM_FAINT,transform:i === view ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Says which view has come up as each switch happens. */}
-        <div aria-live="polite" style={SR_ONLY}>{viewMoved.current ? `${VIEWS[view]}, ${view + 1} of ${VIEWS.length}` : ""}</div>
+        <BandViewCaption views={VIEWS} view={view} moved={viewMoved} onPick={showView} ink={CREAM} soft={CREAM_SOFT} faint={CREAM_FAINT}/>
 
-        <motion.div key={view} initial={viewMoved.current ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+        <motion.div key={view} initial={viewMoved ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
           {view === 0
             ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={chartRef} chartWidth={chartWidth}/>
             : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} hidden={hiddenLines} chartRef={chartRef} chartWidth={chartWidth}/>}

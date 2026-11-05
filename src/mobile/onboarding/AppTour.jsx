@@ -27,7 +27,7 @@ const STOPS = [
   { id: "next", screen: "home", target: "home-modules", title: "Modules to explore",
     body: "Areas you haven't looked at yet. Each takes a few minutes." },
   { id: "progress", screen: "progress", target: "progress-cards", title: "Your progress",
-    body: "Net worth, goals for this tax year and your tax shield. Swipe for the next card." },
+    body: "Net worth, goals for this tax year and your tax shield. Swipe, or tap the dots, for each." },
   { id: "goals", screen: "progress", target: "progress-goals", title: "Goals",
     body: "Goals you set yourself, and one from each module once it's answered." },
   { id: "modules", screen: "modules", target: "modules-cards", title: "Every module",
