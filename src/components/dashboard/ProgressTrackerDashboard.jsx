@@ -13,6 +13,7 @@ import Alert from "../../mobile/AlertBox.jsx";
 import FilterMenu from "../../mobile/FilterMenu.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
+import { SCREEN_TITLE } from "../../mobile/ScreenBand.jsx";
 import {
   G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
@@ -97,7 +98,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
   return (
     <div>
       <style>{GOALS_CSS}</style>
-      <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,margin:"0 0 16px",lineHeight:1.2}}>Your progress</h1>
+      <h1 style={{...SCREEN_TITLE,color:G}}>Progress</h1>
 
       <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
         <section aria-label="Your figures" data-tour="progress-cards">

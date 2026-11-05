@@ -10,7 +10,7 @@ export const MOBILE_NAV_ITEMS = [
   { key:"home", label:"Home", path:"/app/home", icon:Home },
   { key:"progress", label:"Progress", path:"/app/progress", icon:Target },
   { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
-  { key:"forecast", label:"Forecast", path:"/app/forecast", icon:LineChart },
+  { key:"forecast", label:"Forecasts", path:"/app/forecast", icon:LineChart },
   { key:"chat", label:"Chat", path:"/app/chat", icon:Sparkles },
 ];
 export const BAR_ORDER = ["home", "progress", "chat", "modules", "forecast"];

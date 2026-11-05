@@ -3,7 +3,8 @@ import { AnimatePresence } from "framer-motion";
 import { Users, ChevronRight, Lock, Star, Sprout, Sunset, PieChart, KeyRound, ScrollText, Globe } from "lucide-react";
 import { FrontCard, StillCard } from "../CardStack.jsx";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, CREAM, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_ACCENTS, MODULE_ACCENT_MUTED, MODULE_SOON_TILE, MODULES_BAND_BG } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_ACCENTS, MODULE_ACCENT_MUTED, MODULE_SOON_TILE } from "../../design-tokens.js";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, ELSEWHERE } from "../statusLabel.js";
@@ -26,18 +27,9 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 // open what it will cover. Mark as reviewed lives in each module
 // (MobileModuleDeepDive).
 
-// The band runs to the screen's edges on a phone (out past the column's
-// 20px padding and up under the top inset); where the column is narrower
-// than the screen it's a rounded panel instead. On a phone the cream sheet
-// below overlaps its foot with rounded corners. The tiles: two across on a phone,
+// The band and sheet: ScreenBand.jsx. The tiles: two across on a phone,
 // three from a tablet up.
 const CSS = `
-.modules-band { margin: calc(-16px - env(safe-area-inset-top, 0px)) -20px 0; padding: calc(22px + env(safe-area-inset-top, 0px)) 20px 52px; background: ${MODULES_BAND_BG}; }
-.modules-sheet { position: relative; margin: -28px -20px 0; padding: 20px 20px 0; background: ${CREAM}; border-radius: 28px 28px 0 0; }
-@media (min-width: 581px) {
-  .modules-band { margin: 0; padding: 22px 20px; border-radius: 28px; }
-  .modules-sheet { margin: 0; padding: 20px 0 0; border-radius: 0; }
-}
 /* Every row as tall as the tallest, so the tiles line up whatever's in them. */
 .modules-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 12px; }
 @media (min-width: 640px) { .modules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -176,12 +168,12 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   return (
     <div>
       <style>{CSS}</style>
-      <div className="modules-band">
-        <h1 style={{fontFamily:SANS,fontSize:"30px",fontWeight:800,letterSpacing:"-0.01em",lineHeight:1.1,color:G,margin:"0 0 16px"}}>Modules</h1>
+      <ScreenBand>
+        <h1 style={{...SCREEN_TITLE,color:G}}>Modules</h1>
         <section aria-label="At stake" data-tour="modules-cards">{hero}</section>
-      </div>
+      </ScreenBand>
 
-      <div className="modules-sheet">
+      <ScreenSheet>
         {/* "Did you make the change?" prompts. */}
         {set && moduleList.map(mm => <BankConfirm key={mm.key} d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>)}
         {/* The counts in a line, kept small so the figures lead. None before
@@ -252,7 +244,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
             </TilePopover>
           )}
         </AnimatePresence>
-      </div>
+      </ScreenSheet>
     </div>
   );
 }

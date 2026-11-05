@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { PillSlider } from "../PillSlider.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
@@ -11,15 +12,17 @@ import { CTA_WASH } from "../deepdive/SubscribeButtons.jsx";
 import { hasAccess } from "../../lib/entitlement.js";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
-import CardStack, { LIGHT } from "../CardStack.jsx";
-import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, CTA_BLUE, PILL_HEIGHT } from "../../design-tokens.js";
+import { LIGHT, DARK } from "../CardStack.jsx";
+import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, SANS, CREAM, SR_ONLY, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, CTA_BLUE, PILL_HEIGHT } from "../../design-tokens.js";
 
-// The Forecast tab: two cards in a wallet stack, as on Home and Progress
-// (CardStack.jsx). Net worth: everything you own less everything you owe,
-// projected forward. Surplus: what the money left over each month (and a
+// The Forecasts tab: a dark band (ScreenBand.jsx) with two views, swiped
+// between or picked by the dots. Net worth: everything you own less
+// everything you owe, projected forward, its figure and line drawn straight
+// on the band in cream. Surplus: what the money left over each month (and a
 // lump sum) could grow to in an ISA, in savings or in a pension, side by
-// side. The time horizon below the stack sets both, and below it are the
-// front card's details: the breakdown by part, or the low/mid/high table. Every figure comes from src/lib/forecast.js (calcForecast,
+// side. The horizon line at the band's foot sets both, and on the cream
+// below are the view's details: the breakdown by part, or the low/mid/high
+// table. Every figure comes from src/lib/forecast.js (calcForecast,
 // calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions), so
 // nothing here is an invented figure; see calcNetWorthTrajectory's own
 // comment for which growth and paydown assumptions feed the net worth line.
@@ -63,6 +66,13 @@ const NW_ROW_META = {
   Debts:              { color:MODULE_CHART_COLOR.personalLoan, liquidity:"What you still owe — reduces what you could access, not an asset itself." },
 };
 
+// The band's two views, in the order the dots show them.
+const VIEWS = ["Net worth", "Surplus"];
+
+// The Net worth graph's axis stops this far in from each screen edge; the
+// line carries on past it to the edge.
+const NW_INSET = 26;
+
 export default function MobileForecastScreen({ d, m }) {
   const [openRow, setOpenRow] = useState(null);
   const age = +d.age || null;
@@ -84,16 +94,18 @@ export default function MobileForecastScreen({ d, m }) {
   const [lumpSum, setLumpSum] = useState(null);
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
-  const [shown, setShown] = useState(0); // the card in front
+  const [view, setView] = useState(0); // which of VIEWS is showing
+  const viewMoved = useRef(false); // nothing announced until the first switch
   // A lump sum today is a subscriber feature (as Add a goal's rule:
   // subscribers, and anyone from before the paywall). For anyone else the
   // pill is locked, and a tap opens Candid Premium's sheet, as the crown does.
   const lumpLocked = !hasAccess() && d.unlockGate === true;
   const [premiumOpen, setPremiumOpen] = useState(false);
   const openPremium = () => { setPremiumOpen(true); posthog.capture("premium_opened", { from: "forecast_lump_sum" }); };
-  // Each card measures its own chart: both are laid out at once, one behind.
-  const [nwChartRef, nwChartWidth] = useElementWidth(300);
-  const [surplusChartRef, surplusChartWidth] = useElementWidth(300);
+  // Each view's chart is drawn afresh as it comes up, so each is measured
+  // again then (otherwise it keeps the fallback width).
+  const [nwChartRef, nwChartWidth] = useElementWidth(340, [view]);
+  const [surplusChartRef, surplusChartWidth] = useElementWidth(300, [view]);
 
   // Only a monthly surplus the user types goes into the figures, the Surplus
   // card's and the Net worth line's; until then it's £0. Our own estimate
@@ -106,55 +118,104 @@ export default function MobileForecastScreen({ d, m }) {
   const forecast = useMemo(() => calcForecast(d, m, monthly, horizon, lump), [d, m, monthly, horizon, lump]);
   const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon, lump), [d, m, monthly, horizon, lump]);
   const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
-  const netWorthRows = useMemo(() => calcNetWorthTrajectory(d, m, horizon, monthly), [d, m, horizon, monthly]);
-  const nwEnd = netWorthRows[horizon].netWorth;
+  // The line runs on past the horizon to the screen's right edge, so a few
+  // years more are worked out than the horizon: as many as fit in the
+  // graph's inset at its scale. The rows up to the horizon are the same
+  // either way (each year follows from the one before).
+  const extraYears = Math.min(10, Math.ceil(NW_INSET * horizon / Math.max(1, nwChartWidth - 2 * NW_INSET)) + 1);
+  const trajectory = useMemo(() => calcNetWorthTrajectory(d, m, horizon + extraYears, monthly), [d, m, horizon, extraYears, monthly]);
+  const netWorthRows = trajectory.slice(0, horizon + 1);
 
-  // Net worth leads, as on Home. Each card's top line shows while it's behind.
-  // The cards hold the headline and chart; the front card's details (the
-  // breakdown, or the low/mid/high table) sit below the horizon, so the
-  // stack stays short enough to scroll past on a phone.
-  const cards = [
-    { key: "netWorth", label: "Net worth", amount: `${nwEnd < 0 ? "−" : ""}${fmtK1(nwEnd)}`,
-      body: t => <NetWorthCard t={t} age={age} horizon={horizon} netWorthRows={netWorthRows} chartRef={nwChartRef} chartWidth={nwChartWidth}/>,
-      details: <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
-        showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/> },
-    { key: "surplus", label: "Surplus", amount: `${fmt(monthly)} a month`, amountSans: true,
-      body: t => <SurplusCard t={t} surplus={surplus} estimate={estimate} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
-        series={series} chartRef={surplusChartRef} chartWidth={surplusChartWidth}/>,
-      details: <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip}/> },
-  ];
+  const showView = i => {
+    if (i === view) return;
+    viewMoved.current = true;
+    setView(i);
+  };
+  // A mostly sideways drag on the band switches the view, as the card
+  // stack's does (CardStack.jsx); the browser cancels the pointer when it
+  // takes an up or down drag as a page scroll. Touch and pen only: a mouse
+  // drag selects text, and the dots are there for a mouse. Not from the
+  // horizon line or a field, which take their own drags.
+  const swipe = useRef(null), swipedAt = useRef(0);
+  const onPointerDown = e => {
+    swipe.current = e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input") ? null : { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = e => {
+    if (!swipe.current) return;
+    const dx = e.clientX - swipe.current.x, dy = e.clientY - swipe.current.y;
+    swipe.current = null;
+    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) {
+      swipedAt.current = Date.now();
+      showView((view + (dx < 0 ? 1 : -1) + VIEWS.length) % VIEWS.length);
+    }
+  };
+  // A swipe that ends on a button isn't also a tap. Only the click straight
+  // after it: a touch swipe often fires none, and a later tap or key press
+  // must still work.
+  const onClickCapture = e => {
+    if (Date.now() - swipedAt.current > 400) return;
+    swipedAt.current = 0;
+    e.stopPropagation();
+    e.preventDefault();
+  };
 
   return (
     <div>
-      <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your forecast</h1>
-      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 16px"}}>
-        Where your money could be in the future, worked out from your answers. Estimates, not promises: growth isn't guaranteed.
-      </p>
+      <ScreenBand tone="dark" onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => { swipe.current = null; }}
+        onClickCapture={onClickCapture} style={{touchAction:"pan-y"}}>
+        <h1 style={{...SCREEN_TITLE,color:CREAM,margin:"0 0 4px"}}>Forecasts</h1>
+        {/* The view's name, with a dot for each view at the other end (the
+            dots' 44px tap height overlapping what's below). */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"-12px"}}>
+          <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:CREAM_SOFT}}>{VIEWS[view]}</div>
+          <div style={{display:"flex",marginRight:"-10px"}}>
+            {VIEWS.map((label, i) => (
+              <button key={label} type="button" onClick={() => showView(i)} aria-label={`Show ${label}`} aria-pressed={i === view}
+                style={{width:"28px",height:"44px",background:"none",border:0,padding:0,cursor:"pointer",display:"grid",placeItems:"center"}}>
+                <span style={{width:"7px",height:"7px",borderRadius:"50%",background:i === view ? CREAM : CREAM_FAINT,transform:i === view ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Says which view has come up as each switch happens. */}
+        <div aria-live="polite" style={SR_ONLY}>{viewMoved.current ? `${VIEWS[view]}, ${view + 1} of ${VIEWS.length}` : ""}</div>
 
-      <CardStack cards={cards} onChange={setShown}/>
+        <motion.div key={view} initial={viewMoved.current ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+          {view === 0
+            ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={nwChartRef} chartWidth={nwChartWidth}/>
+            : <SurplusCard t={DARK} surplus={surplus} estimate={estimate} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
+                series={series} chartRef={surplusChartRef} chartWidth={surplusChartWidth}/>}
+        </motion.div>
+
+        {/* The horizon sets both views, so it sits below them. */}
+        <HorizonLine value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS}/>
+      </ScreenBand>
       <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_lump_sum" onClose={() => setPremiumOpen(false)}/>
 
-      {/* The horizon sets both cards, so it sits below the stack. */}
-      <div id="forecast-horizon" style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"18px"}}>Time horizon</div>
-      <div style={{marginTop:"8px"}}>
-        <PillSlider value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS} labelledBy="forecast-horizon"/>
-      </div>
+      <ScreenSheet>
+        <section aria-label={`${VIEWS[view]} details`}>
+          {view === 0
+            ? <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
+                showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/>
+            : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip}/>}
+        </section>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0"}}>Estimates from your answers, not promises: growth isn't guaranteed.</p>
 
-      <section aria-label={`${cards[shown].label} details`} style={{marginTop:"24px"}}>{cards[shown].details}</section>
-
-      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-        <div>
-          <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
-          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+        <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+          <div>
+            <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
+            <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+          </div>
+          <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
         </div>
-        <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
-      </div>
+      </ScreenSheet>
     </div>
   );
 }
 
-// ── The stack's cards ──────────────────────────────────────────────────
-// Each drawn in the colours `t` it's wearing (CardStack.jsx): DARK in front.
+// ── The views ──────────────────────────────────────────────────────────
+// Each drawn in the colours `t` it's given (CardStack.jsx): DARK on the
+// band, LIGHT on the cream below.
 
 const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
 const caps = t => ({ fontSize:"11px", fontWeight:600, color:t.label, letterSpacing:"0.09em", textTransform:"uppercase" });
@@ -187,38 +248,143 @@ function Axes({ c, t, age }) {
 
 const signed = v => `${v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
 
-// The Net worth card: the figure at the horizon and the projection chart.
-function NetWorthCard({ t, age, horizon, netWorthRows, chartRef, chartWidth }) {
-  const nwChart = (() => {
-    const values = netWorthRows.map(r => r.netWorth);
-    const yMin = Math.min(0, ...values);
-    const yMax = Math.max(1, ...values);
-    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = i => PL + (i / horizon) * cW;
-    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
-    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
-    const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
-  })();
-  const today = netWorthRows[0].netWorth, end = netWorthRows[horizon].netWorth;
+// ── The Net worth view, drawn straight on the dark band ────────────────
+// Everything in cream: the figure at the horizon, then a line across the
+// whole screen. The axis runs from Now to the horizon's year, a tick a year
+// and a label every few; each labelled year has a dot on the line with its
+// £ above. Past either end of the axis the line runs on to the screen's
+// edge and fades out: on the right the years after the horizon (worked out
+// the same way), on the left the first year's slope carried back, so it
+// reads as a line going somewhere rather than one that stops.
+const CREAM_SOFT = "rgba(250,247,240,0.7)";
+const CREAM_FAINT = "rgba(250,247,240,0.35)";
+
+// The labelled years: an even, round step (four or five across the
+// horizon, each at least LABEL_GAP px apart), plus the horizon itself,
+// without a step that would sit too close to it.
+const LABEL_GAP = 56;
+function labelYears(horizon, perYear) {
+  const step = [1, 2, 5, 10, 20, 25, 50].find(s => s >= horizon / 4.5 && s * perYear >= LABEL_GAP) ?? horizon;
+  const years = [];
+  for (let y = 0; y <= horizon; y += step) {
+    if (y === 0 || (horizon - y >= step / 2 && (horizon - y) * perYear >= LABEL_GAP)) years.push(y);
+  }
+  if (years[years.length - 1] !== horizon) years.push(horizon);
+  return years;
+}
+
+function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
+  const id = `nw${useId().replace(/[^\w-]/g, "")}`; // safe inside url(#…)
+  const values = trajectory.map(r => r.netWorth);
+  const year0 = new Date().getFullYear();
+  const W = chartWidth, H = 172, PT = 26, PB = 34;
+  const x0 = NW_INSET, x1 = W - NW_INSET;
+  const perYear = (x1 - x0) / horizon;
+  const sx = i => x0 + i * perYear;
+  // The left run: the first year's change carried back to the screen's edge.
+  const leftValue = values[0] - (values[1] - values[0]) * (x0 / perYear);
+  const rightEnd = Math.min(values.length - 1, horizon + Math.ceil(NW_INSET / perYear));
+  // Scaled to the years from now to the horizon only: the runs off each edge
+  // aren't the user's figures, so they mustn't squash the line. Where one
+  // would leave the chart, it's held at its top or bottom.
+  const shown = values.slice(0, horizon + 1);
+  const yMin = Math.min(...shown), yMax = Math.max(...shown);
+  const span = yMax - yMin || Math.max(1, Math.abs(yMax));
+  const axisY = H - PB;
+  // A flat line sits mid-height rather than on the axis.
+  const sy = v => yMax === yMin ? PT + (axisY - 14 - PT) / 2 : PT + (1 - (v - yMin) / span) * (axisY - 14 - PT);
+  const syRun = v => Math.min(axisY - 4, Math.max(PT - 10, sy(v)));
+  const pts = (from, to, y = sy) => values.slice(from, to + 1).map((v, k) => `${sx(from + k).toFixed(1)},${y(v).toFixed(1)}`);
+  const main = `M${pts(0, horizon).join(" L")}`;
+  const right = `M${pts(horizon, rightEnd, syRun).join(" L")}`;
+  const left = `M0,${syRun(leftValue).toFixed(1)} L${sx(0)},${sy(values[0]).toFixed(1)}`;
+  // A £ label kept whole on screen: the ones at Now and the horizon sit
+  // near the edges (about 6.5px a character at 11px bold).
+  const labelX = (x, text) => { const half = text.length * 3.3 + 4; return Math.min(W - half, Math.max(half, x)); };
+  const money = v => `${v < 0 ? "−" : ""}${fmtK1(v)}`;
+  const labelled = labelYears(horizon, perYear);
+  const end = values[horizon];
+  const yearOf = y => (y === 0 ? "Now" : `${year0 + y}`);
   return (
     <>
-      <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1,letterSpacing:"-0.01em",marginTop:"8px"}}>{signed(end)}</div>
-      <p style={cardText(t)}>
-        {age ? `At age ${age+horizon}` : `In ${horizon} years`}, from <b style={{color:t.figure}}>{signed(today)}</b> today. Everything you own less everything you owe, projected forward: savings and pension growing, loans paid down.
+      <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"6px"}}>{signed(end)}</div>
+      <p style={SR_ONLY}>
+        {age ? `At age ${age + horizon}` : `In ${horizon} years`}, in {year0 + horizon}, from {signed(values[0])} now. {labelled.slice(1, -1).map(y => `${year0 + y}: ${signed(values[y])}.`).join(" ")}
       </p>
-
-      <div style={{...caps(t),marginTop:"18px",marginBottom:"8px"}}>Projected net worth · {horizon} years</div>
-      <div ref={chartRef}>
-        <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}} aria-hidden="true">
-          <Axes c={nwChart} t={t} age={age}/>
-          <path d={nwChart.path} fill="none" stroke={t.figure} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={t.figure}/>
+      <div ref={chartRef} style={{margin:"8px -20px 0"}}>
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
+          <defs>
+            <linearGradient id={`${id}l`} gradientUnits="userSpaceOnUse" x1="0" x2={x0} y1="0" y2="0">
+              <stop offset="0" stopColor={CREAM} stopOpacity="0"/><stop offset="1" stopColor={CREAM} stopOpacity="0.9"/>
+            </linearGradient>
+            <linearGradient id={`${id}r`} gradientUnits="userSpaceOnUse" x1={x1} x2={W} y1="0" y2="0">
+              <stop offset="0" stopColor={CREAM} stopOpacity="0.9"/><stop offset="1" stopColor={CREAM} stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {/* The axis: a tick a year, a taller one and the year on each label. */}
+          <line x1={x0} x2={x1} y1={axisY} y2={axisY} stroke={CREAM_FAINT} strokeWidth="1.5"/>
+          {Array.from({ length: horizon + 1 }, (_, y) => {
+            const big = labelled.includes(y);
+            return <line key={y} x1={sx(y)} x2={sx(y)} y1={axisY} y2={axisY + (big ? 7 : 4)} stroke={big ? CREAM_SOFT : CREAM_FAINT} strokeWidth="1.2"/>;
+          })}
+          {labelled.map(y => (
+            <text key={y} x={sx(y)} y={axisY + 22} fontFamily={SANS} fontSize="11" fontWeight="600" fill={CREAM_SOFT} textAnchor="middle">{yearOf(y)}</text>
+          ))}
+          {/* The line, then its runs off each edge. */}
+          <path d={left} fill="none" stroke={`url(#${id}l)`} strokeWidth="2.4" strokeLinecap="round"/>
+          {rightEnd > horizon && <path d={right} fill="none" stroke={`url(#${id}r)`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}
+          <path d={main} fill="none" stroke={CREAM} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          {labelled.map(y => (
+            <g key={y}>
+              <circle cx={sx(y)} cy={sy(values[y])} r={y === horizon ? 4.5 : 3.5} fill={CREAM}/>
+              <text x={labelX(sx(y), money(values[y]))} y={sy(values[y]) - 11} fontFamily={SANS} fontSize="11" fontWeight="700" fill={CREAM} textAnchor="middle">
+                {money(values[y])}
+              </text>
+            </g>
+          ))}
         </svg>
       </div>
     </>
+  );
+}
+
+// The time horizon, on the band: a line with a marker for each age and the
+// age above it, the one picked larger and brighter. A radio group to screen
+// readers, as PillSlider: one Tab stop (the picked age), and the arrow keys
+// move and pick.
+function HorizonLine({ value, onChange, options }) {
+  const buttons = useRef([]);
+  // None picked when the horizon isn't one of the options (the ages change
+  // with the answers), so no marker claims a horizon the figures aren't for.
+  const picked = options.findIndex(o => o.value === value);
+  const onKeyDown = e => {
+    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    const next = Math.min(options.length - 1, Math.max(0, picked < 0 ? 0 : picked + dir));
+    onChange(options[next].value);
+    buttons.current[next]?.focus();
+  };
+  const MARK = 56; // each marker's width, the line running between their centres
+  return (
+    <div role="radiogroup" aria-label="Time horizon" onKeyDown={onKeyDown}
+      style={{position:"relative",display:"flex",justifyContent:"space-between",marginTop:"18px"}}>
+      <div aria-hidden="true" style={{position:"absolute",left:MARK / 2,right:MARK / 2,bottom:"16px",height:"1.5px",background:CREAM_FAINT}}/>
+      {options.map((o, i) => {
+        const on = i === picked;
+        return (
+          <button key={o.value} ref={el => { buttons.current[i] = el; }} type="button" role="radio" aria-checked={on} tabIndex={on || (picked < 0 && i === 0) ? 0 : -1}
+            onClick={() => onChange(o.value)}
+            style={{position:"relative",width:MARK,height:"52px",padding:0,background:"none",border:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",gap:"8px",fontFamily:SANS,color:CREAM}}>
+            <span style={{fontSize:"12px",fontWeight:on ? 800 : 600,opacity:on ? 1 : 0.6,whiteSpace:"nowrap",transition:"opacity 0.2s"}}>{o.label}</span>
+            <span style={{height:"16px",marginBottom:"9px",display:"grid",placeItems:"center"}}>
+              <span style={{width:on ? "14px" : "7px",height:on ? "14px" : "7px",borderRadius:"50%",background:on ? CREAM : CREAM_SOFT,
+                boxShadow:on ? "0 0 0 4px rgba(250,247,240,0.18)" : "none",transition:"width 0.2s, height 0.2s, box-shadow 0.2s"}}/>
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
