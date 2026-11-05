@@ -1,5 +1,6 @@
 import { useId, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
 import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
@@ -8,12 +9,11 @@ import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
 import PillMoneyInput, { PILL_ANSWER_TEXT } from "../PillMoneyInput.jsx";
 import { PremiumSheetPortal } from "../Premium.jsx";
-import { CTA_WASH } from "../deepdive/SubscribeButtons.jsx";
 import { hasAccess } from "../../lib/entitlement.js";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
-import { LIGHT, DARK } from "../CardStack.jsx";
-import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, SANS, CREAM, SR_ONLY, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, CTA_BLUE, PILL_HEIGHT } from "../../design-tokens.js";
+import { LIGHT } from "../CardStack.jsx";
+import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, SANS, CREAM, SR_ONLY, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, PILL_HEIGHT } from "../../design-tokens.js";
 
 // The Forecasts tab: a dark band (ScreenBand.jsx) with two views, swiped
 // between or picked by the dots. Net worth: everything you own less
@@ -30,27 +30,6 @@ import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, SANS, CREAM, SR_ONLY, F
 // Normal Minimum Pension Age rises from 55 to 57 from April 2028 — matches
 // the liquidity copy below.
 const PENSION_ACCESS_AGE = 57;
-
-// X-axis year ticks at a single, genuinely uniform step (1/2/5/10/20/25/50
-// years — whichever gives ~4 intervals across the horizon), stopping at the
-// largest multiple of that step that doesn't exceed the horizon. Previous
-// attempts either split the horizon into 25/50/75% fractions (rounding each
-// independently produces jittery, non-uniform gaps like 36/37/39/40) or
-// forced the exact horizon in as an extra tick (which, when it wasn't itself
-// a multiple of the step, crammed a much-too-close final tick right next to
-// the one before it, e.g. 30/31). Neither is needed: a milestone chart
-// doesn't require a tick to land exactly on the endpoint — the line/dot
-// already marks it — so plain, evenly-spaced round-number ticks read as
-// consistent at every horizon length.
-function buildYearTicks(horizon) {
-  if (horizon <= 0) return [0];
-  const niceSteps = [1, 2, 5, 10, 20, 25, 50];
-  const rawStep = horizon / 4;
-  const step = niceSteps.find(s => s >= rawStep) || Math.ceil(rawStep / 50) * 50;
-  const ticks = [];
-  for (let y = 0; y <= horizon; y += step) ticks.push(y);
-  return ticks;
-}
 
 // Net worth breakdown rows — colour, and the assumption/liquidity copy shown
 // when a row is expanded. Liquidity is a genuine, important distinction the
@@ -69,9 +48,9 @@ const NW_ROW_META = {
 // The band's two views, in the order the dots show them.
 const VIEWS = ["Net worth", "Surplus"];
 
-// The Net worth graph's axis stops this far in from each screen edge; the
-// line carries on past it to the edge.
-const NW_INSET = 26;
+// The band graphs' axis stops this far in from each screen edge; the lines
+// carry on past it to the edge.
+const BAND_INSET = 26;
 
 export default function MobileForecastScreen({ d, m }) {
   const [openRow, setOpenRow] = useState(null);
@@ -104,8 +83,7 @@ export default function MobileForecastScreen({ d, m }) {
   const openPremium = () => { setPremiumOpen(true); posthog.capture("premium_opened", { from: "forecast_lump_sum" }); };
   // Each view's chart is drawn afresh as it comes up, so each is measured
   // again then (otherwise it keeps the fallback width).
-  const [nwChartRef, nwChartWidth] = useElementWidth(340, [view]);
-  const [surplusChartRef, surplusChartWidth] = useElementWidth(300, [view]);
+  const [chartRef, chartWidth] = useElementWidth(340, [view]);
 
   // Only a monthly surplus the user types goes into the figures, the Surplus
   // card's and the Net worth line's; until then it's £0. Our own estimate
@@ -114,16 +92,17 @@ export default function MobileForecastScreen({ d, m }) {
   const monthly = surplus ?? 0;
   const lump = lumpLocked ? 0 : lumpSum ?? 0;
   const estimate = Math.max(0, Math.round(m.monthlySurplus || 0));
-  // Not rerun when only the chart's width or an open row changes.
+  // Not rerun when only an open row changes.
   const forecast = useMemo(() => calcForecast(d, m, monthly, horizon, lump), [d, m, monthly, horizon, lump]);
-  const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon, lump), [d, m, monthly, horizon, lump]);
   const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
-  // The line runs on past the horizon to the screen's right edge, so a few
-  // years more are worked out than the horizon: as many as fit in the
-  // graph's inset at its scale. The rows up to the horizon are the same
-  // either way (each year follows from the one before).
-  const extraYears = Math.min(10, Math.ceil(NW_INSET * horizon / Math.max(1, nwChartWidth - 2 * NW_INSET)) + 1);
+  // The lines run on past the horizon to the screen's right edge, so a few
+  // years more are worked out than the horizon: enough to cross the graph's
+  // inset on any screen 260px or wider (not the measured width, so nothing
+  // is worked out again as it's measured). The years up to the horizon are
+  // the same either way (each year follows from the one before).
+  const extraYears = Math.min(10, Math.ceil(horizon / 8) + 1);
   const trajectory = useMemo(() => calcNetWorthTrajectory(d, m, horizon + extraYears, monthly), [d, m, horizon, extraYears, monthly]);
+  const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon + extraYears, lump), [d, m, monthly, horizon, extraYears, lump]);
   const netWorthRows = trajectory.slice(0, horizon + 1);
 
   const showView = i => {
@@ -135,10 +114,12 @@ export default function MobileForecastScreen({ d, m }) {
   // stack's does (CardStack.jsx); the browser cancels the pointer when it
   // takes an up or down drag as a page scroll. Touch and pen only: a mouse
   // drag selects text, and the dots are there for a mouse. Not from the
-  // horizon line or a field, which take their own drags.
+  // horizon line or a field, which take their own drags, nor while a ?'s
+  // card is open (a drag on its backdrop is to close it).
   const swipe = useRef(null), swipedAt = useRef(0);
   const onPointerDown = e => {
-    swipe.current = e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input") ? null : { x: e.clientX, y: e.clientY };
+    const open = e.currentTarget.querySelector("[role=dialog]");
+    swipe.current = open || e.pointerType === "mouse" || e.target.closest("[role=radiogroup], input") ? null : { x: e.clientX, y: e.clientY };
   };
   const onPointerUp = e => {
     if (!swipe.current) return;
@@ -182,13 +163,15 @@ export default function MobileForecastScreen({ d, m }) {
 
         <motion.div key={view} initial={viewMoved.current ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
           {view === 0
-            ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={nwChartRef} chartWidth={nwChartWidth}/>
-            : <SurplusCard t={DARK} surplus={surplus} estimate={estimate} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
-                series={series} chartRef={surplusChartRef} chartWidth={surplusChartWidth}/>}
+            ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={chartRef} chartWidth={chartWidth}/>
+            : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} chartRef={chartRef} chartWidth={chartWidth}/>}
         </motion.div>
 
         {/* The horizon sets both views, so it sits below them. */}
         <HorizonLine value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS}/>
+        {view === 1 && (
+          <SurplusInputs surplus={surplus} estimate={estimate} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum}/>
+        )}
       </ScreenBand>
       <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_lump_sum" onClose={() => setPremiumOpen(false)}/>
 
@@ -214,38 +197,12 @@ export default function MobileForecastScreen({ d, m }) {
 }
 
 // ── The views ──────────────────────────────────────────────────────────
-// Each drawn in the colours `t` it's given (CardStack.jsx): DARK on the
-// band, LIGHT on the cream below.
+// On the band, in cream and each place's colour; the details on the cream
+// below in the colours `t` they're given (CardStack.jsx's LIGHT).
 
-const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
 const caps = t => ({ fontSize:"11px", fontWeight:600, color:t.label, letterSpacing:"0.09em", textTransform:"uppercase" });
 const note = t => ({ marginTop:"8px", background:t.track, borderRadius:"10px", padding:"10px 12px", display:"flex", flexDirection:"column", gap:"6px" });
 const noteText = t => ({ fontSize:"12px", color:t.body, lineHeight:1.55, margin:0 });
-
-// A line chart's axes: three £ gridlines, then year (or age) ticks below,
-// the first anchored left and the last right so no label spills past the
-// chart's edges.
-function Axes({ c, t, age }) {
-  return (
-    <>
-      {c.yTicks.map((v,i) => (
-        <g key={i}>
-          <line x1={c.PL} x2={c.VW-c.PR} y1={c.sy(v)} y2={c.sy(v)} stroke={t.rule} strokeWidth="1"/>
-          <text x={c.PL-6} y={c.sy(v)+3} fontSize="9" fontWeight="700" fill={t.body} textAnchor="end">{fmtCompact(v)}</text>
-        </g>
-      ))}
-      <line x1={c.PL} x2={c.VW-c.PR} y1={c.VH-c.PB} y2={c.VH-c.PB} stroke={t.body} strokeOpacity="0.4" strokeWidth="1.5"/>
-      {c.xTicks.map((yr,i) => (
-        <text key={i} x={c.sx(yr)} y={c.VH-c.PB+14} fontSize="9" fontWeight="700" fill={t.body}
-          textAnchor={i===0?"start":i===c.xTicks.length-1?"end":"middle"}>
-          {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
-        </text>
-      ))}
-      <line x1={c.PL} x2={c.PL} y1={c.PT} y2={c.VH-c.PB} stroke={t.body} strokeOpacity="0.4" strokeWidth="1.5"/>
-    </>
-  );
-}
-
 const signed = v => `${v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
 
 // ── The Net worth view, drawn straight on the dark band ────────────────
@@ -273,24 +230,62 @@ function labelYears(horizon, perYear) {
   return years;
 }
 
-function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
-  const id = `nw${useId().replace(/[^\w-]/g, "")}`; // safe inside url(#…)
-  const values = trajectory.map(r => r.netWorth);
-  const year0 = new Date().getFullYear();
-  const W = chartWidth, H = 172, PT = 26, PB = 34;
-  const x0 = NW_INSET, x1 = W - NW_INSET;
+// The frame both band graphs share (Net worth, Surplus): its size, the
+// axis's ends, where each year sits and which years are labelled.
+function bandFrame(W, horizon) {
+  const H = 172, PT = 26, PB = 34;
+  const x0 = BAND_INSET, x1 = W - BAND_INSET;
   const perYear = (x1 - x0) / horizon;
-  const sx = i => x0 + i * perYear;
+  return { W, H, PT, axisY: H - PB, x0, x1, perYear, sx: i => x0 + i * perYear,
+    labelled: labelYears(horizon, perYear), year0: new Date().getFullYear(),
+    // The last year a run off the right edge needs.
+    runTo: horizon + Math.ceil(BAND_INSET / perYear) };
+}
+
+// The axis: from Now to the horizon, a tick a year, a taller one and the
+// year on each labelled one.
+function BandAxis({ f, horizon }) {
+  return (
+    <>
+      <line x1={f.x0} x2={f.x1} y1={f.axisY} y2={f.axisY} stroke={CREAM_FAINT} strokeWidth="1.5"/>
+      {Array.from({ length: horizon + 1 }, (_, y) => {
+        const big = f.labelled.includes(y);
+        return <line key={y} x1={f.sx(y)} x2={f.sx(y)} y1={f.axisY} y2={f.axisY + (big ? 7 : 4)} stroke={big ? CREAM_SOFT : CREAM_FAINT} strokeWidth="1.2"/>;
+      })}
+      {f.labelled.map(y => (
+        <text key={y} x={f.sx(y)} y={f.axisY + 22} fontFamily={SANS} fontSize="11" fontWeight="600" fill={CREAM_SOFT} textAnchor="middle">{y === 0 ? "Now" : f.year0 + y}</text>
+      ))}
+    </>
+  );
+}
+
+// A line's run off the right edge fades out: a gradient across the inset,
+// from the line's colour to nothing.
+function RunFade({ id, f, color }) {
+  return (
+    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={f.x1} x2={f.W} y1="0" y2="0">
+      <stop offset="0" stopColor={color} stopOpacity="0.9"/><stop offset="1" stopColor={color} stopOpacity="0"/>
+    </linearGradient>
+  );
+}
+
+// A safe id for url(#…) from useId's.
+const svgId = raw => raw.replace(/[^\w-]/g, "");
+
+function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
+  const id = `nw${svgId(useId())}`;
+  const values = trajectory.map(r => r.netWorth);
+  const f = bandFrame(chartWidth, horizon);
+  const { W, PT, axisY, x0, sx, year0, labelled } = f;
   // The left run: the first year's change carried back to the screen's edge.
-  const leftValue = values[0] - (values[1] - values[0]) * (x0 / perYear);
-  const rightEnd = Math.min(values.length - 1, horizon + Math.ceil(NW_INSET / perYear));
+  const leftValue = values[0] - (values[1] - values[0]) * (x0 / f.perYear);
+  const rightEnd = Math.min(values.length - 1, f.runTo);
   // Scaled to the years from now to the horizon only: the runs off each edge
   // aren't the user's figures, so they mustn't squash the line. Where one
   // would leave the chart, it's held at its top or bottom.
   const shown = values.slice(0, horizon + 1);
   const yMin = Math.min(...shown), yMax = Math.max(...shown);
   const span = yMax - yMin || Math.max(1, Math.abs(yMax));
-  const axisY = H - PB;
   // A flat line sits mid-height rather than on the axis.
   const sy = v => yMax === yMin ? PT + (axisY - 14 - PT) / 2 : PT + (1 - (v - yMin) / span) * (axisY - 14 - PT);
   const syRun = v => Math.min(axisY - 4, Math.max(PT - 10, sy(v)));
@@ -302,9 +297,7 @@ function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
   // near the edges (about 6.5px a character at 11px bold).
   const labelX = (x, text) => { const half = text.length * 3.3 + 4; return Math.min(W - half, Math.max(half, x)); };
   const money = v => `${v < 0 ? "−" : ""}${fmtK1(v)}`;
-  const labelled = labelYears(horizon, perYear);
   const end = values[horizon];
-  const yearOf = y => (y === 0 ? "Now" : `${year0 + y}`);
   return (
     <>
       <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"6px"}}>{signed(end)}</div>
@@ -312,24 +305,14 @@ function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
         {age ? `At age ${age + horizon}` : `In ${horizon} years`}, in {year0 + horizon}, from {signed(values[0])} now. {labelled.slice(1, -1).map(y => `${year0 + y}: ${signed(values[y])}.`).join(" ")}
       </p>
       <div ref={chartRef} style={{margin:"8px -20px 0"}}>
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
+        <svg width={W} height={f.H} viewBox={`0 0 ${W} ${f.H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
           <defs>
             <linearGradient id={`${id}l`} gradientUnits="userSpaceOnUse" x1="0" x2={x0} y1="0" y2="0">
               <stop offset="0" stopColor={CREAM} stopOpacity="0"/><stop offset="1" stopColor={CREAM} stopOpacity="0.9"/>
             </linearGradient>
-            <linearGradient id={`${id}r`} gradientUnits="userSpaceOnUse" x1={x1} x2={W} y1="0" y2="0">
-              <stop offset="0" stopColor={CREAM} stopOpacity="0.9"/><stop offset="1" stopColor={CREAM} stopOpacity="0"/>
-            </linearGradient>
+            <RunFade id={`${id}r`} f={f} color={CREAM}/>
           </defs>
-          {/* The axis: a tick a year, a taller one and the year on each label. */}
-          <line x1={x0} x2={x1} y1={axisY} y2={axisY} stroke={CREAM_FAINT} strokeWidth="1.5"/>
-          {Array.from({ length: horizon + 1 }, (_, y) => {
-            const big = labelled.includes(y);
-            return <line key={y} x1={sx(y)} x2={sx(y)} y1={axisY} y2={axisY + (big ? 7 : 4)} stroke={big ? CREAM_SOFT : CREAM_FAINT} strokeWidth="1.2"/>;
-          })}
-          {labelled.map(y => (
-            <text key={y} x={sx(y)} y={axisY + 22} fontFamily={SANS} fontSize="11" fontWeight="600" fill={CREAM_SOFT} textAnchor="middle">{yearOf(y)}</text>
-          ))}
+          <BandAxis f={f} horizon={horizon}/>
           {/* The line, then its runs off each edge. */}
           <path d={left} fill="none" stroke={`url(#${id}l)`} strokeWidth="2.4" strokeLinecap="round"/>
           {rightEnd > horizon && <path d={right} fill="none" stroke={`url(#${id}r)`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}
@@ -402,17 +385,22 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
   const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
   return (
     <>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"4px"}}>
+      <div style={{...anchor,display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"4px"}}>
         <span style={caps(t)}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
         <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
+        <AnimatePresence>
+          {showNwAssumptions && (
+            <TilePopover key="how" title="How it's worked out" onClose={() => setShowNwAssumptions(false)}>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {[`Cash grows at your own savings rate, and is assumed to never exceed your ${fmt(m.emergencyBuffer)} emergency fund target.`,
+                  "Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.",
+                  "Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.",
+                ].map(line => <p key={line} style={{fontSize:"13.5px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
+              </div>
+            </TilePopover>
+          )}
+        </AnimatePresence>
       </div>
-      {showNwAssumptions && (
-        <div style={{...note(t),marginBottom:"8px"}}>
-          <p style={noteText(t)}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
-          <p style={noteText(t)}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
-          <p style={noteText(t)}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
-        </div>
-      )}
       {rows.map((row,i) => {
         const meta = NW_ROW_META[row.label] || {};
         const isOpen = openRow === row.label;
@@ -450,96 +438,135 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
   );
 }
 
-// The lump sum pill for a non-subscriber: £0, not editable, in the pale
-// blue and CTA blue border of the app's other subscriber features, with
-// a sheen passing over it and a lock.
+// The one-off pill for a non-subscriber: £0, not editable, in the blues of
+// the app's other subscriber features, with a sheen passing over it and a
+// lock.
 const LOCKED_PILL_CSS = `
 .lump-lock { position: relative; overflow: hidden; }
 .lump-lock > * { position: relative; z-index: 1; }
 .lump-lock::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
-  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.75) 46%, transparent 60%);
+  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.3) 46%, transparent 60%);
   will-change: transform; animation: lump-lock-sheen 7s ease-in-out infinite; }
 @keyframes lump-lock-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
 @media (prefers-reduced-motion: reduce) { .lump-lock::after { animation: none; transform: translateX(-30%); } }
 `;
+// On the dark band, softened as the other pill is: the subscriber wash
+// (CTA_WASH) at 40% with a dotted blue edge, its caption a pale blue that
+// reads on it.
+const LOCKED_ON_DARK = { fill: "rgba(234,243,254,0.4)", edge: "rgba(140,190,255,0.75)", label: "#d6e8ff" };
 function LockedLumpPill({ onClick }) {
   return (
-    <button type="button" className="lump-lock" onClick={onClick} aria-label="Lump sum today. Adding one is for subscribers"
-      style={{flex:1,minWidth:0,background:CTA_WASH,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"flex-start",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+    <button type="button" className="lump-lock" onClick={onClick} aria-label="One-off today. Adding one is for subscribers"
+      style={{flex:1,minWidth:0,background:LOCKED_ON_DARK.fill,border:`1.5px dotted ${LOCKED_ON_DARK.edge}`,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"flex-start",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
       <style>{LOCKED_PILL_CSS}</style>
-      <span style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"9.5px",fontWeight:700,color:CTA_BLUE,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
-        Lump sum today<Lock size={10} strokeWidth={2.6} aria-hidden="true"/>
+      <span style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"9.5px",fontWeight:700,color:LOCKED_ON_DARK.label,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
+        One-off today<Lock size={10} strokeWidth={2.6} aria-hidden="true"/>
       </span>
-      <span style={{...PILL_ANSWER_TEXT,color:MUT}}>£0</span>
+      <span style={{...PILL_ANSWER_TEXT,color:"rgba(250,247,240,0.6)"}}>£0</span>
     </button>
   );
 }
 
-// The Surplus card: what your monthly surplus and a lump sum could grow to,
-// by where they go.
-function SurplusCard({ t, surplus, estimate, setSurplus, lumpLocked, onLocked, lumpSum, setLumpSum, horizon, age, series, chartRef, chartWidth }) {
-  const chart = (() => {
-    const allValues = series.series.flatMap(s => s.values);
-    // Nothing to grow until a monthly amount or a lump sum is added: the
-    // axes still show, on a nominal £10k scale, with a note over them.
-    const empty = !allValues.some(v => v > 0);
-    const yMax = empty ? 10000 : Math.max(1, ...allValues);
-    const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = i => PL + (i / horizon) * cW;
-    const sy = v => PT + (1 - v / yMax) * cH;
-    const paths = series.series.map(s => {
-      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
-      const path = s.values.slice(0, endIdx + 1).map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-      const lastIdx = Math.min(endIdx, s.values.length - 1);
-      return { label: s.label, path, lastX: sx(lastIdx), lastY: sy(s.values[lastIdx]) };
-    });
-    const yTicks = [0, 0.5, 1].map(f => yMax * f);
-    const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks, empty };
-  })();
+// ── The Surplus view, drawn straight on the dark band ──────────────────
+// What goes in by the horizon (each month's amount and the one-off), then
+// a line for each place it could go, in that place's colour (the rows below
+// carry the same colours, so there's no key). The same frame as Net worth:
+// an axis from Now to the horizon's year, each line marked on the labelled
+// years, ending in a dot and running on to the right edge, fading. Not to the left: nothing has gone
+// in before today. A line that stops before the horizon (a student loan
+// cleared or written off) ends at its dot there.
+function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, chartRef, chartWidth }) {
+  const id = `sp${svgId(useId())}`;
+  const f = bandFrame(chartWidth, horizon);
+  const { W, PT, axisY, sx, year0 } = f;
+  const putIn = monthly * 12 * horizon + lump;
+  // Only the places the estimates below list at this horizon.
+  const listed = new Set(options.map(o => o.label));
+  const lines = series.series.filter(s => listed.has(s.label)).map(s => {
+    // Stops before the horizon, as the series worked out to the horizon
+    // alone would say (one that stops on it runs on, flat).
+    const stop = s.termYear != null && s.termYear < horizon ? s.termYear : null;
+    return { label: s.label, color: FORECAST_COLORS[s.label] || CREAM_SOFT, values: s.values, end: stop ?? horizon, runs: stop == null };
+  });
+  // Scaled to the years up to the horizon, from £0; a run that would leave
+  // the top is held there.
+  const yMax = Math.max(0, ...lines.flatMap(l => l.values.slice(0, l.end + 1)));
+  const empty = yMax <= 0;
+  const sy = v => PT + (1 - v / (yMax || 1)) * (axisY - 10 - PT);
+  const syRun = v => Math.max(PT - 10, sy(v));
+  const path = (l, from, to, y = sy) => `M${l.values.slice(from, to + 1).map((v, k) => `${sx(from + k).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}`;
+  const rightEnd = Math.min(series.years.length - 1, f.runTo);
   return (
     <>
-      <p style={cardText(t)}>What the money left over each month could grow to in a Stocks and Shares ISA, in savings, or in your pension, side by side. Change the monthly amount or add a lump sum to compare.</p>
-      <div style={{display:"flex",gap:"10px",marginTop:"12px"}}>
-        <PillMoneyInput label="Monthly surplus" value={surplus} onChange={setSurplus} placeholder={formatThousands(estimate)}/>
-        {lumpLocked ? <LockedLumpPill onClick={onLocked}/> : <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>}
+      <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px",marginTop:"6px"}}>
+        <span style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em"}}>{fmt(putIn)}</span>
+        <span style={{fontSize:"14px",fontWeight:600,color:CREAM_SOFT}}>put in by {year0 + horizon}</span>
       </div>
-
-      <div style={{...caps(t),marginTop:"18px"}}>Projected value · {horizon} years</div>
-      <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
-        {chart.paths.map(p => (
-          <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
-            <span style={{fontSize:"11.5px",color:t.figure}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
-          </div>
-        ))}
-      </div>
-      <div ref={chartRef} style={{marginTop:"10px",position:"relative"}}>
-        {chart.empty && (
-          <div style={{position:"absolute",left:chart.PL + 10,top:chart.PT + 8,width:chart.cW - 20,height:chart.cH - 16,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",border:`1px dashed ${t.body}`,borderRadius:"12px",padding:"0 16px",boxSizing:"border-box",fontSize:"13px",lineHeight:1.45,color:t.body}}>
-            {lumpLocked ? "Add a monthly amount to see what it could grow to." : "Add a monthly amount or a lump sum to see what it could grow to."}
-          </div>
+      {!empty && (
+        <p style={SR_ONLY}>
+          By {year0 + horizon}: {lines.map(l => `${FORECAST_SHORT_LABEL[l.label] || l.label} ${fmt(l.values[l.end])}${l.end < horizon ? ` (stops in ${year0 + l.end})` : ""}`).join(", ")}.
+        </p>
+      )}
+      <div ref={chartRef} style={{margin:"8px -20px 0",position:"relative"}}>
+        {empty && (
+          <p style={{position:"absolute",left:f.x0 + 12,right:BAND_INSET + 12,top:PT,bottom:f.H - axisY + 12,margin:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"13.5px",lineHeight:1.45,color:CREAM_SOFT}}>
+            {lumpLocked ? "Add an amount each month to see where it could grow." : "Add an amount each month, or one-off, to see where it could grow."}
+          </p>
         )}
-        <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}} aria-hidden="true">
-          <Axes c={chart} t={t} age={age}/>
-          {!chart.empty && chart.paths.map(p => {
-            const color = FORECAST_COLORS[p.label] || MUT;
-            return (
-              <g key={p.label}>
-                <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
-              </g>
-            );
-          })}
+        <svg width={W} height={f.H} viewBox={`0 0 ${W} ${f.H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
+          <defs>{lines.map((l, i) => <RunFade key={l.label} id={`${id}r${i}`} f={f} color={l.color}/>)}</defs>
+          <BandAxis f={f} horizon={horizon}/>
+          {!empty && lines.map((l, i) => (
+            <g key={l.label}>
+              {l.runs && rightEnd > horizon && <path d={path(l, horizon, rightEnd, syRun)} fill="none" stroke={`url(#${id}r${i})`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}
+              <path d={path(l, 0, l.end)} fill="none" stroke={l.color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              {/* A marker on each labelled year the line reaches, and a
+                  larger one where it ends. */}
+              {f.labelled.filter(y => y < l.end).map(y => <circle key={y} cx={sx(y)} cy={sy(l.values[y])} r="3.5" fill={l.color}/>)}
+              <circle cx={sx(l.end)} cy={sy(l.values[l.end])} r="4.5" fill={l.color}/>
+            </g>
+          ))}
         </svg>
       </div>
     </>
   );
 }
 
-// Below the stack while Surplus is in front: each place's low, mid and high
-// estimate at the horizon, each opening on its assumptions.
+// Below the horizon on the Surplus view: what goes in, in quiet pills (no
+// fill, a dotted edge) so the graph leads. Each month's amount starts
+// empty, our estimate from their answers only its placeholder, and its ?
+// pops out what to put in, centred on the screen (the band would cut off a
+// card hung below it). The one-off is a subscriber feature
+// (LockedLumpPill otherwise).
+const POP_CENTRED = { position:"fixed", inset:0, margin:"auto", height:"fit-content", width:"min(340px, calc(100vw - 40px))", transformOrigin:"center", padding:"18px 20px 20px" };
+function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lumpSum, setLumpSum }) {
+  const [why, setWhy] = useState(false);
+  const info = (
+    <InfoButton onClick={e => { e.preventDefault(); setWhy(w => !w); }} open={why}
+      style={{background:CREAM_SOFT,color:G,width:"13px",height:"13px",lineHeight:"13px",fontSize:"9px"}}/>
+  );
+  return (
+    <div style={{marginTop:"18px"}}>
+      <div style={{display:"flex",gap:"10px"}}>
+        <PillMoneyInput onDark label="Each month" labelExtra={info} value={surplus} onChange={setSurplus} placeholder={formatThousands(estimate)}/>
+        {lumpLocked ? <LockedLumpPill onClick={onLocked}/> : <PillMoneyInput onDark label="One-off today" value={lumpSum} onChange={setLumpSum}/>}
+      </div>
+      <AnimatePresence>
+        {why && (
+          <TilePopover key="each-month" title="Each month" onClose={() => setWhy(false)} style={POP_CENTRED}>
+            <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>What you usually have left at the end of a month, once bills and spending are paid.</p>
+              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>The same amount goes into each line above, so you can compare where it could grow the most.</p>
+            </div>
+          </TilePopover>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Below the band while Surplus is up: each place's low, mid and high
+// estimate at the horizon, its ? popping out its assumptions.
 function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip }) {
   const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
   const colHead = { fontSize:"9.5px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
@@ -557,7 +584,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
         const isOpen = openTip === o.label;
         const a = assumptions[o.label];
         return (
-          <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":`1px solid ${t.rule}`}}>
+          <div key={o.label} style={{...anchor,padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":`1px solid ${t.rule}`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
                 <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
@@ -571,16 +598,20 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
               </div>
             </div>
             {o.note && <div style={{fontSize:"11px",color:t.body,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>}
-            {isOpen && a && (
-              <div style={note(t)}>
-                {a.lines.map((line,i) => <p key={i} style={noteText(t)}>{line}</p>)}
-                <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:t.body}}>
-                  <span>Low <b style={{color:t.figure}}>{a.rates.low}</b></span>
-                  <span>Central <b style={{color:t.figure}}>{a.rates.central}</b></span>
-                  <span>High <b style={{color:t.figure}}>{a.rates.high}</b></span>
-                </div>
-              </div>
-            )}
+            <AnimatePresence>
+              {isOpen && a && (
+                <TilePopover key="why" title={o.label} onClose={() => setOpenTip(null)}>
+                  <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                    {a.lines.map((line,i) => <p key={i} style={{fontSize:"13.5px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
+                    <div style={{display:"flex",gap:"14px",fontSize:"12px",color:MUT}}>
+                      <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
+                      <span>Central <b style={{color:TEXT}}>{a.rates.central}</b></span>
+                      <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
+                    </div>
+                  </div>
+                </TilePopover>
+              )}
+            </AnimatePresence>
           </div>
         );
       })}
