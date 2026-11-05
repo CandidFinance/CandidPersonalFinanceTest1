@@ -94,7 +94,8 @@ const fillet = bg => ({ position:"absolute", width:"10px", height:"10px", backgr
 const TILE_LOOK = {
   live:  { bg:"#fff", shadow:"0 2px 10px rgba(22,47,36,0.06)", title:G, art:"" },
   soon:  { bg:MODULE_SOON_TILE.bg, shadow:"none", title:TEXT, art:"-soon", panel:MODULE_SOON_TILE.chip },
-  quiet: { bg:MODULE_QUIET_TILE.bg, shadow:"none", title:MUT, art:"-not-live", panel:MODULE_QUIET_TILE.panel },
+  // Its pale tile is near the page's cream, so a hairline ring gives it an edge.
+  quiet: { bg:MODULE_QUIET_TILE.bg, shadow:"0 0 0 1px rgba(22,47,36,0.08), 0 2px 10px rgba(22,47,36,0.06)", title:MUT, art:"-not-live", panel:MODULE_QUIET_TILE.panel },
 };
 const SOON_BY_KEY = Object.fromEntries(COMING_SOON.map(s => [s.key, s]));
 // Its pop-open card, centred on the screen rather than hung off a half-width
