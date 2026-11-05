@@ -210,7 +210,7 @@ function LegacyRedirect({ to }) {
 // redirect always land here (never inside the app — the API callback
 // redirects to the site root, and the hosted payment page redirects straight
 // to return_uri with no server hop), so this checks for those params first
-// and forwards to Edit inputs, open on Cash & savings, with the query string
+// and forwards to Edit inputs, open on Cash, with the query string
 // intact (CandidApp reads it on mount), instead of ever rendering the
 // marketing page. Not the module page: for someone not in the app yet, that
 // counts as arriving on a shared module link.

@@ -75,7 +75,7 @@ function AddLink({ label, onClick }) {
 }
 
 // The module an expanded tile links to, when the user has chosen it: the
-// match lives in Pension, ISAs in Investments (or Cash & savings for a
+// match lives in Pension, ISAs in Investments (or Cash for a
 // cash-only user).
 function linkedModule(key, selected) {
   if (key === "match") return selected.has("pension") ? "pension" : null;
@@ -123,7 +123,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
       if (c.state === "missing") {
         return c.missing === "expenses"
           ? <><p style={line}>Add your monthly expenses to check this.</p><AddLink label="Add your expenses" onClick={() => onAddInputs("about")}/></>
-          : <><p style={line}>Add your cash savings to check this.</p><AddLink label="Add Cash & savings" onClick={() => onAddInputs("cash")}/></>;
+          : <><p style={line}>Add your cash savings to check this.</p><AddLink label="Add Cash" onClick={() => onAddInputs("cash")}/></>;
       }
       return (
         <>

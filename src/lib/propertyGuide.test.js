@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts, whyLine, STEP_GUIDES } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
-// Someone who did core onboarding with Cash & savings and Pension.
+// Someone who did core onboarding with Cash and Pension.
 const base = {
   selectedModules: ["cash", "pension"],
   salary: "50000", monthlyExpenses: "2000", cashTiers: [{ amount: "30000", rate: "4" }],

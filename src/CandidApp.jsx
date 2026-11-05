@@ -896,7 +896,7 @@ export default function AppShell() {
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
-    // From Student loan, Cash & savings and Pension ask only what its answer
+    // From Student loan, Cash and Pension ask only what its answer
     // uses (moduleGuide.js briefQuestions), then go straight back to it. The
     // module's own walk-through comes later, without those questions.
     const brief = briefQuestions(mobileActiveModule, returnTo);

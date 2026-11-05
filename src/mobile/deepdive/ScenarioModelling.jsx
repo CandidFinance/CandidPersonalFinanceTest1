@@ -68,7 +68,7 @@ const describe = it => it.kind === "once"
 // { level: "over" | "close" | "unknown", text }.
 function affordability(m, it, before = 0) {
   const amount = +it.amount || 0;
-  if (m.expensesUnknown) return { level: "unknown", text: "Add your monthly spending in Cash & savings to check this fits." };
+  if (m.expensesUnknown) return { level: "unknown", text: "Add your monthly spending in Cash to check this fits." };
   if (it.kind === "once") {
     const spare = m.surplusCash || 0, total = before + amount;
     if (total <= spare) return null;

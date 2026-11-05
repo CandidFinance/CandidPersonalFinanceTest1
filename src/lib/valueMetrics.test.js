@@ -4,7 +4,7 @@ import { calcMetrics } from "./metrics.js";
 import { bankChange, unbankChange } from "./moduleStatus.js";
 import { rentVsBuyDecision, studentLoanDecision, decisionRowFields, gainedRowFields, bankedDiff } from "./valueMetrics.js";
 
-// Cash & savings and Pension answered, so the loan's verdict is in.
+// Cash and Pension answered, so the loan's verdict is in.
 const verdictIn = { selectedModules: ["cash", "pension", "studentLoan"], answeredModules: ["cash", "pension", "studentLoan"] };
 const borrower = overrides => {
   const d = {

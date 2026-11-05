@@ -48,8 +48,8 @@ export function checkHighInterestDebt(debts) {
 }
 
 // `cash` is cash savings plus Premium Bonds (calcMetrics' totalLiquid, the
-// same figure as the Cash & savings module's emergency fund). `targetMonths`
-// is the user's own 3/6/9-month choice from Cash & savings: holding more than
+// same figure as the Cash module's emergency fund). `targetMonths`
+// is the user's own 3/6/9-month choice from Cash: holding more than
 // the 3-month floor but less than that target isn't flagged here, but the
 // copy says so, so the two screens never contradict each other.
 export function checkEmergencyFund({ known, cash = 0, monthlyExpenses = 0, targetMonths = EMERGENCY_FLOOR_MONTHS }) {
@@ -119,7 +119,7 @@ export function waterfallInputs(d, m) {
     who: "you",
     salary: m.salary,
     pension: yourPension(d, selected),
-    // isaUsedThisYear covers Cash ISA payments (asked in Cash & savings) and
+    // isaUsedThisYear covers Cash ISA payments (asked in Cash) and
     // S&S/LISA/Other (asked in Investments); m.isaHeadroom is derived from it.
     isa: (selected.has("cash") || selected.has("investments"))
       ? { known: true, usedThisYear: m.isaUsedThisYear }

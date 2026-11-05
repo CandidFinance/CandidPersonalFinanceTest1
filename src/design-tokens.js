@@ -263,6 +263,28 @@ export const HERO_TILE_BG_GREEN = [
   "#EDF6F1",
 ].join(", ");
 
+// Modules' tiles: each module's icon on a rounded square of its own colour,
+// so the tiles tell apart at a glance. `bg` the square, `fg` the icon (each
+// at least 3:1 on its square). A module not started yet goes grey instead.
+export const MODULE_ACCENTS = {
+  cash:         { bg: "#DDF1E4", fg: "#23784C" },
+  investments:  { bg: "#E9E4FA", fg: "#5B3FC4" },
+  pension:      { bg: "#DFEAFA", fg: "#2860B8" },
+  studentLoan:  { bg: "#FAEBD2", fg: "#9A6209" },
+  kids:         { bg: "#FBE3DD", fg: "#B8472E" },
+  taxTrap:      { bg: "#D9F0EE", fg: "#17746F" },
+  property:     { bg: "#F5E2EE", fg: "#9C3A6F" },
+  mortgage:     { bg: "#E4E9EF", fg: "#3F5266" },
+  personalLoan: { bg: "#E2E6F8", fg: "#3E4FA8" },
+};
+export const MODULE_ACCENT_MUTED = { bg: "rgba(22,47,36,0.06)", fg: "#8a8a8a" };
+// A module not built yet: a flat grey tile with its icon on white, so it
+// reads apart from one not started (a pale white tile, its icon on grey).
+export const MODULE_SOON_TILE = { bg: "#ECEAE3", chip: "#FFFFFF", fg: "#9B9B9B" };
+// Modules' top band, behind the title and the hero card: brand green
+// washing into gold, pale enough for dark text.
+export const MODULES_BAND_BG = "linear-gradient(160deg, #D9EADF 0%, #E9EEDB 50%, #F5E6C8 100%)";
+
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
 // are affordable). White for the top 30%, then fading to the status colour

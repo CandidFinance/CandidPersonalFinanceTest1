@@ -56,7 +56,7 @@ export const MAX_SELLING_COSTS_PCT = 20;
 // Where the renter's money sits. "cash" (the default) earns the better of
 // the blended rate on the user's own cash savings, Premium Bonds and Cash
 // ISAs (cashRate) and the best savings rate Candid tracks (savings_rates,
-// the same rates the Cash & savings module points users to): leaving money
+// the same rates the Cash module points users to): leaving money
 // in a poor account shouldn't count against renting.
 // "invested" earns 6% a year, the long-run growth Candid uses everywhere
 // (growth.js: pensions, Forecast and the Investments module); the stress

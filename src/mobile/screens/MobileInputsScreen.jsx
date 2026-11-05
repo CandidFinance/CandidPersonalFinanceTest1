@@ -45,7 +45,7 @@ function onSomething(target, container) {
 export default function MobileInputsScreen({ d, m, set, open, field = null, onStartModule, onOpenModule, onEmailChange }) {
   const pressedOn = useRef(false);
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
-  // Cash & savings and Pension answered only as far as Student loan needs
+  // Cash and Pension answered only as far as Student loan needs
   // (its short route): those answers, and only those, to change here.
   const partly = SCORED_MODULES.filter(k => !answered.includes(k) && ((k === "cash" && loanSavingsIn(d)) || (k === "pension" && loanPensionChecked(d))));
   const notYet = scoredInView(d).filter(k => !answered.includes(k) && !partly.includes(k));

@@ -355,7 +355,7 @@ function PensionTargetEditor({ row, set, onDone }) {
 const MONTH_CHOICES = [{ value: "3", label: "3 months" }, { value: "6", label: "6 months" }, { value: "9", label: "9 months" }];
 
 // The months of spending to keep, and the monthly spending: the same two
-// answers Cash & savings sizes the emergency fund from.
+// answers Cash sizes the emergency fund from.
 function EmergencyEditor({ m, set, onDone }) {
   const [months, setMonths] = useState(String(m.bufferMonths));
   const [spending, setSpending] = useState(m.expenses > 0 ? Math.round(m.expenses) : null);
@@ -370,7 +370,7 @@ function EmergencyEditor({ m, set, onDone }) {
       <PillSlider value={months} onChange={setMonths} options={MONTH_CHOICES}/>
       <p style={helpText}>{EMERGENCY_MONTHS_HINT[months]}.</p>
       <PillMoneyInput label="Monthly spending" value={spending} onChange={setSpending}/>
-      <p style={helpText}>Cash & savings uses the same two answers.</p>
+      <p style={helpText}>Cash uses the same two answers.</p>
     </EditorCard>
   );
 }

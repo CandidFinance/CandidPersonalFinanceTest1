@@ -39,7 +39,7 @@ const SITE = "https://www.candid-finance.co.uk";
 const DNS_TIMEOUT_MS = 2500;
 const RESEND_AFTER_MS = 10 * 60 * 1000;
 const MAX_SENDS = 5;
-const MODULE_TITLES = { cash: "Cash & savings", investments: "Investments", pension: "Pension", studentLoan: "Student loan", kids: "Kids & family" };
+const MODULE_TITLES = { cash: "Cash", investments: "Investments", pension: "Pension", studentLoan: "Student loan", kids: "Kids & family" };
 
 const checkLimiter = rateLimiter(15, "10 m", "ratelimit:email-check");
 const confirmLimiter = rateLimiter(30, "10 m", "ratelimit:email-confirm");

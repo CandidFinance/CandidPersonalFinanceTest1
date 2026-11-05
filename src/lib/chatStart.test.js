@@ -150,7 +150,7 @@ test("the questions read as a conversation: a word back, where they are, and a n
   // Costs then the emergency fund: "Nearly there" before the costs, "Last
   // one" on the fund (no ISA question for under £1k).
   assert.match(q("costs", { savings: "u1", rate: "2-3" }, { prev: "rate" })[0].text, /Nearly there\./);
-  assert.match(q("buffer", { savings: "u1", rate: "2-3", costs: "1-1.5" }, { prev: "costs" })[0].text, /Last one for Cash & savings: how many months/);
+  assert.match(q("buffer", { savings: "u1", rate: "2-3", costs: "1-1.5" }, { prev: "costs" })[0].text, /Last one for Cash: how many months/);
   // Not "Last one" while an answer could still bring a follow-up.
   const trap = questionParts(CHAT_QUICK.taxTrap, "under12", d, m, { employment: "employed", salary: "100-110", bonus: "none", payIn: "no" }, { prev: "payIn" });
   assert.doesNotMatch(trap[0].text, /last one|final question/i);

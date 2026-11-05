@@ -724,7 +724,7 @@ export const MODULE_GUIDES = {
 
 // The short route from Student loan (?from=studentLoan): only the questions
 // its answer uses, each asked once, so the module's own walk-through skips
-// them later. Cash & savings: spending (for the buffer), savings with their
+// them later. Cash: spending (for the buffer), savings with their
 // rate, Premium Bonds (money that could go on the loan too) and this year's
 // ISA payments (allowance that's use it or lose it, unlike the loan).
 // Pension: whether they pay in, and their employer's match.

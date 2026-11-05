@@ -4,7 +4,7 @@
 // wherever it's asked. A field not here falls back to its input label, then
 // to the question.
 export const SHORT_LABELS = {
-  // Cash & savings
+  // Cash
   hasCashSavings: "Cash savings",
   cashTiers: "Accounts and rates",
   hasPremiumBonds: "Premium Bonds",

@@ -14,7 +14,7 @@ test("the entry asks one question, interests, with a short reason (name comes wi
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
   assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
   assert.equal(firstPick({ interests: ["cash", "retirement"] }), "pension");
-  // Just exploring goes to Cash & savings, the tour module.
+  // Just exploring goes to Cash, the tour module.
   assert.equal(firstPick({ interests: ["exploring"] }), "cash");
   assert.equal(modulePath("property"), "/app/property");
 });
@@ -76,7 +76,7 @@ test("picks come first in the order offered, then the rest", () => {
     ["cash", "studentLoan", "pension", "investments", "kids", "property"]);
 });
 
-test("just exploring leads with Cash & savings", () => {
+test("just exploring leads with Cash", () => {
   const order = moduleOrder({ interests: ["exploring"] });
   assert.equal(order[0], DEFAULT_FIRST_MODULE);
   assert.equal(DEFAULT_FIRST_MODULE, "cash");

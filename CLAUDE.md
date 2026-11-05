@@ -34,7 +34,7 @@
 
 ## Design Language & UI Rules
 
-1. **App navigation:** The floating tab bar (`MobileTabBar`) is the app's navigation on every screen. Only Home has a top bar (Account, Premium crown, Edit inputs; no wordmark). Every other screen starts at the top of the page, with its page label hidden from view but kept for screen readers and analytics. The marketing site keeps its own header with the wordmark.
+1. **App navigation:** The floating tab bar (`MobileTabBar`) is the app's navigation on every screen. Only Home has a top bar (Account, Premium crown, Edit inputs; no wordmark). Every other screen starts at the top of the page, with its page label hidden from view but kept for screen readers and analytics. Exception: Modules shows its title, large and in the page, above its hero card (Harvey, 5 Nov 2026). The marketing site keeps its own header with the wordmark.
 2. **Zero Emoji Policy:** Never use emojis in copy, buttons, headers, or icons. Use text labels or a single unified SVG icon set (e.g., Lucide React configured consistently).
 3. **Surface Variety:** Do NOT default to wrapping every section in a white rounded border card (`rounded-xl border shadow-sm`). Reserve card containers strictly for discrete, interactive components (e.g., forms, actionable modules). Use whitespace, section backgrounds, or plain `<hr />` dividers for general content.
 4. **Single State Indicator:** Every piece of state (e.g., Status, Completion, Progress) gets ONE visual indicator on screen. Eliminate redundant badges or secondary icons repeating the same status.

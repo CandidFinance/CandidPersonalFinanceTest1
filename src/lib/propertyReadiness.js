@@ -2,7 +2,7 @@
 // mortgage) unlocks: the purchase details the loan is worked out from, i.e.
 // a price, where, and first-time buyer status where it changes stamp duty.
 // The "before a deposit" checks (waterfall.js) are advice on the same screen,
-// not a gate: two of them need the Cash & savings or Investments modules, and
+// not a gate: two of them need the Cash or Investments modules, and
 // someone arriving at Property from a shared link should get through steps
 // 1, 2 and 3 without leaving it. Unit tested in propertyReadiness.test.js.
 import { regionNation } from "./regions.js";

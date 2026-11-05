@@ -142,7 +142,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           </p>
         )}
         {snoozed && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => set("assistSnoozed", { ...(d.assistSnoozed || {}), cash: null })}>Show them anyway</button>}
-        {cashHere && !(m.cash > 0) && page !== "cash" && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => { minimise(); onGoTo("cash"); }}>Go to Cash & savings</button>}
+        {cashHere && !(m.cash > 0) && page !== "cash" && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => { minimise(); onGoTo("cash"); }}>Go to Cash</button>}
         <Elsewhere items={elsewhere} labels={moduleLabels} onGo={goTo}/>
         <p style={{ fontSize: "12.5px", color: MUT, lineHeight: 1.55, marginTop: "22px" }}>
           Assist checks your figures against the live rates each time you open Candid, and shows a gold dot when there's something new.

@@ -150,7 +150,7 @@ function overpaymentRow(id, label, target, paid, field, paidField) {
   };
 }
 
-// The extra interest a year from changes made in Cash & savings (banked,
+// The extra interest a year from changes made in Cash (banked,
 // as on Modules), against that plus what's still on the table there at
 // today's rates (the module's £, as on Home).
 function cashRow(d, m, statuses) {
@@ -171,7 +171,7 @@ function cashRow(d, m, statuses) {
 const titleOf = key => MODULE_META.find(mm => mm.key === key)?.title || key;
 
 // Every row, in a fixed order. Each unlocks once one of its modules is
-// answered: the ISA allowance with Cash & savings or Investments (both ask
+// answered: the ISA allowance with Cash or Investments (both ask
 // this year's ISA payments), the rest with their own. Until then it's
 // locked and counts for nothing. Once answered, a row that doesn't fit the
 // answers (no student loan, no cash) goes. Mortgage only shows once its

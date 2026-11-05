@@ -67,7 +67,7 @@ export const PROFILES = {
   loanFastPay: { ...rich, salary: "34000", age: "25", loanBalance: "55000", salaryTrajectory: "high" },
   loanBelowThreshold: { ...rich, salary: "26000", age: "23", loanBalance: "50000", hasPgLoan: "yes", pgLoanBalance: "12000" },
   // Only Student loan answered, then savings and the pension match on its
-  // short route (moduleGuide.js briefQuestions): the rest of Cash & savings
+  // short route (moduleGuide.js briefQuestions): the rest of Cash
   // and Pension not answered, and behind the paywall.
   loanOnly: { name: "Jo", appEntered: true, email: "check@example.com", unlockGate: true, unlockedModules: ["studentLoan"], selectedModules: ["studentLoan"], answeredModules: ["studentLoan"],
     goalsAsked: true, confidenceAsked: true, employmentStatus: "employed", employmentAsked: true, salary: "70000", salaryTrajectory: "stable",

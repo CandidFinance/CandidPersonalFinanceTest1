@@ -81,7 +81,7 @@
  */
 
 /**
- * Cash and savings
+ * Cash
  * @typedef {Object} CashInputs
  * @property {string} cashSavings The single figure, used when there are no cash tiers.
  * @property {string} savingsRate

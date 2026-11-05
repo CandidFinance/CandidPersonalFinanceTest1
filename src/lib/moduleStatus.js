@@ -29,7 +29,7 @@ export function mortgageComparisonRate(d, marketRates = {}) {
 const GROWTH = GROWTH_NOMINAL_PCT / 100;
 
 export const MODULE_META = [
-  { key:"cash",        icon:PoundSterling, title:"Cash & savings"  },
+  { key:"cash",        icon:PoundSterling, title:"Cash"  },
   { key:"investments", icon:TrendingUp,    title:"Investments"     },
   { key:"pension",     icon:Landmark,      title:"Pension"         },
   { key:"studentLoan", icon:GraduationCap, title:"Student loan"    },
@@ -198,7 +198,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Unused allowance only counts as a gap when there's money that could fill it
   // before 5 April: investments held outside an ISA, cash above the emergency
   // buffer, or spare monthly income once any buffer shortfall is topped up.
-  // (The shortfall is only known when Cash & savings was picked — otherwise
+  // (The shortfall is only known when Cash was picked — otherwise
   // spare income is taken at face value.)
   const isaFillable = isaFillableBy(d, m);
   const isaGap = isaFillable > 2000;

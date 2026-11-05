@@ -1,4 +1,4 @@
-// Cash & savings' quick start (quickStart.js): how much, roughly what it
+// Cash's quick start (quickStart.js): how much, roughly what it
 // earns, monthly costs, the emergency fund target, and a Cash ISA this tax year only where interest
 // could go over the Personal Savings Allowance. Unit tested in
 // quickStart.test.js.
@@ -69,7 +69,7 @@ const band = (list, value) => list.find(b => b.value === value);
 
 export const CASH_QUICK = {
   module: "cash",
-  intro: { title: "Cash & savings", subtitle: "Money left in a low-rate account loses value every year.", question: "How much is yours losing?" },
+  intro: { title: "Cash", subtitle: "Money left in a low-rate account loses value every year.", question: "How much is yours losing?" },
   order: ["savings", "rate", "costs", "buffer", "isa"],
   questions: {
     savings: {

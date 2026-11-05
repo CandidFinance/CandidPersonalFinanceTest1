@@ -133,7 +133,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£618/yr lost to low savings rates",
      "impact": 618,
@@ -292,7 +292,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£618/yr lost to low savings rates",
       "impact": 618,
@@ -1480,7 +1480,7 @@
      },
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 618,
       "amountIsLumpSum": false,
       "line": "£618/yr lost to low savings rates"
@@ -3159,7 +3159,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£623/yr lost to low savings rates",
      "impact": 623,
@@ -3318,7 +3318,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£623/yr lost to low savings rates",
       "impact": 623,
@@ -4310,7 +4310,7 @@
      },
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 623,
       "amountIsLumpSum": false,
       "line": "£623/yr lost to low savings rates"
@@ -5934,7 +5934,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£204/yr lost to low savings rates",
      "impact": 204,
@@ -6073,7 +6073,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£204/yr lost to low savings rates",
       "impact": 204,
@@ -7087,7 +7087,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 204,
       "amountIsLumpSum": false,
       "line": "£204/yr lost to low savings rates"
@@ -8586,7 +8586,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£204/yr lost to low savings rates",
      "impact": 204,
@@ -8725,7 +8725,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£204/yr lost to low savings rates",
       "impact": 204,
@@ -9611,7 +9611,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 204,
       "amountIsLumpSum": false,
       "line": "£204/yr lost to low savings rates"
@@ -11068,7 +11068,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "impact": 1070,
@@ -11207,7 +11207,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "impact": 1070,
@@ -12272,7 +12272,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1070,
       "amountIsLumpSum": false,
       "line": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs"
@@ -13785,7 +13785,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "impact": 1185,
@@ -13924,7 +13924,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "impact": 1185,
@@ -14831,7 +14831,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1185,
       "amountIsLumpSum": false,
       "line": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs"
@@ -16286,7 +16286,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£6,700 short of your 6-month emergency fund",
      "impact": 24,
@@ -16425,7 +16425,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£6,700 short of your 6-month emergency fund",
       "impact": 24,
@@ -17350,7 +17350,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 24,
       "amountIsLumpSum": false,
       "line": "£6,700 short of your 6-month emergency fund"
@@ -17889,7 +17889,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£6,700 short of your 6-month emergency fund",
      "impact": 25,
@@ -18028,7 +18028,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£6,700 short of your 6-month emergency fund",
       "impact": 25,
@@ -18834,7 +18834,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 25,
       "amountIsLumpSum": false,
       "line": "£6,700 short of your 6-month emergency fund"
@@ -19334,7 +19334,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "impact": 1084,
@@ -19473,7 +19473,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "impact": 1084,
@@ -20647,7 +20647,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1084,
       "amountIsLumpSum": false,
       "line": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs"
@@ -22184,7 +22184,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "impact": 984,
@@ -22323,7 +22323,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "impact": 984,
@@ -23327,7 +23327,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 984,
       "amountIsLumpSum": false,
       "line": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs"
@@ -24808,7 +24808,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "impact": 975,
@@ -24947,7 +24947,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "impact": 975,
@@ -25923,7 +25923,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 975,
       "amountIsLumpSum": false,
       "line": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs"
@@ -27470,7 +27470,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "impact": 675,
@@ -27629,7 +27629,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "impact": 675,
@@ -28495,7 +28495,7 @@
      },
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 675,
       "amountIsLumpSum": false,
       "line": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs"
@@ -30006,7 +30006,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "impact": 908,
@@ -30145,7 +30145,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "impact": 908,
@@ -31206,7 +31206,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 908,
       "amountIsLumpSum": false,
       "line": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs"
@@ -32712,7 +32712,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "impact": 950,
@@ -32851,7 +32851,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "impact": 950,
@@ -33723,7 +33723,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 950,
       "amountIsLumpSum": false,
       "line": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs"
@@ -35174,7 +35174,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 222,
@@ -35313,7 +35313,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 222,
@@ -36432,7 +36432,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
@@ -38536,7 +38536,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 250,
@@ -38675,7 +38675,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 250,
@@ -39667,7 +39667,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
@@ -41729,7 +41729,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£5,400 short of your 6-month emergency fund",
      "impact": 37,
@@ -41868,7 +41868,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£5,400 short of your 6-month emergency fund",
       "impact": 37,
@@ -42979,7 +42979,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 37,
       "amountIsLumpSum": false,
       "line": "£5,400 short of your 6-month emergency fund"
@@ -45472,7 +45472,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£5,400 short of your 6-month emergency fund",
      "impact": 45,
@@ -45611,7 +45611,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£5,400 short of your 6-month emergency fund",
       "impact": 45,
@@ -46603,7 +46603,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 45,
       "amountIsLumpSum": false,
       "line": "£5,400 short of your 6-month emergency fund"
@@ -49054,7 +49054,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 222,
@@ -49193,7 +49193,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 222,
@@ -50325,7 +50325,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
@@ -52005,7 +52005,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 250,
@@ -52144,7 +52144,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 250,
@@ -53149,7 +53149,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
@@ -54787,7 +54787,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "impact": 312,
@@ -54926,7 +54926,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "impact": 312,
@@ -55970,7 +55970,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 312,
       "amountIsLumpSum": false,
       "line": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs"
@@ -57540,7 +57540,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "impact": 44,
@@ -57679,7 +57679,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "impact": 44,
@@ -58562,7 +58562,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 44,
       "amountIsLumpSum": false,
       "line": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs"
@@ -60075,7 +60075,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "impact": 1008,
@@ -60214,7 +60214,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "impact": 1008,
@@ -61276,7 +61276,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1008,
       "amountIsLumpSum": false,
       "line": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs"
@@ -62773,7 +62773,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "impact": 1071,
@@ -62912,7 +62912,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "impact": 1071,
@@ -63785,7 +63785,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1071,
       "amountIsLumpSum": false,
       "line": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs"
@@ -65225,7 +65225,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£759/yr lost to low savings rates",
      "impact": 759,
@@ -65364,7 +65364,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£759/yr lost to low savings rates",
       "impact": 759,
@@ -66417,7 +66417,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 759,
       "amountIsLumpSum": false,
       "line": "£759/yr lost to low savings rates"
@@ -67920,7 +67920,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£801/yr lost to low savings rates",
      "impact": 801,
@@ -68059,7 +68059,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£801/yr lost to low savings rates",
       "impact": 801,
@@ -68923,7 +68923,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 801,
       "amountIsLumpSum": false,
       "line": "£801/yr lost to low savings rates"
@@ -70369,7 +70369,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -71943,7 +71943,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -73349,7 +73349,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "impact": 508,
@@ -73488,7 +73488,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "impact": 508,
@@ -74955,7 +74955,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 508,
       "amountIsLumpSum": false,
       "line": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs"
@@ -76460,7 +76460,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "impact": 272,
@@ -76599,7 +76599,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "impact": 272,
@@ -77908,7 +77908,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 272,
       "amountIsLumpSum": false,
       "line": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs"
@@ -79359,7 +79359,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "impact": 1161,
@@ -79498,7 +79498,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "impact": 1161,
@@ -80956,7 +80956,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 1161,
       "amountIsLumpSum": false,
       "line": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
@@ -82930,7 +82930,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "critical",
      "summary": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "impact": 989,
@@ -83069,7 +83069,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "critical",
       "summary": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "impact": 989,
@@ -84369,7 +84369,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 989,
       "amountIsLumpSum": false,
       "line": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
@@ -86284,7 +86284,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 222,
@@ -86423,7 +86423,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 222,
@@ -87386,7 +87386,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
@@ -88874,7 +88874,7 @@
     "cash": {
      "key": "cash",
      "icon": "<element undefined>",
-     "title": "Cash & savings",
+     "title": "Cash",
      "status": "attention",
      "summary": "£800 short of your 6-month emergency fund",
      "impact": 250,
@@ -89013,7 +89013,7 @@
      {
       "key": "cash",
       "icon": "<element undefined>",
-      "title": "Cash & savings",
+      "title": "Cash",
       "status": "attention",
       "summary": "£800 short of your 6-month emergency fund",
       "impact": 250,
@@ -89849,7 +89849,7 @@
     "first": [
      {
       "key": "cash",
-      "title": "Cash & savings",
+      "title": "Cash",
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"

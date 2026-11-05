@@ -215,7 +215,7 @@ export function AccountFlow({ item, state, update, d, set, backToList }) {
       <button type="button" disabled={!pick} style={primaryButton(!pick)} onClick={() => update({ step: "how" })}>Show me how</button>
       <div style={{ textAlign: "center", marginTop: "6px" }}>
         <button type="button" style={textButton} onClick={() => settle(null)}>Keep it where it is</button>
-        {absolute && !a.isa && <p style={{ fontSize: "11.5px", color: MUT, margin: 0 }}>Candid will keep it at {pct(a.ratePct)} until you update it in Cash & savings.</p>}
+        {absolute && !a.isa && <p style={{ fontSize: "11.5px", color: MUT, margin: 0 }}>Candid will keep it at {pct(a.ratePct)} until you update it in Cash.</p>}
       </div>
     </div>
   );

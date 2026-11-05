@@ -36,13 +36,13 @@ test("every row shows, locked until its module's questions are answered", () => 
   // Opened and skipped isn't answered.
   assert.deepEqual(openIds({ ...none, selectedModules: ["cash", "pension"], answeredModules: [] }), []);
   assert.deepEqual(openIds({ ...none, ...answered(["pension"]) }), ["pension"]);
-  // Cash & savings asks this year's ISA payments too, so it unlocks the ISA row.
+  // Cash asks this year's ISA payments too, so it unlocks the ISA row.
   assert.deepEqual(openIds({ ...none, ...answered(["cash"]) }), ["isa", "emergency", "cashInterest"]);
   assert.deepEqual(openIds({ ...none, ...answered(["investments"]) }), ["isa"]);
   assert.deepEqual(openIds({ ...loan, unwrappedValue: "0", ...answered(["studentLoan"]) }), ["studentLoan"]);
   // A locked row names the modules that unlock it, and the one to open.
   const isa = rowsOf(none).find(r => r.id === "isa");
-  assert.equal(isa.unlock, "Cash & savings or Investments");
+  assert.equal(isa.unlock, "Cash or Investments");
   assert.equal(isa.module, "investments");
   assert.equal(isa.moduleTitle, "Investments");
   assert.equal(isa.tracked, false);
@@ -51,7 +51,7 @@ test("every row shows, locked until its module's questions are answered", () => 
 test("once its module is answered, a row that doesn't fit the answers goes", () => {
   // Student loan answered with no loan: nothing to overpay.
   assert.equal(rowOf({ ...base, ...answered(["studentLoan"]) }, "studentLoan"), undefined);
-  // Cash & savings answered with no cash: no interest to optimise.
+  // Cash answered with no cash: no interest to optimise.
   assert.equal(rowOf({ ...base, cashTiers: [], cashSavings: "0" }, "cashInterest"), undefined);
 });
 

@@ -81,7 +81,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
   const sl = calcStudentLoanScenario(d, m);
   const pg = pgScenario(d, m);
-  // Whether paying it off comes out ahead: only once Cash & savings and
+  // Whether paying it off comes out ahead: only once Cash and
   // Pension are answered (appEntry.js loanVerdictReady).
   const verdict = loanVerdictReady(d);
   const worthOverpaying = verdict && sl.worthOverpaying;
@@ -477,7 +477,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
       <PillSlider compact label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
       {/* Whether it's spare: against cash above the emergency buffer. */}
       {overpayAmt > 0 && (m.expensesUnknown
-        ? <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash & savings to check you could spare this.</p>
+        ? <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash to check you could spare this.</p>
         : overpayAmt > (m.surplusCash || 0) && (
           <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:TEXT,marginTop:"6px"}}>
             <CircleAlert size={13} color={CRITICAL} style={{flexShrink:0,marginTop:"1px"}}/>
@@ -518,7 +518,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
   );
 }
 
-// Until Cash & savings and Pension are answered, the answer here is only
+// Until Cash and Pension are answered, the answer here is only
 // part of it: whether the money's spare, and whether paying the loan off
 // beats saving or the pension, depend on them. The way in to each (behind
 // the paywall for anyone whose free answer was this one).
@@ -555,7 +555,7 @@ function LockedOpportunity({ d }) {
           <p style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
             A few more details show the full trade-offs of paying off early.
           </p>
-          {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash & savings")}
+          {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash")}
           {hasEmployerMatch(d) && step(loanPensionChecked(d), "/app/module/pension?from=studentLoan", "Pension")}
         </div>
       </div>
@@ -585,7 +585,7 @@ function SpareCheck({ d, m, sl, amount, menu }) {
     items.push((m.surplusCash || 0) >= amount
       ? { topic: "Cash runway", ok: true, text: "Good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
       : { topic: "Cash runway", ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
-  } else items.push({ topic: "Cash runway", ok: null, text: "Not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash & savings)." });
+  } else items.push({ topic: "Cash runway", ok: null, text: "Not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash)." });
   if (loanIsaIn(d)) {
     items.push(m.isaHeadroom > 0
       ? { topic: "ISA allowance", ok: false, text: `${k(m.isaHeadroom)} remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }

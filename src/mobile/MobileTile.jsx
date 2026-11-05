@@ -125,8 +125,9 @@ export const Nested = ({ children }) => <div style={{marginLeft:"44px"}}>{childr
 // does from the "more" button: an input or an explanation over the page,
 // not opening the tile downwards. Put it inside the row, made `position:
 // relative` (`anchor` below); it opens under the row
-// from its right edge. A tap anywhere else, or Escape, closes it.
-export function TilePopover({ title, onClose, children }) {
+// from its right edge. A tap anywhere else, or Escape, closes it. `style`:
+// placed elsewhere (Modules' coming-soon tiles: centred on the screen).
+export function TilePopover({ title, onClose, style, children }) {
   const ref = useRef(null);
   const reduceMotion = useReducedMotion();
   useDialogFocus(ref, { onEscape: onClose });
@@ -140,7 +141,7 @@ export function TilePopover({ title, onClose, children }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
         transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.2, 0, 0, 1] }}
-        style={{position:"absolute",top:"calc(100% - 4px)",right:"8px",zIndex:41,transformOrigin:"top right",width:"min(320px, calc(100% - 8px))",background:WHITE,borderRadius:"14px",boxShadow:"0 8px 28px rgba(22,47,36,0.18), 0 1px 3px rgba(22,47,36,0.08)",padding:"14px 16px",outline:"none",textAlign:"left"}}>
+        style={{position:"absolute",top:"calc(100% - 4px)",right:"8px",zIndex:41,transformOrigin:"top right",width:"min(320px, calc(100% - 8px))",background:WHITE,borderRadius:"14px",boxShadow:"0 8px 28px rgba(22,47,36,0.18), 0 1px 3px rgba(22,47,36,0.08)",padding:"14px 16px",outline:"none",textAlign:"left",...style}}>
         <div style={{fontFamily:SANS,fontSize:"15px",fontWeight:700,color:G,marginBottom:"8px"}}>{title}</div>
         {children}
       </motion.div>

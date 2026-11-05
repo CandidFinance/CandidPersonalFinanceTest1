@@ -6,7 +6,7 @@ import { trapInView } from "./taxTrap.js";
 //
 // The entry's picks are saved as `interests`, never `selectedModules`: the
 // calculations read `selectedModules` as "this module's figures are in"
-// (e.g. the Property checks treat cash as known once Cash & savings is
+// (e.g. the Property checks treat cash as known once Cash is
 // selected), so a module joins it only once its questions are answered.
 
 // The modules a user can start from, in the order offered when nothing
@@ -27,25 +27,6 @@ export const MODULE_PITCH = {
   kids:        "See the childcare help you could get, and what £100,000 costs a parent.",
   taxTrap:     "See what crossing £100k costs you, and the ways back under it.",
   property:    "See what you could borrow, and whether buying beats renting.",
-};
-
-// What a module looks at, and what it can turn up, either way: Modules' top
-// card for a module not yet explored. Neutral: what's checked, not what to do.
-export const MODULE_EXPLAINER = {
-  pension:     { covers: "What you and your employer pay in, the tax relief on it, and the pot it's heading for at retirement.",
-                 shows: "Employer money left unclaimed, tax relief not yet claimed, and how far the pot's projection is from what you'd want." },
-  cash:        { covers: "Your savings, the rates they earn, and how many months of spending they'd cover.",
-                 shows: "Interest lost to a low rate, tax due on savings interest, and how long your buffer would last." },
-  investments: { covers: "What you hold, whether it sits in an ISA or pension, and this tax year's allowances.",
-                 shows: "ISA allowance left unused, and tax on gains or dividends from investments held outside one." },
-  studentLoan: { covers: "Your plan, balance and repayments, and when the loan is projected to clear or be written off.",
-                 shows: "Whether paying extra saves money, or goes on a balance that would be written off anyway." },
-  kids:        { covers: "Child Benefit, Tax-Free Childcare and funded hours, and how each parent's income affects them.",
-                 shows: "Childcare support not yet claimed, and the support lost if either parent's income passes £100,000." },
-  taxTrap:     { covers: "Income between £100,000 and £125,140, where the tax-free personal allowance tapers away.",
-                 shows: "A marginal tax rate of up to 62% on that band, and the ways income can come back under £100,000." },
-  property:    { covers: "What you could borrow, the deposit it takes, and the cost of buying set against renting.",
-                 shows: "Whether buying or renting costs more over time, and how far your deposit is from a purchase." },
 };
 
 // Where "Just exploring" goes, and what leads Home with no picks: Cash &
@@ -144,7 +125,7 @@ export const loanSavingsIn = d => moduleAnswered("cash", d) || (d.askedFields ||
 export function loanPensionChecked(d) {
   return moduleAnswered("pension", d) || (d.askedFields || []).includes("pensionStatus");
 }
-// This year's ISA payments: from Cash & savings or Investments, or the
+// This year's ISA payments: from Cash or Investments, or the
 // short route's ISA questions.
 export const loanIsaIn = d => moduleAnswered("cash", d) || moduleAnswered("investments", d) || (d.askedFields || []).includes("hasCashIsaThisYear");
 // Only the employed have an employer's pension match to check.
