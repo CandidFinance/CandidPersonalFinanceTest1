@@ -243,7 +243,7 @@
           (kids > 0 ? ' With ' + kids + ' child' + (kids === 1 ? '' : 'ren') + ' under 5, crossing ' + F.TAPER_START + ' at all — even by £1 — would also wipe out Tax-Free Childcare and your 30 free hours for the whole year, worth roughly ' + fmt(childcareAtStake) + '/yr. That\'s the real danger zone: a bonus or pay rise can tip you over both cliffs without much warning.' : ' A bonus or pay rise can tip you over this without much warning.') +
           '</p>';
         bridgeLabel = "There's more to this than the taper";
-        bridgeText = "This only checks your Personal Allowance taper and childcare entitlement. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or how close you are to the Annual Allowance limit on pension contributions. Candid checks your whole picture in about 5 minutes, and your first module is free.";
+        bridgeText = "This only checks your Personal Allowance taper and childcare entitlement. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or how close you are to the Annual Allowance limit on pension contributions. Candid checks your whole picture in about 5 minutes, free.";
       } else {
         var inBand = ani < TAPER_END;
         var sacrificeNeeded = Math.ceil(ani - TAPER_START);
@@ -285,7 +285,7 @@
           '</div>';
 
         bridgeLabel = "Salary sacrifice could be worth " + fmt(totalValue) + " a year";
-        bridgeText = "There's more to look at than the taper: employer pension match, ISA allowance, debt, and more. Candid checks your whole picture in about 5 minutes, and your first module is free.";
+        bridgeText = "There's more to look at than the taper: employer pension match, ISA allowance, debt, and more. Candid checks your whole picture in about 5 minutes, free.";
       }
 
       resultEl.innerHTML = html;

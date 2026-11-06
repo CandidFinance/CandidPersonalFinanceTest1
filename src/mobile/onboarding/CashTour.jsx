@@ -28,7 +28,7 @@ const STOPS = [
   { id: "working", target: "working", title: "How it's worked out",
     body: "This tile opens to the figure step by step: what your savings earn now, and what the same money earns across today's top accounts, after tax. \"Explain this\", by the page's title, replays your answer." },
   { id: "assist", target: "assist", round: true, title: "Candid Assist",
-    body: "Lists the accounts paying more than yours, what each would earn on your savings, and how moving works. It's on every page." },
+    body: "Lists the accounts paying more than yours, what each would earn on your savings, and how moving works, step by step. Part of Candid Premium." },
   { id: "loop", target: null, title: "When you make a change",
     body: "Update your figures after moving money and Candid asks whether you made the change or corrected a figure. Changes you confirm count as Saved on the Modules tab, and your figures and Candid score update with them." },
 ];

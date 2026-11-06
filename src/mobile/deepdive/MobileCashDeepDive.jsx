@@ -3,7 +3,7 @@ import { Bell, Info, Pencil, EyeOff } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { cashOpportunity, accountName, assistItems } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { isLocked } from "../../lib/unlock.js";
+import { premiumOpen } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
 import MobileTile, { TileRow, RowText, ROW, priorityTag } from "../MobileTile.jsx";
@@ -68,10 +68,10 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
   const opp = cashOpportunity(d, m, savingsRates);
   const gain = opp ? opp.gain : optimisationGain;
-  // "See options" opens Candid Assist on the cash item, so it shows only while
-  // Assist has one to open (not below its threshold, snoozed or locked), and
-  // the tile itself shows a loss.
-  const assistCash = useMemo(() => !isLocked(d, "cash") && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
+  // Candid Assist is a premium feature, with a cash item to open only above
+  // its threshold and not snoozed. Below, "See options" goes there when it
+  // can, or else to the provider lists on this page, which are free.
+  const assistCash = useMemo(() => premiumOpen(d) && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
   const assistHasCash = !!onOpenAssist && gain > 50 && assistCash;
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
   const reminder = useReminder({
@@ -81,7 +81,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
     // the rate tiles/provider to do the "how", rather than instructing
     // a specific transfer, avoiding reading as financial advice.
     description: opp
-      ? `${firstName(d) ? firstName(d)+", h" : "H"}ere's your reminder to look at your savings rates. The highest-rate options in Candid today are worth up to ${fmt(gain)}/yr more after tax than where it sits.\n\nCandid Assist lays out the options and how to move. Most accounts open online in a few minutes.`
+      ? `${firstName(d) ? firstName(d)+", h" : "H"}ere's your reminder to look at your savings rates. The highest-rate options in Candid today are worth up to ${fmt(gain)}/yr more after tax than where it sits.\n\nThe options are on your Cash page. Most accounts open online in a few minutes.`
       : `${firstName(d) ? firstName(d)+", h" : "H"}ere's your reminder to look at your savings rates. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nThe current highest rates are in Candid; any move is made directly with the provider - most accounts open online in a few minutes.`,
   });
 
@@ -110,6 +110,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   // A Savings row's way on: its provider list on this page, or Candid Assist
   // for Premium Bonds (no list here). Null leaves the row plain.
   const scrollTo = id => () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const seeOptions = assistHasCash ? () => onOpenAssist("cash") : hasIsaList ? scrollTo("cash-isas") : hasSavingsList ? scrollTo("cash-savings") : null;
   const rowTarget = section =>
     section === "Cash ISA" && hasIsaList ? scrollTo("cash-isas")
     : section === "Savings account" && hasSavingsList ? scrollTo("cash-savings")
@@ -121,7 +122,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
     <div>
       {opportunityCols.length > 0 && (
         <OpportunityTile tour="figure" figures={opportunityCols}
-          action={assistHasCash ? { label: "See options", onClick: () => onOpenAssist("cash") } : null}/>
+          action={seeOptions ? { label: "See options", onClick: seeOptions } : null}/>
       )}
 
       {/* The emergency fund, above the other tiles: £ held of the target,
@@ -205,7 +206,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             )}
             {notes.savings && (
               <TileRow>
-                <p style={ROW.text}>The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.</p>
+                <p style={ROW.text}>The highest-earning option in each, worked out together so no money is counted twice. The lists below show the other providers in each.</p>
               </TileRow>
             )}
           </>

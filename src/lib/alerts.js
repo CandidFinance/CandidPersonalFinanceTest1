@@ -276,7 +276,7 @@ export function alertEmail(alert, { name = "", free = false, asOf = null, unsubs
       { list: alert.items },
       { button: { label: "See it in Candid", href: alert.link } },
       ...(free && asOf ? [{ small: `These figures are from what you told Candid in ${MONTHS[asOf.getMonth()]} ${asOf.getFullYear()}. If they've changed, so will these.` }] : []),
-      ...(free ? [{ small: "A subscription keeps every module's figures current, with reminders before 5 April, at bonus time and when a better rate appears." }] : []),
+      ...(free ? [{ small: "Candid Premium adds a check-in each payday, an alert before a bonus, and an email when each new tax year starts." }] : []),
     ],
     note: "Candid works out what each option is worth on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
     unsubscribeUrl,

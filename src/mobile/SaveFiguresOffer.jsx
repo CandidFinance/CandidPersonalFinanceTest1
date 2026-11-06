@@ -7,9 +7,8 @@ import { useEmailCheck, DidYouMean } from "./emailCheckForm.jsx";
 import { signInWithGoogle } from "../lib/entitlement.js";
 import GoogleButton from "./GoogleButton.jsx";
 
-// The email, asked for after the first answer rather than before it
-// (unlock.js FIRST_ANSWER_FREE), for hearing when something changes that
-// answer. Under the reveal's last step, beside inviting friends; nothing
+// The email, asked for after an answer rather than before it, for hearing
+// when something changes that answer. Under the reveal's last step, beside inviting friends; nothing
 // once Candid has their email. Their invite code goes with it, as from the
 // old unlock form, so whoever invited them is rewarded once it's confirmed.
 // Their first name is asked here too, not at the entry; it's optional.
@@ -19,13 +18,14 @@ import GoogleButton from "./GoogleButton.jsx";
 // is ("Your rate is costing you £X."), with the ask framed around it getting
 // worse; otherwise a plain ask.
 // `onDismiss` adds an X (the tile at the top of the Cash page), and the
-// fields wait behind an "Add email" button there. `style`: for the Cash
+// fields wait behind an "Add email" button there (`startOpen`: not behind it,
+// under an answer). `style`: for the Cash
 // tour's card and that tile. `children`: under the form (the tour's "Not now").
 // `source`: where it's asked, for the email check's events.
 // "Continue with Google" gives the email too, already confirmed by Google
 // (server/google.js), with their first name from it if none is typed.
-export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = null, onDismiss = null, style = null, children = null, source = "after_answer" }) {
-  const [open, setOpen] = useState(!onDismiss);
+export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = null, onDismiss = null, style = null, children = null, source = "after_answer", startOpen = false }) {
+  const [open, setOpen] = useState(!onDismiss || startOpen);
   const [email, setEmail] = useState("");
   const [name, setName] = useState(d.name || "");
   const check = useEmailCheck(source);

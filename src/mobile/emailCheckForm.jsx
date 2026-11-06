@@ -13,7 +13,7 @@ export const EMAIL_WHY = "So we can tell you when something changes that makes y
 // confirms it's theirs (`confirm`, api/email.js). `run` resolves to the
 // tidied address and what happened to the link ({ email, sent }), or to
 // null with `error` or `suggestion` set. Used by the
-// unlock and rate-alert forms (MobileUnlock.jsx) and Edit inputs.
+// email offer (SaveFiguresOffer.jsx) and Edit inputs.
 export function useEmailCheck(source) {
   const [error, setError] = useState(null);
   const [suggestion, setSuggestion] = useState(null);

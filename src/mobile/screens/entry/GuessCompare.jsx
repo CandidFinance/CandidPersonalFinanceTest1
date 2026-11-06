@@ -57,7 +57,8 @@ function Comparison({ item, look, estimated, cta, onNext }) {
       <div className={`pad${landed && tone === "worse" && !still ? " shake" : ""}`}>
         <div style={{ height: 18, flexShrink: 0 }}/>
         <span className="pill" style={{ color: look.ink }}>{look.name}</span>
-        <div style={{ height: 14, flexShrink: 0 }}/>
+        {/* Asked a while ago, so it's said again: all this screen's figures answer it. */}
+        <p style={{ margin: "12px 0 10px", fontSize: 16, lineHeight: 1.35, fontWeight: 600, color: "#3d4a43", flexShrink: 0 }}>{item.ask}</p>
         <h1 aria-live="polite" key={landed ? "after" : "before"} className={landed ? "headIn" : undefined} style={{ fontSize: 34, minHeight: 74 }}>
           {landed ? item.head : `You guessed ${item.band}.`}
         </h1>

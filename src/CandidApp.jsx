@@ -16,14 +16,13 @@ import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
-import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
 import CheckedCard from "./mobile/CheckedCard.jsx";
 import CashTour from "./mobile/onboarding/CashTour.jsx";
 import AppTour from "./mobile/onboarding/AppTour.jsx";
 import { getConsent } from "./lib/consent.js";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
-import { isLocked, unlockPatch, firstUnlockPatch, onTrackReward, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { onTrack, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
 import { recordVisit } from "./mobile/visitNews.js";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -40,7 +39,6 @@ import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import OnTrackReward from "./mobile/OnTrackReward.jsx";
 import GoalReached from "./mobile/GoalReached.jsx";
-import { hasReferralBonus } from "./lib/referral.js";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
@@ -78,10 +76,12 @@ const BLANK_DATA = {
   // `appTourDone` the same for the app's tour of Home, Progress and Modules
   // (AppTour.jsx).
   // `emailTileDismissed`: the email tile at the top of the Cash page closed.
+  // `emailOfferDismissed`, `inviteDismissed`: the email offer and the invite
+  // card under an answer closed.
   // `emergencyCardDismissed`: Cash's emergency fund card closed while the
   // fund is at its target (cleared once it falls below).
   // `trapSubscribeClosed`: the £100k tax trap's subscribe tile closed.
-  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false,
+  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emailOfferDismissed:false, inviteDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
@@ -613,20 +613,9 @@ export default function AppShell() {
   // goes with the inputs; the unlock columns on their own, so a missing
   // column grant can't stop the email saving.
   const [unlockSaveTick, setUnlockSaveTick] = useState(0);
-  // A module answered with nothing to improve earns one more answer free
-  // (unlock.js onTrackReward), whether or not its answer is watched to the
-  // end.
-  useEffect(() => {
-    const key = params.moduleKey;
-    if (!key || d.onTrackBonus || onTrackReward(d, key, statuses[key]) !== "bonus") return;
-    set("onTrackBonus", key);
-    posthog.capture("on_track_bonus_earned", { module: key });
-    setRowSaveTick(t => t + 1);
-  }, [params.moduleKey, statuses]); // eslint-disable-line react-hooks/exhaustive-deps
   // A subscription (src/lib/entitlement.js): checked with the server on
   // opening, including back from checkout or a sign-in link. A change
-  // redraws, since what's locked reads it. Back from paying on a module's
-  // page, its answer is shown step by step, as after a free unlock.
+  // redraws, since what's premium reads it.
   const [accessTick, setAccessTick] = useState(0);
   useEffect(() => {
     const redraw = () => setAccessTick(t => t + 1);
@@ -638,8 +627,6 @@ export default function AppShell() {
         posthog.capture(outcome === "paid" ? "checkout_completed" : "access_restored", { plan: accessInfo()?.plan ?? null });
         const email = accessInfo()?.email;
         if (email && !d.email) { set("email", email); setUnlockSaveTick(t => t + 1); }
-        const onModule = window.location.pathname.match(/^\/app\/module\/([a-zA-Z]+)/);
-        if (outcome === "paid" && onModule) { setRevealModule(onModule[1]); setRevealReplay(null); }
       } else if (outcome === "check-email") {
         // Paid with the email of an account already there: it's sent a
         // sign-in link, which brings the subscription and its answers here.
@@ -746,7 +733,7 @@ export default function AppShell() {
         set("appEntered", true);
         // Which modules are answered, not just opened, is tracked from here.
         set("answeredModules", []);
-        // New users unlock each module's answer (src/lib/unlock.js).
+        // New users are held to the premium gate (src/lib/unlock.js).
         if (UNLOCK_GATE_ON) set("unlockGate", true);
         posthog.capture("app_entered", { interests: (d.interests || []).join(",") });
         // The user's row from the start (their interests), not only once a
@@ -874,22 +861,14 @@ export default function AppShell() {
 
   // A module's questions answered (or skipped), from its walk-through or the
   // Chat tab: it joins selectedModules, so its own screen, the answer, takes
-  // over, and its answers are saved to the user's row. The first module
-  // finished unlocks by itself (unlock.js); returns that patch, or null.
+  // over, and its answers are saved to the user's row.
   const answerModule = (key, how, at, via = null) => {
     const selected = d.selectedModules || [];
     if (!selected.includes(key)) set("selectedModules", [...selected, key]);
     if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, key).answeredModules);
     posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: key, at, ...(via && { via }) });
     posthog.capture("module_answer_shown", { module: key, ...(via && { via }) });
-    const firstFree = how === "finished" ? firstUnlockPatch(d, key) : null;
-    if (firstFree) {
-      Object.entries(firstFree).forEach(([k, v]) => set(k, v));
-      posthog.capture("module_unlocked", { module: key, via: "first_free" });
-      setUnlockSaveTick(t => t + 1);
-    }
     setRowSaveTick(t => t + 1);
-    return firstFree;
   };
 
   if (pathname === "/app/chat") return (
@@ -964,10 +943,10 @@ export default function AppShell() {
     // the answer, takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d)) {
       const finishGuide = (how, at) => {
-        const firstFree = answerModule(mobileActiveModule, how, at);
+        answerModule(mobileActiveModule, how, at);
         // A walk-through, finished, goes on to the answer step by
         // step (MODULE_REVEALS), when there's one to give.
-        if (how === "finished" && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
+        if (how === "finished" && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
           setRevealModule(mobileActiveModule);
           setRevealReplay(null);
           posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
@@ -999,28 +978,6 @@ export default function AppShell() {
       posthog.capture("email_captured", { source, module: mobileActiveModule, how });
       setUnlockSaveTick(t => t + 1);
     };
-    // Answered but locked: what it's worth, and the way to unlock it, which
-    // then goes straight on to the answer.
-    if (isLocked(d, mobileActiveModule)) {
-      return (
-        <MobileLayout d={d} assist={assistNode} activeTab="modules" pageLabel={moduleLabel}>
-          <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} returnTo={returnTo}
-            onLeaveEmail={email => {
-              set("email", email); set("alertsOptIn", true);
-              posthog.capture("email_captured", { source: "paywall" });
-              setUnlockSaveTick(t => t + 1);
-            }}
-            onUnlock={(ask, answer) => {
-              const patch = unlockPatch(d, mobileActiveModule, ask, answer);
-              Object.entries(patch).forEach(([k, v]) => set(k, v));
-              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.invite ? "invite" : ask.bonus ? "on_track_bonus" : ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
-              if (ask.kind === "email") { posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk }); if (answer.callOk) set("alertsOptIn", true); }
-              setUnlockSaveTick(t => t + 1);
-              if (revealSteps) { setRevealModule(mobileActiveModule); setRevealReplay(null); }
-            }}/>
-        </MobileLayout>
-      );
-    }
     if (revealModule === mobileActiveModule && revealSteps) {
       // Their guess from the entry beside this figure, once, ahead of the answer.
       // Decided as the answer opens: rates arriving later don't interrupt it.
@@ -1034,7 +991,6 @@ export default function AppShell() {
           </Suspense>
         );
       }
-      const onTrackKind = onTrackReward(d, mobileActiveModule, statuses[mobileActiveModule]);
       return (
         <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
@@ -1050,20 +1006,21 @@ export default function AppShell() {
               },
             } : null}
             footer={<>
-              {/* Nothing to improve: one more answer free, or a national
-                  figure (OnTrackReward.jsx). */}
-              {onTrackKind && (
-                <OnTrackReward moduleKey={mobileActiveModule} kind={onTrackKind}
-                  unlocked={(d.unlockedModules || []).length + (hasReferralBonus() ? 1 : 0)}
-                  celebrate={revealReplay !== mobileActiveModule}
-                  onChoose={() => { setRevealModule(null); setRevealReplay(null); navigate("/app/modules"); scrollToTop(); }}/>
+              {/* Nothing to improve: a national figure (OnTrackReward.jsx). */}
+              {onTrack(d, mobileActiveModule, statuses[mobileActiveModule]) && (
+                <OnTrackReward moduleKey={mobileActiveModule} celebrate={revealReplay !== mobileActiveModule}/>
               )}
-              {/* The email, asked for now the answer's theirs (unlock.js).
-                  Cash asks at the end of its tour instead. */}
-              {mobileActiveModule !== "cash" && (
-                <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} rateCost={rateCost} onEmail={saveEmail("after_answer")}/>
+              {/* The email, asked for now the answer's theirs, until it's
+                  closed, and not on a replay. Cash asks at the end of its
+                  tour instead. */}
+              {mobileActiveModule !== "cash" && revealReplay !== mobileActiveModule && !d.emailOfferDismissed && (
+                <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} rateCost={rateCost} onEmail={saveEmail("after_answer")} startOpen
+                  onDismiss={() => { set("emailOfferDismissed", true); posthog.capture("email_offer_dismissed", { module: mobileActiveModule }); }}/>
               )}
-              <InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>
+              {revealReplay !== mobileActiveModule && !d.inviteDismissed && (
+                <InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}
+                  onDismiss={() => { set("inviteDismissed", true); posthog.capture("invite_dismissed", { module: mobileActiveModule }); }}/>
+              )}
             </>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });

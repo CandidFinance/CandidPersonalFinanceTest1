@@ -32,7 +32,7 @@ Visitors compare Candid against payslips, P60s, pension statements, student loan
 
 ## Capabilities and Constraints
 
-- First module free, no card needed; paid subscription via Stripe after that. [CONFIRM: show the price on the landing page or not]
+- Every module's answer free, no card needed; Candid Premium, a subscription via Stripe, adds planning and tracking features. [CONFIRM: show the price on the landing page or not]
 - No bank linking; figures are typed in. Rough estimates are fine.
 - England, Wales, NI and Scottish tax rates.
 - Regulatory: guidance, not advice (PERG 8.30B.9G). The regulatory disclaimer component must stay on the page.

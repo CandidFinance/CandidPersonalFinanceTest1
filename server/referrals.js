@@ -1,7 +1,7 @@
 // Referrals: a friend who arrives on someone's link (?ref=<code>), gives
 // their email for their first answer and confirms it earns that person a
-// free month, up to REFERRAL_CAP. The friend's own reward, a second answer
-// free, is in the app (src/lib/referral.js, unlock.js).
+// free month of Candid Premium, up to REFERRAL_CAP. The friend gets no reward
+// of their own: every answer is free (src/lib/referral.js).
 //
 //  - referralLink: a confirmed email's code (made the first time), and how
 //    many free months it has earned. api/billing.js ?action=referral-link.

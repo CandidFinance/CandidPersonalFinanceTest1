@@ -9,7 +9,7 @@ import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
 import { signInEmail } from "../src/lib/accountEmails.js";
 import { googleIdentity, markConfirmed } from "../server/google.js";
 
-// Subscriptions: the first module's answer is free, every one after it needs
+// Subscriptions: every module's answer is free; Candid Premium's features need
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
 // ?action=, to stay inside Vercel's function limit:
 //   checkout  POST {plan, module, email?, token?} -> { url } of Stripe's hosted

@@ -56,7 +56,7 @@ test("A free user's welcome: rate alerts offered to a founding user who hasn't a
   const base = { name: "Jo", optInUrl: "https://o", cap: 12, unsubscribeUrl: "https://u" };
   const offer = confirmedWelcomeEmail({ ...base, founding: true, optedIn: false, inviteCode: "abcd2345" });
   assert.match(offer.html, /href="https:\/\/o"[^>]*>Turn on rate alerts<\/a>/);
-  assert.match(offer.text, /free for founding users only/);
+  assert.match(offer.text, /Free rate alerts/i);
   assert.match(offer.text, /candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
   assert.match(offer.text, /Sign in to Candid with this email address and they're saved to your account/);
   const on = confirmedWelcomeEmail({ ...base, founding: true, optedIn: true });
@@ -64,14 +64,14 @@ test("A free user's welcome: rate alerts offered to a founding user who hasn't a
   assert.match(on.text, /You're signed up/);
   assert.match(on.text, /Your link is in Candid, under Edit inputs/);
   const later = confirmedWelcomeEmail({ ...base, founding: false, optedIn: false });
-  assert.doesNotMatch(later.text, /founding|Turn on rate alerts/);
+  assert.doesNotMatch(later.text, /Free rate alerts|Turn on rate alerts/i);
 });
 
 test("The reminder to confirm: a fresh link on a CTA-blue button, and the founding offer while it's open", () => {
   const r = confirmReminderEmail({ name: "Jo", url: "https://c", days: 14, founding: true, unsubscribeUrl: "https://u" });
   assert.match(r.html, /background:#0071E3;"><a href="https:\/\/c"[^>]*>Confirm my email<\/a>/);
   assert.match(r.text, /isn't confirmed yet/);
-  assert.match(r.text, /founding user, with rate alerts free/);
+  assert.match(r.text, /you can turn on free rate alerts/);
   assert.doesNotMatch(confirmReminderEmail({ name: "Jo", url: "https://c", days: 14, founding: false, unsubscribeUrl: "https://u" }).text, /founding/);
 });
 

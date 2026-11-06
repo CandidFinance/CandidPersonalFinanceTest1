@@ -282,7 +282,7 @@ export const FSCS_LIMIT = 120000;
 // What the user could do when better rates are there: Candid Assist, shown
 // with its own icon (`icon` "assist") so it's recognised as the button on
 // the screen.
-const ASSIST_STEP = { label: ACTION, icon: "assist", title: "Candid Assist can help you save more.", body: "Candid Assist lists the highest-paying Cash ISAs and savings accounts for your money, and the steps to open one and move your savings across, ISA transfers included." };
+const ASSIST_STEP = { label: ACTION, icon: "assist", title: "The highest-paying accounts are on your Cash page.", body: "Cash ISAs and savings accounts, with what each pays. Candid Assist, part of Candid Premium, also goes through opening one and moving your savings across, ISA transfers included." };
 function fscsLine(m) {
   const over = Math.round((m.largestCashHolding || 0) - FSCS_LIMIT);
   return over > 0 ? `The FSCS protects ${fmt(FSCS_LIMIT)} per person at each banking licence; ${fmt(over)} of yours is above that at one bank.` : null;

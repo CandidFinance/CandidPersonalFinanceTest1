@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { entryGoals } from "../../lib/appEntry.js";
 import { computeModuleStatuses } from "../../lib/moduleStatus.js";
-import { isLocked } from "../../lib/unlock.js";
 import { matchTopic } from "../../lib/chatTopics.js";
 import {
   CHAT_QUICK, CHAT_AREAS, CHAT_EXACT, titleOf, listOf, areasPicked, picksParts, moduleIntro, nextQuestion, questionParts,
@@ -31,7 +30,6 @@ export function useChatStart({ d, m, marketRates, set, answerModule, say, setRep
   const [landing, setLanding] = useState(null); // { key, stamp }
 
   const statusesOf = (dd, mm) => computeModuleStatuses(dd, mm, marketRates);
-  const lockedIn = dd => key => isLocked(dd, key);
 
   // Into a module: its intro and first question, or the button into its
   // own walk-through. Parts only; the caller says them.
@@ -64,7 +62,7 @@ export function useChatStart({ d, m, marketRates, set, answerModule, say, setRep
   useEffect(() => {
     if (!landing || d.quickAt?.[landing.key] !== landing.stamp || !(d.selectedModules || []).includes(landing.key)) return;
     setLanding(null);
-    say(null, resultParts(d, m, statusesOf(d, m), landing.key, lockedIn(d), voice), { think: true });
+    say(null, resultParts(d, m, statusesOf(d, m), landing.key, undefined, voice), { think: true });
     setReplies(nextReplies(d, landing.key));
   }, [landing, d, m]); // eslint-disable-line react-hooks/exhaustive-deps
 

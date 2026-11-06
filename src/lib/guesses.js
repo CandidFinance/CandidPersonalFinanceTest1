@@ -172,7 +172,7 @@ export function pendingComparisons(key, d, m, ctx) {
     if (!b) continue;
     const value = guessFigure(q.id, d, m, ctx);
     if (value == null || !Number.isFinite(value)) continue;
-    out.push({ id: q.id, band: b.label, value: Math.round(value), bars: guessBars(b, value), ...guessOutcome(q, b, value) });
+    out.push({ id: q.id, ask: q.ask, band: b.label, value: Math.round(value), bars: guessBars(b, value), ...guessOutcome(q, b, value) });
   }
   return out;
 }

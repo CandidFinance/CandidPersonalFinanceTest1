@@ -111,7 +111,7 @@ test("the email: greeting, items, the link, guidance, unsubscribe and company de
   const free = alertEmail(a, { free: true, asOf: new Date("2026-09-01"), unsubscribeUrl: "https://x/u" }).text;
   assert.match(free, /^Hi,\n/);
   assert.match(free, /from what you told Candid in September 2026/);
-  assert.match(free, /A subscription keeps every module's figures current/);
+  assert.match(free, /Candid Premium adds a check-in each payday/);
 });
 
 test("free users' better rates: from ratesFrom (a few days after they confirm), and none when it's false (not a founding user)", () => {

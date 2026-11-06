@@ -4,7 +4,9 @@ import { AnimatePresence, motion, useDragControls, useReducedMotion } from "fram
 import { Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, HERO_TILE_BG } from "../../design-tokens.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { isLocked } from "../../lib/unlock.js";
+import posthog from "posthog-js";
+import { premiumOpen } from "../../lib/unlock.js";
+import { PremiumSheetPortal } from "../Premium.jsx";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, MIN_ASSIST_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -56,15 +58,18 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Nothing about a module whose answer is still locked (src/lib/unlock.js).
-  const allItems = useMemo(() => assistItems(d, m, savingsRates).filter(i => !isLocked(d, i.module)), [d, m, savingsRates]);
+  // A premium feature (src/lib/unlock.js): for anyone else its button opens
+  // Candid Premium's sheet, and never shows a "something new" dot.
+  const premium = premiumOpen(d);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const allItems = useMemo(() => assistItems(d, m, savingsRates), [d, m, savingsRates]);
   const { here: items, elsewhere } = itemsForPage(allItems, page);
   const pageLabel = page ? moduleLabels[page] || page : null;
   // With one thing to show, Assist opens on it; with more, on a list of them.
   const item = items.find(i => i.id === state.itemId) || (items.length === 1 ? items[0] : null);
   // The dot is for anything new anywhere, so nothing is missed by being on
   // another page; the button's fill is for this page.
-  const news = assistHasNews(allItems, readSeen());
+  const news = premium && assistHasNews(allItems, readSeen());
   const quiet = items.length === 0;
   const goTo = i => { onGoTo(i.module); update({ open: true, itemId: i.id, step: "overview" }); };
   const skipIsa = d.assistSkipIsa === true;
@@ -334,9 +339,14 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     <>
       {/* Hidden while a bottom sheet is open (useDialogFocus.js useHidesAssist). */}
       <style>{`body[data-sheet-open] [data-tour="assist"] { visibility: hidden; }`}</style>
-      {!state.open && (
-        <button type="button" data-tour="assist" onClick={() => update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) })}
-          aria-label={`Open Candid Assist${news ? ", something new" : ""}`}
+      {!premium && <PremiumSheetPortal open={sheetOpen} d={d} from="assist" onClose={() => setSheetOpen(false)}/>}
+      {!(state.open && premium) && (
+        <button type="button" data-tour="assist"
+          onClick={() => {
+            if (!premium) { setSheetOpen(true); posthog.capture("premium_opened", { from: "assist" }); return; }
+            update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) });
+          }}
+          aria-label={premium ? `Open Candid Assist${news ? ", something new" : ""}` : "Candid Assist, part of Candid Premium"}
           style={{
             position: "fixed", zIndex: 4500, bottom: "calc(70px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
@@ -351,7 +361,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         </button>
       )}
       <AnimatePresence>
-        {state.open && (
+        {state.open && premium && (
           <>
             <motion.div key="assist-backdrop" onClick={minimise} aria-hidden="true"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}

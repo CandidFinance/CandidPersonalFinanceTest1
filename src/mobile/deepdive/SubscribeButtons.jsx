@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout } from "../../lib/entitlement.js";
 import { G, WHITE, MUT, SERIF, CRITICAL, CTA_BLUE } from "../../design-tokens.js";
@@ -6,9 +6,13 @@ import { G, WHITE, MUT, SERIF, CRITICAL, CTA_BLUE } from "../../design-tokens.js
 // CTA blue's pale wash, for what's picked.
 export const CTA_WASH = "#EAF3FE";
 
-function useCheckout(d, module, from) {
+function useCheckout(d, module, from, kind) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  // Each way to subscribe, named by its feature. `kind` "inline" sits on a page,
+  // so it counts page views; "picker" was mostly opened by a tap. Not comparable
+  // across kinds. A new name: paywall_shown was the module paywall before 6 Nov.
+  useEffect(() => { posthog.capture("premium_gate_shown", { feature: from, kind, module: module || null }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const subscribe = async plan => {
     setBusy(plan); setError(null);
     posthog.capture("checkout_started", { module, plan, from });
@@ -21,7 +25,7 @@ function useCheckout(d, module, from) {
 // The two plans as cards to pick from, monthly then yearly, yearly picked
 // to start with, and one button to Stripe's checkout for the one picked.
 export function PlanPicker({ d, module, from }) {
-  const { busy, error, subscribe } = useCheckout(d, module, from);
+  const { busy, error, subscribe } = useCheckout(d, module, from, "picker");
   const [plan, setPlan] = useState("yearly");
   const card = p => {
     const on = plan === p;
@@ -55,7 +59,7 @@ export function PlanPicker({ d, module, from }) {
 // shown locked on a module's page, in CTA blue as PlanPicker's. `from` names
 // the feature in analytics.
 export default function SubscribeButtons({ d, module, from }) {
-  const { busy, error, subscribe } = useCheckout(d, module, from);
+  const { busy, error, subscribe } = useCheckout(d, module, from, "inline");
   return (
     <>
       <div style={{display:"flex",gap:"8px"}}>

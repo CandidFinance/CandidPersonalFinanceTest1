@@ -2,12 +2,11 @@ import { useState } from "react";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
-import { loanAlternatives } from "../../lib/crossModule.js";
-import { ExternalLink, ChevronRight, Check, CircleAlert, Lock, Clock, Pencil, Wrench, ChartLine, AlertTriangle } from "lucide-react";
+import { ExternalLink, ChevronRight, Check, CircleAlert, Clock, Pencil, Wrench, ChartLine, AlertTriangle } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
-import { hasAccess } from "../../lib/entitlement.js";
+import { premiumOpen } from "../../lib/unlock.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import LoanCompare from "./LoanCompare.jsx";
 import ScenarioModelling from "./ScenarioModelling.jsx";
@@ -85,14 +84,11 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // Pension are answered (appEntry.js loanVerdictReady).
   const verdict = loanVerdictReady(d);
   const worthOverpaying = verdict && sl.worthOverpaying;
+  // A lump sum against every place it could go (LoanCompare): premium. Others
+  // keep the £100 a month view above, and once the verdict's ready and the
+  // pension's checked, the comparison's top row and the way to subscribe.
+  const compareOpen = premiumOpen(d);
   const pensionChecked = loanPensionChecked(d);
-  // Where the money could go instead: for subscribers (and anyone from
-  // before the paywall), or once their savings and pension match are in.
-  const alternativesOpen = (verdict && pensionChecked) || hasAccess() || d.unlockGate !== true;
-  // A lump sum against every place it could go (LoanCompare): subscribers,
-  // and anyone from before the paywall. Others keep the £100 a month view
-  // above, with the comparison's top row and the way to subscribe.
-  const compareOpen = hasAccess() || d.unlockGate !== true;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -162,12 +158,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
       {!sl.belowThreshold && (compareOpen
         ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null} menu={[editItem]}/>
-        : (
-          <>
-            {!worthOverpaying && <WhereItCouldGo m={m} locked={!alternativesOpen} menu={[editItem]}/>}
-            {alternativesOpen && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]}/>}
-          </>
-        ))}
+        : verdict && pensionChecked && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]}/>)}
 
       {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash} menu={[editItem]}/>}
     </div>
@@ -837,40 +828,5 @@ function ReturnChart({ sl, curve, chartWrapRef }) {
         <p style={{...ROW.note,marginTop:"6px",marginBottom:0}}>Tax relief isn't included: you'd get it whether you pay in now or once the loan clears.</p>
       </TileRow>
     </>
-  );
-}
-
-// Overpaying isn't worth it, so money that might have gone on the loan can
-// do more elsewhere: the same £100 a month in a pension, an ISA or savings,
-// with what each would grow to and how easily it can be reached
-// (src/lib/crossModule.js loanAlternatives). Each opens its module; the user
-// chooses, so they're listed by £ with their trade-offs, not ranked as advice.
-const ALTERNATIVES = {
-  pension:     { title: "Pension", note: tr => `Tax relief at ${Math.round(tr * 100)}% adds to every payment. Can't be touched until 57.` },
-  investments: { title: "Stocks and Shares ISA", note: () => "Growth is tax-free and you can take it out any time. Can fall as well as rise." },
-  cash:        { title: "Savings at the highest rate", note: () => "Safe, and there whenever you need it." },
-};
-function WhereItCouldGo({ m, locked, menu }) {
-  const navigate = useNavigate();
-  const { monthly, years, paidIn, options } = loanAlternatives(m);
-  return (
-    <MobileTile title="Where it could go instead" subtitle={`£${monthly} a month for ${years} years (${fmt(paidIn)} in all) could grow to:`} menu={menu}>
-      <div style={{position:"relative"}}>
-        <div aria-hidden={locked || undefined} inert={locked ? "" : undefined} style={locked ? {filter:"blur(6px)",userSelect:"none",pointerEvents:"none"} : undefined}>
-          {options.map(o => (
-            <TileRow key={o.key} onClick={() => navigate(`/app/module/${o.key}`)}>
-              <RowText label={ALTERNATIVES[o.key].title} note={ALTERNATIVES[o.key].note(m.tr || 0)} figure={fmt(o.total)}/>
-            </TileRow>
-          ))}
-          <TileRow><div style={{...ROW.note,marginTop:0}}>Investments growing {GROWTH_NOMINAL_PCT}% a year and savings at today's best rate. Not including anything an employer adds to a pension.</div></TileRow>
-        </div>
-        {locked && (
-          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"8px",textAlign:"center",padding:"0 28px 0 12px"}}>
-            <span style={{width:"40px",height:"40px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={18} color={G}/></span>
-            <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"240px"}}>Opens with your savings and pension match, or a subscription</span>
-          </div>
-        )}
-      </div>
-    </MobileTile>
   );
 }

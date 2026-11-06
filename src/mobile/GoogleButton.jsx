@@ -5,7 +5,7 @@ import { googleSignInAvailable, renderGoogleButton, forgetGoogleButton } from ".
 import OrRule from "./OrRule.jsx";
 
 // "Continue with Google", beside the email ask (SaveFiguresOffer) and on the
-// sign-in screens (SignInPage, SignInSetup, MobileUnlock). Google draws the
+// sign-in screens (SignInPage, SignInSetup). Google draws the
 // button; `onCredential(credential)` does the signing in and throws with a
 // message to show when it doesn't work. Nothing at all without a client id
 // (src/lib/google.js), or when Google's script can't load.

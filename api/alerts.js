@@ -381,7 +381,7 @@ async function optIn(req, res) {
   if (!email) return res.status(400).send(page("Link not recognised", `<h1>That link isn't working</h1><p>Reply to any Candid email and we'll turn rate alerts on for you.</p>`));
   if (req.method === "GET") {
     const action = `/api/alerts?action=optin&t=${encodeURIComponent(t)}`;
-    return res.status(200).send(page("Turn on rate alerts", `<h1>Rate alerts</h1><p>Free for founding users: an email when a better savings rate could earn you £100+ a year more on your figures, at most once a month.</p><form method="post" action="${action}"><label><input type="checkbox" name="optin" value="1" required><span>Email me rate alerts at ${esc(email)}</span></label><button type="submit">Turn on rate alerts</button></form>`));
+    return res.status(200).send(page("Turn on rate alerts", `<h1>Rate alerts</h1><p>Free: an email when a better savings rate could earn you £100+ a year more on your figures, at most once a month.</p><form method="post" action="${action}"><label><input type="checkbox" name="optin" value="1" required><span>Email me rate alerts at ${esc(email)}</span></label><button type="submit">Turn on rate alerts</button></form>`));
   }
   if (req.method !== "POST") return res.status(405).end();
   if (req.body?.optin !== "1") return res.status(400).send(page("Nothing changed", `<h1>Nothing changed</h1><p>Tick the box to turn rate alerts on.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));

@@ -296,7 +296,7 @@ export default function ReceiptScene() {
               Unclaimed pension relief, the £100k tax trap, idle cash and student loan overpayments cost good earners thousands a year. Answer a few questions and see, in pounds, what Candid could help you save.
             </p>
             <StartCheckButton source="hero" size="large" />
-            <div className="rs-reassure"><span>First module free</span><span>No card needed</span></div>
+            <div className="rs-reassure"><span>Every answer free</span><span>No card needed</span></div>
             <div className="rs-quick">
               Or answer one question in 30 seconds:{" "}
               <a href="/student-loan-calculator.html">student loan</a>{" · "}

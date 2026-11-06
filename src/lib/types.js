@@ -23,6 +23,8 @@
  * @property {boolean} [cashTourDone] The Cash page's tour finished or skipped.
  * @property {boolean} [appTourDone] The app's tour of Home, Progress and Modules started (AppTour.jsx).
  * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.
+ * @property {boolean} [emailOfferDismissed] The email offer under an answer closed.
+ * @property {boolean} [inviteDismissed] The invite card under an answer closed.
  * @property {boolean} [emergencyCardDismissed] Cash's emergency fund card closed while at its target.
  * @property {string[]} financialGoals
  * @property {string[]} [entryWorries] What worries them, from the entry.
@@ -43,7 +45,7 @@
  * @property {string[]} [allowanceGoals] Allowance goals added on Progress: "cgt", "dividends" (progressTracker.js cgtRow, dividendRow).
  * @property {string} [dividendsThisYear] Dividends received this tax year, from Progress; cleared on 6 April (rollTaxYear).
  * @property {Object<string, {choice: string, taxYear: number, perYear?: number, on?: string, moduleKey?: string}>} [opportunityChoices] "Done" or "not for me" on an opportunity, for a tax year (opportunityChoices.js).
- * @property {boolean} [unlockGate] Came in after the paywall shipped (unlock.js).
+ * @property {boolean} [unlockGate] Came in after the paywall shipped, so held to premiumOpen (unlock.js).
  * @property {string[]} [unlockedModules]
  * @property {boolean} [unlockCallOk]
  * @property {string} [unlockFeedback]

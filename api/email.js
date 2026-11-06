@@ -6,7 +6,7 @@ import { recordReferral } from "../server/referrals.js";
 import { confirmEmail } from "../src/lib/accountEmails.js";
 
 // Checking and confirming the emails people leave for their first answer or
-// for rate alerts (src/lib/emailCheck.js, MobileUnlock.jsx).
+// for rate alerts (src/lib/emailCheck.js, SaveFiguresOffer.jsx).
 //  - POST { action: "check", email, confirm }: the address's shape and
 //    domain (src/lib/emailCheck.js), then whether the domain takes email
 //    (its MX records). A problem is a 422 with { problem }; everything else

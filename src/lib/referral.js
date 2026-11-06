@@ -1,9 +1,9 @@
 // Invites (server/referrals.js). Someone's link is the site with ?ref=<code>.
 //  - The friend: the code is kept in this browser when they arrive, if
-//    they're new here (nothing unlocked yet), and checked with the server.
-//    A real one gives them a second answer free (unlock.js unlockAsk), and
-//    goes with their email when they give it (MobileUnlock.jsx), so the
-//    person who invited them can be rewarded once it's confirmed.
+//    they're new here (nothing answered yet), and checked with the server.
+//    It goes with their email when they give it (SaveFiguresOffer.jsx), so
+//    the person who invited them can be rewarded once it's confirmed. The
+//    friend gets no reward of their own: every answer is free.
 //  - The person inviting: their link, for a confirmed email, and how many
 //    free months it has earned (InviteFriends.jsx).
 import { reportStorageFailure } from "./storage.js";
@@ -19,6 +19,13 @@ function write(v) {
   try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { reportStorageFailure("save_referral", e); }
 }
 
+function clear() {
+  try { localStorage.removeItem(KEY); } catch (e) { reportStorageFailure("save_referral", e); }
+}
+// Modules actually answered: selectedModules also holds skipped ones, so it's
+// only for someone from before answeredModules was tracked.
+const answeredIn = d => Array.isArray(d.answeredModules) ? d.answeredModules : d.selectedModules || [];
+
 async function call(action, body) {
   const res = await fetch(`/api/billing?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await res.json().catch(() => ({}));
@@ -27,30 +34,26 @@ async function call(action, body) {
 }
 
 // On arriving: a code in the address kept, unless they've one already or
-// have unlocked an answer here before (they're not new). Then checked with
+// have answered a module here before (they're not new). Then checked with
 // the server, once, until it says.
 export function captureReferral(search = typeof window !== "undefined" ? window.location.search : "") {
   const code = new URLSearchParams(search).get("ref");
   if (code && CODE_RE.test(code) && !read()) {
-    let unlocked = 0;
-    try { unlocked = (JSON.parse(localStorage.getItem("candid_inputs") || "{}").unlockedModules || []).length; } catch { /* treated as new */ }
-    if (!unlocked) write({ code, valid: null, at: new Date().toISOString() });
+    let answered = 0;
+    try { answered = answeredIn(JSON.parse(localStorage.getItem("candid_inputs") || "{}")).length; } catch { /* treated as new */ }
+    if (!answered) write({ code, valid: null, at: new Date().toISOString() });
   }
   const held = read();
   if (held && held.valid === null) {
     call("referral-check", { code: held.code })
-      .then(({ valid }) => { if (typeof valid === "boolean") write({ ...held, valid }); })
+      // A false code is dropped, so a real link can take its place.
+      .then(({ valid }) => { if (valid === true) write({ ...held, valid }); else if (valid === false) clear(); })
       .catch(() => { /* checked again next time */ });
   }
 }
 
-// The code they arrived on, for the server to check itself; and whether it's
-// been found real, which is what gives the second answer free.
+// The code they arrived on, for the server to check itself.
 export const referralCode = () => read()?.code || null;
-export const hasReferralBonus = () => read()?.valid === true;
-// For telling them they were invited: a code kept and not found false (the
-// check may still be on its way when the first screen shows).
-export const invitedHere = () => { const r = read(); return !!r && r.valid !== false; };
 
 // Their own link: { confirmed: false } until their email is confirmed,
 // then { confirmed: true, code, earned, cap }.
@@ -60,11 +63,11 @@ export const fetchReferralLink = email => call("referral-link", { email });
 // A /?ref= link (the first ones shared) still counts: it's kept on the
 // homepage too.
 export const inviteUrl = code => `${typeof window !== "undefined" ? window.location.origin : "https://www.candid-finance.co.uk"}/app/start?ref=${code}`;
-export const INVITE_SUBJECT = "Try Candid: your second module is unlocked for free";
+export const INVITE_SUBJECT = "Try Candid: see where you could keep more of your money";
 
 // What they've used Candid for, in their own words, so the friend knows
 // what it is: the module given (the answer just seen), else the last one
-// they unlocked, else in general.
+// they answered, else in general.
 const USED_FOR = {
   studentLoan: "work out whether to pay off my student loan early",
   cash: "see if I could be earning more on my savings",
@@ -75,9 +78,9 @@ const USED_FOR = {
   taxTrap: "see what earning over £100,000 really costs me",
 };
 export function inviteMessage(code, d = {}, moduleKey = null) {
-  const key = USED_FOR[moduleKey] ? moduleKey : [...(d.unlockedModules || [])].reverse().find(k => USED_FOR[k]);
+  const key = USED_FOR[moduleKey] ? moduleKey : [...answeredIn(d)].reverse().find(k => USED_FOR[k]);
   const usedFor = USED_FOR[key] || "see where I could be keeping more of my money";
-  return `I've been using Candid to ${usedFor}. It's a tool that helps people like us work out if we're leaving money on the table. Start with my link and your second module is unlocked for free:\n${inviteUrl(code)}`;
+  return `I've been using Candid to ${usedFor}. It's a tool that helps people like us work out if we're leaving money on the table. Here's my link:\n${inviteUrl(code)}`;
 }
 
 // A phone's own share sheet (email, WhatsApp, recent apps and the rest) on

@@ -5,7 +5,8 @@ import { VAULT_NAMES, newVaultId, poundsInput, withVault, withoutVault, vaultRea
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import PillSelect from "../../mobile/property/PillSelect.jsx";
 import { G, WHITE, MUT, TEXT, CUSTOM_GOAL_COLOR } from "../../design-tokens.js";
-import { hasAccess, featureUsed } from "../../lib/entitlement.js";
+import { featureUsed } from "../../lib/entitlement.js";
+import { premiumOpen } from "../../lib/unlock.js";
 import SubscribeButtons from "../../mobile/deepdive/SubscribeButtons.jsx";
 import { BarTile, AddTile, Tag, ProgressBar, ReachedMark, useReachedReveal, Figure, Details, TextButton, EditorCard, TextPill, helpText } from "./ProgressParts.jsx";
 
@@ -48,7 +49,7 @@ function vaultNote(v) {
 // subscribe. Pots already added stay theirs either way. `names`: the pots
 // already showing, left out of its suggestions.
 export function AddGoalTile({ d, names, open, onToggle, onSave }) {
-  const locked = !hasAccess() && d.unlockGate === true;
+  const locked = !premiumOpen(d);
   return (
     <AddTile label="Add a goal" open={open} onToggle={onToggle} locked={locked} lockedBody={<LockedGoal d={d}/>} used={featureUsed(d, "addGoal")}>
       <VaultEditor names={names} onCancel={onToggle} onSave={onSave}/>

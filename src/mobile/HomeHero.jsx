@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ChevronRight, Check, Lock } from "lucide-react";
+import { ChevronRight, Check } from "lucide-react";
 import CardStack, { DARK } from "./CardStack.jsx";
 import ScoreDonut from "./ScoreDonut.jsx";
-import { isLocked } from "../lib/unlock.js";
 import { fmt } from "../lib/format.js";
 import { G, GOLD, TEXT, SERIF, SANS, WHITE, OPPORTUNITY_TILE_FIGURE } from "../design-tokens.js";
 
@@ -120,10 +119,9 @@ export default function HomeHero({ d, totalOpp, saved, score, scoreColor, scoreL
             </span>
             <span style={{flex:1,minWidth:0}}>
               <span style={{display:"block",fontSize:"14px",fontWeight:700,color:t === DARK ? OPPORTUNITY_TILE_FIGURE : TEXT}}>{p.title}</span>
-              {isLocked(d, p.key) && <span style={{display:"block",fontSize:"12px",color:t.body,marginTop:"1px"}}>Unlock to see how</span>}
             </span>
             <span style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"13px",fontWeight:600,color:t.body,whiteSpace:"nowrap"}}>
-              {isLocked(d, p.key) && <Lock size={12}/>}{fmt(p.amount)}{p.amountIsLumpSum ? " by 18" : "/yr"}
+              {fmt(p.amount)}{p.amountIsLumpSum ? " by 18" : "/yr"}
             </span>
             <ChevronRight size={15} color={t.body} style={{flexShrink:0}}/>
           </button>

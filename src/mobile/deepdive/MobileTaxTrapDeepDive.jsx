@@ -218,8 +218,9 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
   const moments = [
     employed && { when: `Every payday, the ${ordinal(paydayOf(d))}`, what: "Check-in: where your year is heading" },
     employed && +d.bonusAmount > 0 && { when: bonus, what: `How much of it keeps you under ${K}` },
-    { when: "Before 5 April", what: "The top-up needed, while there's still time", last: true },
   ].filter(Boolean);
+  // The alert before 5 April is free, so with neither of these it has nothing to sell.
+  if (!moments.length) return null;
   return (
     <section aria-label={`Plan ahead for the ${K} trap`} style={{position:"relative",background:WHITE,border:`2px solid ${CTA_BLUE}`,borderRadius:"20px",overflow:"hidden",boxShadow:"0 8px 24px rgba(0,113,227,0.14)"}}>
       <div style={{background:CTA_WASH,padding:"20px 20px 18px"}}>
@@ -239,18 +240,21 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
       <div style={{padding:"18px 20px 20px"}}>
         <div style={{fontSize:"11px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:MUT}}>What you get from Candid</div>
         <ol style={{listStyle:"none",margin:"12px 0 0",padding:0}}>
-          {moments.map(mo => (
+          {moments.map((mo, i) => {
+            const last = i === moments.length - 1;
+            return (
             <li key={mo.when} style={{display:"flex",gap:"14px"}}>
               <span aria-hidden="true" style={{display:"flex",flexDirection:"column",alignItems:"center",width:"14px",flexShrink:0}}>
-                <span style={{width:"14px",height:"14px",borderRadius:"50%",background:mo.last ? CRITICAL : CTA_BLUE,flexShrink:0,marginTop:"2px"}}/>
-                {!mo.last && <span style={{flex:1,width:"2px",background:"rgba(0,113,227,0.3)"}}/>}
+                <span style={{width:"14px",height:"14px",borderRadius:"50%",background:CTA_BLUE,flexShrink:0,marginTop:"2px"}}/>
+                {!last && <span style={{flex:1,width:"2px",background:"rgba(0,113,227,0.3)"}}/>}
               </span>
-              <span style={{paddingBottom: mo.last ? 0 : "16px"}}>
-                <span style={{display:"block",fontSize:"11px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:mo.last ? "#a8301f" : "#0058b0"}}>{mo.when}</span>
+              <span style={{paddingBottom: last ? 0 : "16px"}}>
+                <span style={{display:"block",fontSize:"11px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"#0058b0"}}>{mo.when}</span>
                 <span style={{display:"block",fontSize:"14px",fontWeight:700,marginTop:"2px",color:TEXT}}>{mo.what}</span>
               </span>
             </li>
-          ))}
+            );
+          })}
         </ol>
         <div style={{marginTop:"18px"}}>
           <PlanPicker d={d} module="taxTrap" from="tax_trap_tracking"/>

@@ -70,20 +70,24 @@ export const PROFILES = {
   loanBelowThreshold: { ...rich, salary: "26000", age: "23", loanBalance: "50000", hasPgLoan: "yes", pgLoanBalance: "12000" },
   // Only Student loan answered, then savings and the pension match on its
   // short route (moduleGuide.js briefQuestions): the rest of Cash
-  // and Pension not answered, and behind the paywall.
+  // and Pension not answered.
   loanOnly: { name: "Jo", appEntered: true, email: "check@example.com", unlockGate: true, unlockedModules: ["studentLoan"], selectedModules: ["studentLoan"], answeredModules: ["studentLoan"],
     goalsAsked: true, confidenceAsked: true, employmentStatus: "employed", employmentAsked: true, salary: "70000", salaryTrajectory: "stable",
     studentLoan: "plan2", slPlanAnswer: "plan2", loanBalance: "18500", studentLoanRate: "6.4", hasPgLoan: "no", monthlyExpenses: "2000",
     cashTiers: [{ amount: "20000", rate: "4" }], hasPremiumBonds: "yes", premiumBonds: "5000", hasCashIsaThisYear: "no", hasOtherIsaThisYear: "no",
     pensionStatus: "yes", hasPension: "yes", myContribution: "3", employerContributionType: "match", employerMatch: "5",
     askedFields: ["employmentStatus", "salary", "salaryTrajectory", "monthlyExpenses", "cashTiers", "hasPremiumBonds", "premiumBonds", "hasCashIsaThisYear", "hasOtherIsaThisYear", "pensionStatus", "myContribution", "employerContributionType", "employerMatch"] },
+  // Every new user: all modules answered and open, with the premium features
+  // locked (unlock.js premiumOpen). The others come in before the gate.
+  freeUser: { ...rich, unlockGate: true },
   // The ICP's cash-rich saver: over 50, a large balance on a poor rate.
   cashRichSaver: { ...rich, age: "58", salary: "48000", studentLoan: "none", slPlanAnswer: "", loanBalance: "", cashTiers: [{ name: "High street", amount: "150000", rate: "1.2" }], potValue: "320000", childBenefitChildren: "", hasKids: "no", kidsStatus: "no" },
 };
 // The key ICPs (docs/investor-personas.md, ICP): the employed higher-rate
 // core with a workplace pension, the same with a student loan worth paying
-// off, Student loan alone on its short route, and the cash-rich saver.
-const KEY_PROFILES = ["rich", "loanWorthOverpaying", "loanOnly", "cashRichSaver"];
+// off, Student loan alone on its short route, the cash-rich saver, and the
+// core again as a new user would have it, with premium locked.
+const KEY_PROFILES = ["rich", "loanWorthOverpaying", "loanOnly", "cashRichSaver", "freeUser"];
 const RUN = process.argv.includes("--key") ? Object.fromEntries(KEY_PROFILES.map(k => [k, PROFILES[k]])) : PROFILES;
 const ROUTES = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
 const BLOCK = /supabase\.co|posthog|stripe\.com|truelayer|resend\.com/;
@@ -170,8 +174,16 @@ try {
           problems.push(`${name} ${r}: the chat's way in didn't show within 20s, ${second ? "but did after a reload" : "nor after a reload"}. Screenshot ${shot}. On screen: ${JSON.stringify(seen)}`);
           if (!second) return false;
         }
+        // The chat's replies can redraw just after they show, so a moment to settle.
+        await page.waitForTimeout(1500);
+        // Gone for good, with neither to click: say what's there, don't crash.
         if (await ask.count()) await ask.click();
-        else { await explore.click(); await page.getByRole("button", { name: "Done" }).click(); }
+        else if (await explore.count()) { await explore.click(); await page.getByRole("button", { name: "Done" }).click(); }
+        else {
+          const on = await page.evaluate(() => document.body.innerText.replace(/\s+/g, " ").slice(-400)).catch(() => "");
+          problems.push(`${name} ${r}: the chat's way in showed, then went. On screen: ${on}`);
+          return false;
+        }
         return true;
       };
       if (!broken && r === "/app/chat" && await toStarters()) {

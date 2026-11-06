@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft, Plus } from "lucide-react";
 import posthog from "posthog-js";
-import { invitedHere } from "../../../lib/referral.js";
 import { signedIn } from "../../../lib/entitlement.js";
 import { GUESS_ORDER, entryPatch, guessQuestions, moduleGuess } from "../../../lib/guesses.js";
 import { HERO_SIZE } from "./art.js";
@@ -283,8 +282,6 @@ export default function EntryFlow({ set, onEntered, onDone, onExit }) {
             })}
           </div>
           <div className="grow"/>
-          {/* Arrived on a friend's invite link (src/lib/referral.js). */}
-          {invitedHere() && <p className="invited">A friend invited you: your second module is unlocked for free.</p>}
           <button type="button" className="cta" onClick={() => go("goals")}>Continue →</button>
           {/* Back on a new device: their account brings their answers. */}
           {!signedIn() && <p className="signin">Already have an account? <a href="/app/signin" onClick={() => posthog.capture("entry_sign_in_clicked")}>Sign in</a></p>}

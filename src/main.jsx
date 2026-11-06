@@ -93,8 +93,8 @@ posthog.register({
 if (acquisition.fresh && acquisition.source === 'referral') {
   posthog.capture('referral_started', { referred_by: acquisition.referred_by })
 }
-// A friend's invite link (?ref=<code>): kept and checked, for their second
-// answer free and the friend's reward (src/lib/referral.js). Unlike the
+// A friend's invite link (?ref=<code>): kept and checked, for the reward to
+// whoever invited them (src/lib/referral.js). Unlike the
 // first-touch record above, it's taken from any visit before their first
 // answer, so an invite still counts for someone who's been to the site.
 captureReferral()

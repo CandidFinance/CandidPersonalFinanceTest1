@@ -14,7 +14,6 @@ import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews } from "../visitNews.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
-import { isLocked } from "../../lib/unlock.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Modules screen. A coloured band at the top with the page's title
@@ -157,7 +156,6 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     }
     if (key === "property") return { note: "Ready" };
     const mm = liveByKey[key];
-    if (isLocked(d, key)) return { note: "Ready to unlock" };
     const onTrack = isOptimised(mm);
     const warn = !onTrack ? mm.warn : null;
     const color = warn === "red" ? CRITICAL : warn ? WARNING_TEXT : null;

@@ -9,7 +9,7 @@ import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
 import PillMoneyInput, { PILL_ANSWER_TEXT } from "../PillMoneyInput.jsx";
 import { PremiumSheetPortal } from "../Premium.jsx";
-import { hasAccess } from "../../lib/entitlement.js";
+import { premiumOpen as premiumFor } from "../../lib/unlock.js";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
 import { LIGHT } from "../CardStack.jsx";
@@ -86,7 +86,7 @@ export default function MobileForecastScreen({ d, m }) {
   // A lump sum today is a subscriber feature (as Add a goal's rule:
   // subscribers, and anyone from before the paywall). For anyone else the
   // pill is locked, and a tap opens Candid Premium's sheet, as the crown does.
-  const lumpLocked = !hasAccess() && d.unlockGate === true;
+  const lumpLocked = !premiumFor(d);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const openPremium = () => { setPremiumOpen(true); posthog.capture("premium_opened", { from: "forecast_lump_sum" }); };
   // Both views' charts run the band's full width, the reel's (BandReel), so

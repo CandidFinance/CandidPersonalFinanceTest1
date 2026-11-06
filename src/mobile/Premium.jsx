@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
-import { Crown, X, LayoutGrid, CalendarCheck, BellRing, Percent } from "lucide-react";
+import { Crown, X, Sparkles, TrendingUp, Target, CalendarCheck, Percent } from "lucide-react";
 import { G, MUT, TEXT, WHITE, CTA_BLUE } from "../design-tokens.js";
 import { hasAccess } from "../lib/entitlement.js";
 import { PlanPicker, CTA_WASH } from "./deepdive/SubscribeButtons.jsx";
@@ -12,10 +12,11 @@ import useDialogFocus, { useHidesAssist } from "./useDialogFocus.js";
 // subscribed: a small CTA blue crown that opens what a subscription
 // includes and the two plans. Subscribers don't see it.
 const INCLUDES = [
-  { Icon: LayoutGrid, title: "Every module unlocked", line: "Your first one is free; Premium opens the rest." },
-  { Icon: Percent, title: "The £100k trap, tracked", line: "A check-in each payday, and alerts before your bonus and 5 April." },
-  { Icon: BellRing, title: "Better-rate alerts", line: "When your savings could earn £100 or more a year elsewhere." },
-  { Icon: CalendarCheck, title: "A fresh start each April", line: "Your figures rolled into the new tax year, with a check your pay's the same." },
+  { Icon: Sparkles, title: "Candid Assist", line: "Your savings options and how moving works, step by step." },
+  { Icon: TrendingUp, title: "What-ifs", line: "Scenario modelling, student loan options side by side, and lump sums in your forecast." },
+  { Icon: Target, title: "Your own goals", line: "Add goals of your own and track them." },
+  { Icon: Percent, title: "The £100k trap, tracked", line: "A check-in each payday, and an alert before your bonus." },
+  { Icon: CalendarCheck, title: "A fresh start each April", line: "An email when the new tax year starts, with a check your pay's the same." },
 ];
 
 export default function PremiumButton({ d }) {
@@ -92,6 +93,7 @@ function PremiumSheet({ d, from, onClose }) {
           <div style={{marginTop:"18px"}}>
             <PlanPicker d={d} module={null} from={from}/>
           </div>
+          <p style={{margin:"12px 0 0",fontSize:"12.5px",color:MUT,textAlign:"center"}}>Already subscribed? <a href="/app/signin" style={{color:G,fontWeight:700}}>Sign in</a></p>
         </div>
       </motion.div>
     </motion.div>

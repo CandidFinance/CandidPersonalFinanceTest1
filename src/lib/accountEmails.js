@@ -48,11 +48,11 @@ export function signInEmail({ url }) {
 export function confirmReminderEmail({ name, url, days, founding, unsubscribeUrl }) {
   return renderEmail({ campaign: "confirmReminder",
     subject: "Confirm your email for Candid",
-    preheader: founding ? "Confirm it and rate alerts are free for you." : "One tap to confirm it's you.",
+    preheader: founding ? "Confirm it and you can turn on free rate alerts." : "One tap to confirm it's you.",
     greeting: hi(name),
     blocks: [
       { p: "You left this email address on Candid, but it isn't confirmed yet." },
-      ...(founding ? [{ p: "Confirm it and you're a founding user, with rate alerts free: an email when a low rate is costing you £100+ a year on your figures - at most once a month." }] : []),
+      ...(founding ? [{ p: "Confirm it and you can turn on free rate alerts: an email when a low rate is costing you £100+ a year on your figures - at most once a month." }] : []),
       { button: { label: "Confirm my email", href: url } },
       { small: `The link works for ${days} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.` },
     ],
@@ -68,20 +68,20 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
   const offer = founding && !optedIn;
   return renderEmail({ campaign: "confirmed",
     subject: "Thanks for confirming - welcome to Candid",
-    preheader: offer ? "Rate alerts are free for founding users." : "Your invite link, and how to keep your answers.",
+    preheader: offer ? "Free rate alerts, if you want them." : "Your invite link, and how to keep your answers.",
     greeting: hi(name),
     blocks: [
       { p: "Thanks for confirming your email address, and welcome to Candid." },
       { p: "Your answers are saved on the device you used. Sign in to Candid with this email address and they're saved to your account, so you can pick up where you left off on any device." },
       ...(founding ? [
-        { h: "Rate alerts, free for founding users" },
+        { h: "Free rate alerts" },
         optedIn
           ? { p: "You're signed up. When a low rate is costing you £100+ a year on your figures, we'll email you - at most once a month." }
-          : { p: "Turn them on and we'll email you when a low rate is costing you £100+ a year on your figures - at most once a month. They're free for founding users only, so don't miss out." },
+          : { p: "Turn them on and we'll email you when a low rate is costing you £100+ a year on your figures - at most once a month." },
         ...(optedIn ? [] : [{ button: { label: "Turn on rate alerts", href: optInUrl } }]),
       ] : []),
       { h: "Share Candid" },
-      { p: `Know a partner, friend or colleague who could do with a hand with their money? Send them your link. When they join and complete their first module, you get a free month of Candid, up to ${cap} months, and they get an extra answer free.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
+      { p: `Know a partner, friend or colleague who could do with a hand with their money? Send them your link. When they join and confirm their email, you get a free month of Candid Premium, up to ${cap} months.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
       ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
       { p: "Any questions or feedback, just reply to this email." },
     ],
@@ -99,16 +99,16 @@ export function referralRewardEmail({ kind, until = null, url = null, cap, credi
     return renderEmail({ campaign: "referral",
       subject: "A friend joined Candid: a month off your bill", preheader: `${off} comes off your next bill.`,
       blocks: [
-        { p: `A friend you invited has joined Candid and completed their first module, so ${creditPence > 0 ? `${off}, a month of Candid,` : "a month of Candid"} comes off your next bill.` },
+        { p: `A friend you invited has joined Candid, so ${creditPence > 0 ? `${off}, a month of Candid,` : "a month of Candid"} comes off your next bill.` },
         { p: where },
       ],
     });
   }
   const date = until ? new Date(until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
   return renderEmail({ campaign: "referral",
-    subject: "A friend joined Candid: you've got a free month", preheader: "Every module, free for a month.",
+    subject: "A friend joined Candid: you've got a free month", preheader: "Candid Premium, free for a month.",
     blocks: [
-      { p: `A friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer and Candid Assist${date ? `, until ${date}` : ""}.` },
+      { p: `A friend you invited has joined Candid, so you've got a free month of Candid Premium: Candid Assist, what-ifs and your own goals${date ? `, until ${date}` : ""}.` },
       { p: "Open this link on the phone or computer you use Candid on, and it's on. The link works for 7 days." },
       { button: { label: "Turn on my free month", href: url } },
       { small: `The month ends by itself, and nothing is charged. ${where}` },

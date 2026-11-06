@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import InviteFriends from "../InviteFriends.jsx";
+import { referralCode } from "../../lib/referral.js";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Mail, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
@@ -282,7 +283,7 @@ function EmailField({ d, onEmailChange, spotlight = false }) {
     : `Link sent to ${link.email}. Open it to confirm it's yours. If it isn't there in a few minutes, check your spam folder.`;
   const confirm = async () => {
     if (check.busy) return;
-    const ok = await check.run(draft, { name: d.name || null });
+    const ok = await check.run(draft, { name: d.name || null, ...(referralCode() ? { ref: referralCode() } : {}) });
     if (!ok) return;
     if (!same(ok.email, d.email) || (spotlight && !d.alertsOptIn)) onEmailChange?.(ok.email, spotlight);
     setDraft(ok.email);

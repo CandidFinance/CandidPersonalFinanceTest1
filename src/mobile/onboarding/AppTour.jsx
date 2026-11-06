@@ -32,8 +32,8 @@ const STOPS = [
     body: "Each asset and debt behind your net worth, and when you can use it." },
   { id: "modules", screen: "modules", target: "modules-cards", title: "Every module",
     body: "Each module in one place, with what it's worth a year and where it stands." },
-  { id: "assist", screen: "modules", target: "assist", round: true, title: "Ask a question",
-    body: "Ask about your figures at any time. It's on every page." },
+  { id: "assist", screen: "modules", target: "assist", round: true, title: "Candid Assist",
+    body: "Your savings options and how moving works, step by step. Part of Candid Premium." },
   { id: "done", screen: "modules", target: null, title: "That's the tour",
     body: "Everything here updates as you answer more modules." },
 ];

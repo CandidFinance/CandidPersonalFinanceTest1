@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Home } from "lucide-react";
 import { reportStorageFailure } from "../../lib/storage.js";
-import { invitedHere } from "../../lib/referral.js";
 import { signedIn } from "../../lib/entitlement.js";
 import posthog from "posthog-js";
 import { NavBar } from "../../NavBar.jsx";
@@ -48,10 +47,6 @@ export default function MobileEntryScreen({ d, m, set, onEntered, onDone }) {
     <div style={{minHeight:"100vh",background:CREAM,display:"flex",flexDirection:"column"}}>
       <NavBar light center="Getting started"/>
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
-        {/* Arrived on a friend's invite link (src/lib/referral.js). */}
-        {invitedHere() && (
-          <div style={{fontSize:"13px",fontWeight:600,color:G,lineHeight:1.45,marginBottom:"14px"}}>A friend invited you: your second module is unlocked for free.</div>
-        )}
         {/* Says which module is opening, for a screen reader: there from the
             start, so the change is announced when the hand-off shows. */}
         <div role="status" style={{position:"absolute",width:"1px",height:"1px",overflow:"hidden",clip:"rect(0 0 0 0)"}}>{done && meta?.title ? `Opening ${meta.title}` : ""}</div>

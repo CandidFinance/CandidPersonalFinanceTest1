@@ -5,7 +5,6 @@ import { ArrowUp } from "lucide-react";
 import { G, WHITE, TEXT, MUT, SANS, CREAM, FIELD_BORDER } from "../../design-tokens.js";
 import { TOPICS, WINDFALL, matchTopic, wantsLead, answerParts, topicFigures, MODULE_SUB, boldRuns } from "../../lib/chatTopics.js";
 import { computeModuleStatuses } from "../../lib/moduleStatus.js";
-import { isLocked } from "../../lib/unlock.js";
 import { opening, titleOf, askReplies, CHAT_QUICK } from "../../lib/chatStart.js";
 import { makeVoice } from "../../lib/chatVoice.js";
 import { Bubble, Dots, DotsKeyframes, Thinking, SheenKeyframes, ModuleButton, AskNext } from "./ChatParts.jsx";
@@ -49,7 +48,7 @@ export function useQAChat(d, m, { onWindfall, set, marketRates, answerModule }) 
   // Candid's phrases (chatVoice.js), from a different place each visit.
   const [voice] = useState(() => makeVoice(Math.floor(Math.random() * 1000)));
   // The way in, worked out once as the tab opens.
-  const [start] = useState(() => opening(d, m, computeModuleStatuses(d, m, marketRates), key => isLocked(d, key), voice));
+  const [start] = useState(() => opening(d, m, computeModuleStatuses(d, m, marketRates), undefined, voice));
   const [msgs, setMsgs] = useState([]);
   const [queue, setQueue] = useState(start.parts);
   const [typing, setTyping] = useState(false);

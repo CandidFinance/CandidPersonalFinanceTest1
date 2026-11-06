@@ -389,13 +389,13 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCo
   const renews = periodEnd && !isNaN(new Date(periodEnd)) ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
   const invite = inviteCode ? `${SITE}/app/start?ref=${inviteCode}` : null;
   return renderEmail({ campaign: "welcome",
-    subject: "Welcome to Candid", preheader: "Every module is now open to you.",
+    subject: "Welcome to Candid", preheader: "Candid Premium is now open to you.",
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
-      { p: "Thanks for subscribing to Candid. Every module is now open to you, and your answers are saved to this email address." },
+      { p: "Thanks for subscribing to Candid. Candid Premium is now open to you, and your answers are saved to this email address." },
       { h: "What you'll get" },
       { list: [
-        [{ b: "Every module's figures" }, ", kept current as you update your answers. Open Banking is in testing: in future you'll be able to connect your bank accounts, and your figures will update automatically."],
+        [{ b: "Candid Assist, what-ifs and your own goals" }, ", on your own figures. Open Banking is in testing: in future you'll be able to connect your bank accounts, and your figures will update automatically."],
         [{ b: "An email roundup on Sunday mornings" }, ": rate changes and Budget news, and what each would mean on your figures."],
         [{ b: "Updates on key dates in the tax calendar" }, " that apply to you, from your bonus to 5 April, and whenever a better savings rate appears."],
       ] },
@@ -404,7 +404,7 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCo
       ...(price ? [{ panel: { label: "Your plan", text: `${price}${renews ? `, renewing on ${renews}` : ""}` } }] : []),
       { small: ["To manage your subscription, go to ", { a: "Edit inputs", href: `${SITE}/app/inputs` }, " in Candid, then Manage subscription."] },
       { h: "Share Candid" },
-      { p: `Know someone who'd find Candid useful? For each friend who joins with your link and completes their first module, you get a month free, up to ${REFERRAL_MONTHS} months.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
+      { p: `Know someone who'd find Candid useful? For each friend who joins with your link and confirms their email, you get a month of Candid Premium free, up to ${REFERRAL_MONTHS} months.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
       ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
       { p: "Any questions or feedback, just reply to this email." },
     ],

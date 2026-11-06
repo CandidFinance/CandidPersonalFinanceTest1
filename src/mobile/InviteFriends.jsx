@@ -1,23 +1,21 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import { Share2, Copy, Check, Mail, MessageCircle } from "lucide-react";
+import { Share2, Copy, Check, Mail, MessageCircle, X } from "lucide-react";
 import { G, MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE } from "../design-tokens.js";
 import { validEmailShape, requestEmailCheck } from "../lib/emailCheck.js";
 import { fetchReferralLink, inviteMessage, nativeShare, shareInvite, copyInvite, inviteMailto, inviteWhatsApp, REFERRAL_CAP } from "../lib/referral.js";
 
-// Inviting friends (src/lib/referral.js, server/referrals.js): a free month
-// for each friend who joins on their link and completes their first module,
-// up to REFERRAL_CAP; the friend's second module is unlocked for free. The
-// link is for a confirmed email only, so until theirs is, this offers its
+// Inviting friends (src/lib/referral.js, server/referrals.js): a free month of
+// Premium for each friend who joins on their link and confirms their email,
+// up to REFERRAL_CAP. The link is for a confirmed email only, so until theirs is, this offers its
 // confirmation link instead. Nothing without an email.
 // Kept short: one line, then one blue button, "Share your Candid link",
 // with a copy icon beside it. On a phone the button opens its share sheet;
 // on a computer (or if the sheet fails) it shows Email and WhatsApp under
 // it. Copying takes the message with its link, to paste anywhere. The message says what they've used Candid for
-// (`moduleKey`, the answer just seen, else their last one unlocked).
-// `source` is where it's shown, for PostHog. `bare`: no card of its own,
-// inside one already (the paywall).
-export default function InviteFriends({ d, source, moduleKey = null, bare = false }) {
+// (`moduleKey`, the answer just seen, else their last one answered).
+// `source` is where it's shown, for PostHog. `onDismiss` adds an X.
+export default function InviteFriends({ d, source, moduleKey = null, onDismiss = null }) {
   const email = validEmailShape(d.email) ? d.email.trim() : null;
   const [link, setLink] = useState(null); // { confirmed, code, earned, cap }
   const [failed, setFailed] = useState(false);
@@ -60,15 +58,16 @@ export default function InviteFriends({ d, source, moduleKey = null, bare = fals
     setResent(sent === "sent" || sent === "sent recently" ? "sent" : "failed");
   };
 
-  const wrap = bare ? {} : { background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"14px", padding:"16px 18px", marginTop:"16px" };
+  const wrap = { position:"relative", background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"14px", padding:"16px 18px", marginTop:"16px" };
   const textLink = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   const pill = { border:"none", borderRadius:"100px", padding:"12px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"7px", boxSizing:"border-box" };
   const choice = { ...pill, flex:1, background:WHITE, color:G, border:`1.5px solid ${G}`, padding:"10px", textDecoration:"none" };
   return (
     <div style={wrap}>
-      <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Give a friend a free module, get a free month</div>
+      {onDismiss && <button type="button" onClick={onDismiss} aria-label="Dismiss" style={{position:"absolute",top:"8px",right:"8px",background:"none",border:"none",padding:"6px",color:MUT,cursor:"pointer",display:"flex"}}><X size={18}/></button>}
+      <div style={{fontSize:"14px",fontWeight:700,color:TEXT,paddingRight:onDismiss ? "24px" : 0}}>Invite a friend, get a free month of Premium</div>
       <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
-        Once they finish their first module. Up to {REFERRAL_CAP} months. <a href="/terms.html#referrals" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>
+        Once they join and confirm their email. Up to {REFERRAL_CAP} months. <a href="/terms.html#referrals" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>
       </p>
       {link.confirmed ? (
         <>
