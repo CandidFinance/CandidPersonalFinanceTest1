@@ -8,7 +8,7 @@ import { EVENTS } from "../src/lib/outsideEvents.js";
 import { confirmUrl, LINK_DAYS } from "../server/confirmLink.js";
 import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 import { referralLink } from "../server/referrals.js";
-import { reportIds } from "../server/access.js";
+import { accessFor, reportIds } from "../server/access.js";
 
 // Candid's emails between visits (src/lib/alerts.js decides what's due),
 // subscribers' welcome and the Sunday email (src/lib/weekly.js). One route:
@@ -147,6 +147,8 @@ async function recipients(notes) {
   const optedIn = new Set(rows.filter(r => r.unlock_call_ok || r.alerts_opt_in).map(r => cleanEmail(r.email)));
   const people = new Map();
   for (const s of subs) {
+    // A free month that's over still has status active: they count as free now.
+    if (!accessFor(s).active) continue;
     const email = cleanEmail(s.email);
     // Saved as { inputs, completedModules } (entitlement.js saveStateSoon).
     const d = s.saved_state?.inputs;
