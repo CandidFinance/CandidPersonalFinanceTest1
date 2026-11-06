@@ -287,12 +287,15 @@ export const MODULE_SOON_TILE = { bg: "#ECEAE3", chip: "#FFFFFF", fg: "#9B9B9B" 
 export const MODULE_QUIET_TILE = { bg: "#FBF9F5", panel: "#EEEDE9" };
 // Modules' top band, behind the title and the hero card: brand green
 // washing into gold, pale enough for dark text.
-export const MODULES_BAND_BG = "linear-gradient(160deg, #D9EADF 0%, #E9EEDB 50%, #F5E6C8 100%)";
 // The same band warning, red or amber: Progress's while income is over
 // £100,000 (red) or within £5,000 of it (amber), as the Tax shield card's
-// wash was in the wallet stack.
-export const BAND_BG_RED = "linear-gradient(160deg, #F4D3CC 0%, #F7DED6 50%, #F8E6DC 100%)";
-export const BAND_BG_AMBER = "linear-gradient(160deg, #FBE2C6 0%, #FAE8D3 50%, #F8EBDA 100%)";
+// wash was in the wallet stack. Each a 160deg gradient through these three
+// colours (ScreenBand.jsx fades between them).
+export const BAND_STOPS = {
+  light: ["#D9EADF", "#E9EEDB", "#F5E6C8"],
+  red:   ["#F4D3CC", "#F7DED6", "#F8E6DC"],
+  amber: ["#FBE2C6", "#FAE8D3", "#F8EBDA"],
+};
 
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
@@ -313,6 +316,13 @@ export const STATUS_TILE = {
 // corner (5.1:1 at the teal's peak; the full slick took it to 2.1:1), with a
 // faint sheen that runs once. The card stack's front card (Home, Progress,
 // Modules) from 31 Oct 2026, the module pages' tiles from 1 Nov. Harvey.
+// `slickBg(h)`: the slick drawn for a box `h` tall (a CSS length) at the top
+// of a taller one, carrying on smoothly below it (ScreenBand's dark band,
+// which runs on under its sheet).
+// Each tint sized as a layer of its own (a gradient's radius won't take a
+// calc of % and px): the teal and violet fade out inside the top box; the
+// gold, centred below it, on a layer twice as tall.
+export const slickBg = h => `radial-gradient(80% 120% at 0% 0%, rgba(42,138,108,0.38) 0%, rgba(42,138,108,0) 60%) 0 0 / 100% ${h} no-repeat, radial-gradient(70% 100% at 100% 0%, rgba(107,90,166,0.35) 0%, rgba(107,90,166,0) 62%) 0 0 / 100% ${h} no-repeat, radial-gradient(90% 55% at 85% 57.5%, rgba(196,150,58,0.3) 0%, rgba(196,150,58,0) 60%) 0 0 / 100% calc(${h} * 2) no-repeat, #0e2219`;
 export const STACK_SLICK_BG    = "radial-gradient(80% 120% at 0% 0%, rgba(42,138,108,0.38) 0%, rgba(42,138,108,0) 60%), radial-gradient(70% 100% at 100% 0%, rgba(107,90,166,0.35) 0%, rgba(107,90,166,0) 62%), radial-gradient(90% 110% at 85% 115%, rgba(196,150,58,0.3) 0%, rgba(196,150,58,0) 60%), #0e2219";
 export const STACK_SLICK_SHEEN = 0.05;
 

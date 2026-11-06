@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { buildProgressSnapshot, worthNotes, worthByAccess, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
@@ -14,7 +13,7 @@ import Alert from "../../mobile/AlertBox.jsx";
 import FilterMenu from "../../mobile/FilterMenu.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption } from "../../mobile/ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../../mobile/ScreenBand.jsx";
 import {
   G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
@@ -110,11 +109,10 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
   const WORTH = views.findIndex(v => v.key === "netWorth");
   const GOALS = views.findIndex(v => v.key === "goals");
   const SHIELD = views.findIndex(v => v.key === "taxShield");
-  const { view, showView, moved, bandProps } = useBandViews(views.length);
+  const { view, showView, moved, bandProps, reel } = useBandViews(views.length);
   const warn = WARN_ZONE[income.zone];
   const tone = view === SHIELD && warn ? warn : "light";
   const t = BAND_T[tone];
-  const fade = { key: view, initial: moved ? { opacity: 0 } : false, animate: { opacity: 1 }, transition: { duration: 0.25 } };
 
   return (
     <div>
@@ -124,53 +122,55 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
         <section aria-label="Your figures" data-tour="progress-cards">
           <BandViewCaption views={views.map(v => v.label)} view={view} moved={moved} onPick={showView} ink={t.figure} soft={t.label} faint={t.dot}
             marks={warn && { [SHIELD]: { color: WARN[warn].icon, note: income.zone === "in" ? "in the £100k trap" : "near the £100k trap" } }}/>
-          <motion.div {...fade}>{views[view].body(t)}</motion.div>
+          <BandReel reel={reel}>{views[view].body(t)}</BandReel>
         </section>
       </ScreenBand>
 
       <ScreenSheet>
-        {view === WORTH && (
-          <motion.div {...fade} data-tour="progress-worth">
-            <WorthTiles picture={netWorth} assets={worthAssets.tiles} notes={worthAssets.notes} switchable={worthAssets.switchable} by={worthBy} onBy={pickWorthBy} onOpenModule={openModule}/>
-          </motion.div>
-        )}
-        {view === SHIELD && (
-          <motion.section {...fade} aria-label="Tax shield details">
-            <ShieldDetails income={income} t={SHEET_T} onOpenTrap={openTrap}/>
-          </motion.section>
-        )}
-        {/* Add a goal first, then the goals in the order picked: as built,
-            the user's pots (newest first) then this tax year's goals from the
-            modules (sortGoals). Each goal its own tile on the cream. */}
-        <section data-tour="progress-goals" aria-labelledby="progress-goals-title" hidden={view !== GOALS}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",padding:"0 2px"}}>
-            <h2 id="progress-goals-title" style={kicker}>Goals</h2>
-            <div style={{height:0,display:"flex",alignItems:"center"}}>
-              <FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>
+        <SheetGlass view={view}>{shown => (<>
+          {shown === WORTH && (
+            <div data-tour="progress-worth">
+              <WorthTiles picture={netWorth} assets={worthAssets.tiles} notes={worthAssets.notes} switchable={worthAssets.switchable} by={worthBy} onBy={pickWorthBy} onOpenModule={openModule}/>
             </div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"16px"}}>
-            <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
-              onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); if (hasAccess()) set("subscriberFeaturesUsed", withFeatureUsed(d, "addGoal")); setExpanded(null); }}/>
-            {sortGoals(goals, sortBy).map(({ vault: v, row }) => {
-              if (v) {
-                const key = `vault:${v.id}`;
+          )}
+          {shown === SHIELD && (
+            <section aria-label="Tax shield details">
+              <ShieldDetails income={income} t={SHEET_T} onOpenTrap={openTrap}/>
+            </section>
+          )}
+          {/* Add a goal first, then the goals in the order picked: as built,
+              the user's pots (newest first) then this tax year's goals from the
+              modules (sortGoals). Each goal its own tile on the cream. */}
+          <section data-tour="progress-goals" aria-labelledby="progress-goals-title" hidden={shown !== GOALS}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",padding:"0 2px"}}>
+              <h2 id="progress-goals-title" style={kicker}>Goals</h2>
+              <div style={{height:0,display:"flex",alignItems:"center"}}>
+                <FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"16px"}}>
+              <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
+                onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); if (hasAccess()) set("subscriberFeaturesUsed", withFeatureUsed(d, "addGoal")); setExpanded(null); }}/>
+              {sortGoals(goals, sortBy).map(({ vault: v, row }) => {
+                if (v) {
+                  const key = `vault:${v.id}`;
+                  return (
+                    <VaultTile key={key} vault={v} fresh={visit.includes(key)} names={vaults.map(x => x.name)} open={expanded === key} onToggle={() => toggle(key)}
+                      editing={editing === key} onEdit={() => setEditing(key)} onCancel={close}
+                      onSave={next => { saveVault(d, set, next, { added: false, fromGoal: v.fromGoal }); close(); }}
+                      onRemove={() => { removeVault(d, set, v); close(); setExpanded(null); }}/>
+                  );
+                }
+                const key = `row:${row.id}`;
                 return (
-                  <VaultTile key={key} vault={v} fresh={visit.includes(key)} names={vaults.map(x => x.name)} open={expanded === key} onToggle={() => toggle(key)}
-                    editing={editing === key} onEdit={() => setEditing(key)} onCancel={close}
-                    onSave={next => { saveVault(d, set, next, { added: false, fromGoal: v.fromGoal }); close(); }}
-                    onRemove={() => { removeVault(d, set, v); close(); setExpanded(null); }}/>
+                  <GoalTile key={key} row={row} fresh={visit.includes(`${taxYear}:${key}`)} open={expanded === key} onToggle={() => toggle(key)}
+                    editing={editing === key} onEdit={() => setEditing(key)} onOpenModule={openModule}
+                    editor={editing === key && <RowEditor row={row} d={d} m={m} set={set} onDone={close}/>}/>
                 );
-              }
-              const key = `row:${row.id}`;
-              return (
-                <GoalTile key={key} row={row} fresh={visit.includes(`${taxYear}:${key}`)} open={expanded === key} onToggle={() => toggle(key)}
-                  editing={editing === key} onEdit={() => setEditing(key)} onOpenModule={openModule}
-                  editor={editing === key && <RowEditor row={row} d={d} m={m} set={set} onDone={close}/>}/>
-              );
-            })}
-          </div>
-        </section>
+              })}
+            </div>
+          </section>
+        </>)}</SheetGlass>
       </ScreenSheet>
     </div>
   );

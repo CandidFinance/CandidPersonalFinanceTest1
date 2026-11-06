@@ -1,9 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption } from "../ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../ScreenBand.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
@@ -74,7 +74,7 @@ export default function MobileForecastScreen({ d, m }) {
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
   // Which of VIEWS is showing (ScreenBand.jsx).
-  const { view, showView, moved: viewMoved, bandProps } = useBandViews(VIEWS.length);
+  const { view, showView, moved: viewMoved, bandProps, reel } = useBandViews(VIEWS.length);
   // The Surplus lines taken off the graph (by tapping their row below), so
   // two can be compared on their own. All on to start with.
   const [hiddenLines, setHiddenLines] = useState(() => new Set());
@@ -89,9 +89,9 @@ export default function MobileForecastScreen({ d, m }) {
   const lumpLocked = !hasAccess() && d.unlockGate === true;
   const [premiumOpen, setPremiumOpen] = useState(false);
   const openPremium = () => { setPremiumOpen(true); posthog.capture("premium_opened", { from: "forecast_lump_sum" }); };
-  // Each view's chart is drawn afresh as it comes up, so each is measured
-  // again then (otherwise it keeps the fallback width).
-  const [chartRef, chartWidth] = useElementWidth(340, [view]);
+  // Both views' charts run the band's full width, the reel's (BandReel), so
+  // the reel is measured: it stays as the views slide in and out.
+  const [chartRef, chartWidth] = useElementWidth(340);
 
   // Only a monthly surplus the user types goes into the figures, the Surplus
   // card's and the Net worth line's; until then it's £0. Our own estimate
@@ -119,11 +119,11 @@ export default function MobileForecastScreen({ d, m }) {
         <h1 style={{...SCREEN_TITLE,color:CREAM,margin:"0 0 4px"}}>Forecasts</h1>
         <BandViewCaption views={VIEWS} view={view} moved={viewMoved} onPick={showView} ink={CREAM} soft={CREAM_SOFT} faint={CREAM_FAINT}/>
 
-        <motion.div key={view} initial={viewMoved ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+        <BandReel reel={reel} measureRef={chartRef}>
           {view === 0
-            ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartRef={chartRef} chartWidth={chartWidth}/>
-            : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} hidden={hiddenLines} chartRef={chartRef} chartWidth={chartWidth}/>}
-        </motion.div>
+            ? <NetWorthBand age={age} horizon={horizon} trajectory={trajectory} chartWidth={chartWidth}/>
+            : <SurplusBand horizon={horizon} monthly={monthly} lump={lump} lumpLocked={lumpLocked} series={series} options={forecast.options} hidden={hiddenLines} chartWidth={chartWidth}/>}
+        </BandReel>
 
         {/* The horizon sets both views, so it sits below them. */}
         <HorizonLine value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS}/>
@@ -134,12 +134,14 @@ export default function MobileForecastScreen({ d, m }) {
       <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_lump_sum" onClose={() => setPremiumOpen(false)}/>
 
       <ScreenSheet>
-        <section aria-label={`${VIEWS[view]} details`}>
-          {view === 0
-            ? <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
-                showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/>
-            : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip} hidden={hiddenLines} onToggle={toggleLine} canHide={monthly > 0 || lump > 0}/>}
-        </section>
+        <SheetGlass view={view}>{shown => (
+          <section aria-label={`${VIEWS[shown]} details`}>
+            {shown === 0
+              ? <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
+                  showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/>
+              : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip} hidden={hiddenLines} onToggle={toggleLine} canHide={monthly > 0 || lump > 0}/>}
+          </section>
+        )}</SheetGlass>
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0"}}>Estimates from your answers, not promises: growth isn't guaranteed.</p>
 
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
@@ -232,7 +234,7 @@ function RunFade({ id, f, color }) {
 // A safe id for url(#…) from useId's.
 const svgId = raw => raw.replace(/[^\w-]/g, "");
 
-function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
+function NetWorthBand({ age, horizon, trajectory, chartWidth }) {
   const id = `nw${svgId(useId())}`;
   const values = trajectory.map(r => r.netWorth);
   const f = bandFrame(chartWidth, horizon);
@@ -264,7 +266,7 @@ function NetWorthBand({ age, horizon, trajectory, chartRef, chartWidth }) {
       <p style={SR_ONLY}>
         {age ? `At age ${age + horizon}` : `In ${horizon} years`}, in {year0 + horizon}, from {signed(values[0])} now. {labelled.slice(1, -1).map(y => `${year0 + y}: ${signed(values[y])}.`).join(" ")}
       </p>
-      <div ref={chartRef} style={{margin:"8px -20px 0"}}>
+      <div style={{margin:"8px -20px 0"}}>
         <svg width={W} height={f.H} viewBox={`0 0 ${W} ${f.H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
           <defs>
             <linearGradient id={`${id}l`} gradientUnits="userSpaceOnUse" x1="0" x2={x0} y1="0" y2="0">
@@ -438,7 +440,7 @@ function LockedLumpPill({ onClick }) {
 // tapped off isn't drawn, and the rest are scaled to fill the graph.
 // Hovering, or touching and dragging along, the graph reads one year: a
 // guide at that year, a marker on each line and its £ beside it.
-function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidden, chartRef, chartWidth }) {
+function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidden, chartWidth }) {
   const id = `sp${svgId(useId())}`;
   const f = bandFrame(chartWidth, horizon);
   const { W, PT, axisY, sx, year0 } = f;
@@ -519,7 +521,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
           By {year0 + horizon}: {lines.map(l => `${FORECAST_SHORT_LABEL[l.label] || l.label} ${fmt(l.values[l.end])}${l.end < horizon ? ` (stops in ${year0 + l.end})` : ""}`).join(", ")}.
         </p>
       )}
-      <div ref={chartRef} data-scrub={empty ? undefined : ""} tabIndex={empty ? undefined : 0} role={empty ? undefined : "group"}
+      <div data-scrub={empty ? undefined : ""} tabIndex={empty ? undefined : 0} role={empty ? undefined : "group"}
         aria-label={empty ? undefined : "Surplus graph. Left and right arrow keys read each year."}
         onPointerDown={empty ? undefined : onScrub} onPointerMove={empty ? undefined : onScrub}
         onPointerLeave={e => { if (e.pointerType === "mouse") setReading(null); }} onKeyDown={empty ? undefined : onKeyDown} onBlur={() => setReading(null)}
