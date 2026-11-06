@@ -25,6 +25,8 @@
  * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.
  * @property {boolean} [emergencyCardDismissed] Cash's emergency fund card closed while at its target.
  * @property {string[]} financialGoals
+ * @property {string[]} [entryWorries] What worries them, from the entry.
+ * @property {Object<string,{band:string,shown?:boolean}>|null} [guesses] Guesses at the entry, by question id (guesses.js). Stored once.
  * @property {string} houseTargetAmount
  * @property {string} houseTimeframe
  * @property {string} bigPurchaseTargetAmount

@@ -9,6 +9,12 @@ import { trapInView } from "./taxTrap.js";
 // (e.g. the Property checks treat cash as known once Cash is
 // selected), so a module joins it only once its questions are answered.
 
+// The new entry (src/mobile/screens/entry/): worries, goals, modules, guesses.
+// Turn off to go back to the one-question entry (MobileEntryScreen), and the
+// guess comparison with it. Compare /app/start visits to reveal_shown before
+// and after (30 days to 6 Nov 2026: 382 people entered, 91 reached a reveal).
+export const NEW_ENTRY = true;
+
 // The modules a user can start from, in the order offered when nothing
 // else decides it. "property" isn't in MODULE_META yet (see
 // MobilePropertyScreen) but is offered the same way. The £100k tax trap
@@ -215,9 +221,9 @@ export function moduleOrder(d) {
 
 // The modules offered to this user: the £100k tax trap only when their
 // income is near or over £100,000, or heading there (taxTrap.js
-// trapInView), or once they've answered it.
+// trapInView), or once they've answered it or picked it at the entry.
 export function modulesInView(d, keys = START_MODULES) {
-  return keys.filter(k => k !== "taxTrap" || moduleAnswered("taxTrap", d) || trapInView(d));
+  return keys.filter(k => k !== "taxTrap" || moduleAnswered("taxTrap", d) || (d.interests || []).includes("taxTrap") || trapInView(d));
 }
 // Not offered yet, but shown greyed on Modules so they know it's there: the
 // £100k tax trap below £90,000, with what it's for and when it opens. In

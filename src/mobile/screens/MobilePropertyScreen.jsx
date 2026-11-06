@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { Home, ChevronRight } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
@@ -14,6 +14,9 @@ import AssumptionsHeading from "../property/AssumptionsHeading.jsx";
 import { STEP_GUIDES, guideStarts } from "../../lib/propertyGuide.js";
 import { PROPERTY_REVEALS } from "../../lib/propertyReveal.js";
 import MobileModuleReveal from "./MobileModuleReveal.jsx";
+import { GuessCompare } from "./entry/lazy.js";
+import { NEW_ENTRY } from "../../lib/appEntry.js";
+import { pendingComparisons, markShown } from "../../lib/guesses.js";
 import { workingChecks } from "../../lib/workingChecks.js";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 
@@ -74,6 +77,9 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   // Straight from the walk-through, Rent vs Buy's answer opens on the rules
   // run on the user's figures (workingChecks.js); not when replayed.
   const [revealFresh, setRevealFresh] = useState(false);
+  // Their guess from the entry beside what they could afford, once, ahead of
+  // the first answer it can be set against.
+  const comparisons = NEW_ENTRY && showReveal && revealFresh && step === "readiness" ? pendingComparisons("property", d, m, revealCtx) : [];
   const explain = revealSteps && !guiding ? () => {
     setRevealStep(step);
     setRevealFresh(false);
@@ -117,7 +123,11 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
 
       <PropertySteps step={step} unlocked={unlocked} onSelect={onSelectStep}/>
 
-      {showReveal ? (
+      {showReveal && comparisons.length ? (
+        <Suspense fallback={null}>
+          <GuessCompare moduleKey="property" items={comparisons} onDone={() => { set("guesses", markShown(d.guesses, comparisons.map(c => c.id))); window.scrollTo({ top: 0 }); }}/>
+        </Suspense>
+      ) : showReveal ? (
         <div style={{marginTop:"20px"}}>
           <MobileModuleReveal moduleKey="property" header={false} steps={revealSteps}
             checks={revealFresh && step === "rentVsBuy" ? workingChecks("rentVsBuy", d, m, revealCtx) : null}

@@ -53,6 +53,16 @@ const withNi = (steps, d, m) => {
   return [...steps.slice(0, -1), { ...last, body: last.body ? `${last.body} ${line}` : line }];
 };
 
+// The figures on the legal minimum, for someone who isn't sure what they pay
+// in. The minimum is on qualifying earnings, £6,240 to £50,270, not the whole
+// salary: as a share of salary, so the usual sums apply.
+export function legalMinimumMetrics(d, m) {
+  const pot = +d.potValue > 0 ? +d.potValue : estimatePensionPot(d);
+  const qualifying = Math.max(0, Math.min(m.salary, 50270) - 6240);
+  const share = pctOfQualifying => String(Math.round(pctOfQualifying * qualifying / m.salary * 100) / 100);
+  return calcMetrics({ ...d, pensionUnknown: false, hasPension: "yes", pensionKind: "dc", myContribution: share(5), employerMatch: share(3), employerContributionType: "fixed", potValue: String(pot) });
+}
+
 export function pensionReveal(d, m) {
   return withNi(pensionSteps(d, m), d, m);
 }
@@ -62,11 +72,7 @@ function pensionSteps(d, m) {
   // nothing.
   if (m.pensionStatus === "unknown" && d.employmentStatus === "employed" && m.salary > 0 && +d.age > 0) {
     const pot = +d.potValue > 0 ? +d.potValue : estimatePensionPot(d);
-    // The minimum is on qualifying earnings, £6,240 to £50,270, not the
-    // whole salary: as a share of salary, so the usual sums apply.
-    const qualifying = Math.max(0, Math.min(m.salary, 50270) - 6240);
-    const share = pctOfQualifying => String(Math.round(pctOfQualifying * qualifying / m.salary * 100) / 100);
-    const assumed = calcMetrics({ ...d, pensionUnknown: false, hasPension: "yes", pensionKind: "dc", myContribution: share(5), employerMatch: share(3), employerContributionType: "fixed", potValue: String(pot) });
+    const assumed = legalMinimumMetrics(d, m);
     return [
       { label: ANSWER, figure: fmt(Math.round(assumed.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}, if you pay the legal minimum.` },
       { label: WHY, title: "The legal minimum is 5% from you and 3% from your employer, on pay between £6,240 and £50,270. Many employers add more.",

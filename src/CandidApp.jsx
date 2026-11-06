@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
 import { Check } from "lucide-react";
@@ -28,6 +28,8 @@ import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from
 import { recordVisit } from "./mobile/visitNews.js";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
+import { EntryFlow, GuessCompare } from "./mobile/screens/entry/lazy.js";
+import { pendingComparisons, markShown } from "./lib/guesses.js";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import QuickStart from "./mobile/QuickStart.jsx";
 import { STUDENT_LOAN_QUICK, estimatePhrases } from "./lib/studentLoanQuick.js";
@@ -44,7 +46,7 @@ import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange, gainedSoFar } from "./lib/moduleStatus.js";
 import { bankedDiff, gainedRowFields, decisionRowFields } from "./lib/valueMetrics.js";
-import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady, NEW_ENTRY } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear, taxYearOf } from "./lib/taxYear.js";
 import { yearRecordPatch } from "./lib/yearRecord.js";
@@ -90,6 +92,9 @@ const BLANK_DATA = {
   // read by any calc-engine logic (see MobileInvestmentsDeepDive/CGT-style
   // features for the pattern once that wiring is scoped).
   financialGoals:[],
+  // From the entry (src/lib/guesses.js). `guesses` starts null, not {}: an empty
+  // object would beat a device's real guesses in mergeAnswers.
+  entryWorries:[], guesses:null,
   houseTargetAmount:"", houseTimeframe:"",
   bigPurchaseTargetAmount:"", bigPurchaseTimeframe:"",
   // The Progress tab's own answers (src/lib/progressTracker.js): a pension
@@ -595,6 +600,15 @@ export default function AppShell() {
   // The entry's hand-off to the first module is showing: the user is
   // recorded as entered, but /app/start stays up until it's done.
   const [entryHandoff, setEntryHandoff] = useState(false);
+  // Modules whose guess was just compared: the count-up has done the working
+  // out, so their answer doesn't open on the working screen as well.
+  const comparedNow = useRef(new Set());
+  const answerOpen = useRef(null);
+  useEffect(() => {
+    if (revealModule) return;
+    comparedNow.current.clear();
+    answerOpen.current = null;
+  }, [revealModule]);
   // An unlock's answers, saved a render later so they're in `d`. The email
   // goes with the inputs; the unlock columns on their own, so a missing
   // column grant can't stop the email saving.
@@ -727,8 +741,7 @@ export default function AppShell() {
   // The entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
     if (appUnlocked(d, insights) && !entryHandoff) return <Navigate to="/app/home" replace />;
-    return (
-      <MobileEntryScreen d={d} m={m} set={set} onEntered={() => {
+    const entered = () => {
         setEntryHandoff(true);
         set("appEntered", true);
         // Which modules are answered, not just opened, is tracked from here.
@@ -739,12 +752,16 @@ export default function AppShell() {
         // The user's row from the start (their interests), not only once a
         // report exists. The report still adds its own row when it's made.
         insertReportRow(null);
-      }} onDone={() => {
-        // Into the first module they picked; Cash for "Just exploring".
+    };
+    // Into the module they chose, or the first they picked; Cash for "Just
+    // exploring".
+    const opened = key => {
         setEntryHandoff(false);
-        navigate(modulePath(firstPick(d)));
-      }}/>
-    );
+        navigate(modulePath(key || firstPick(d)));
+    };
+    return NEW_ENTRY
+      ? <Suspense fallback={<div style={{position:"fixed",inset:0,background:"#FCE5D3"}}/>}><EntryFlow set={set} onEntered={entered} onDone={opened} onExit={() => navigate("/")}/></Suspense>
+      : <MobileEntryScreen d={d} m={m} set={set} onEntered={entered} onDone={() => opened()}/>;
   }
 
   // Home's top bar only, in words. A module's page has its own, a spanner
@@ -1005,11 +1022,23 @@ export default function AppShell() {
       );
     }
     if (revealModule === mobileActiveModule && revealSteps) {
+      // Their guess from the entry beside this figure, once, ahead of the answer.
+      // Decided as the answer opens: rates arriving later don't interrupt it.
+      const comparisons = NEW_ENTRY && revealReplay !== mobileActiveModule && answerOpen.current !== mobileActiveModule ? pendingComparisons(mobileActiveModule, d, m, { marketRates }) : [];
+      if (!comparisons.length) answerOpen.current = mobileActiveModule;
+      if (comparisons.length) {
+        return (
+          <Suspense fallback={null}>
+            <GuessCompare moduleKey={mobileActiveModule} items={comparisons} estimated={!!quickEstimateLine(mobileActiveModule, d)}
+              onDone={() => { comparedNow.current.add(mobileActiveModule); set("guesses", markShown(d.guesses, comparisons.map(c => c.id))); scrollToTop(); }}/>
+          </Suspense>
+        );
+      }
       const onTrackKind = onTrackReward(d, mobileActiveModule, statuses[mobileActiveModule]);
       return (
         <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
-            checks={revealReplay === mobileActiveModule ? null : workingChecks(mobileActiveModule, d, m, { marketRates })}
+            checks={revealReplay === mobileActiveModule || comparedNow.current.has(mobileActiveModule) ? null : workingChecks(mobileActiveModule, d, m, { marketRates })}
             doneLabel={mobileActiveModule === "studentLoan" ? "Explore student loans" : mobileActiveModule === "pension" ? "Explore your pension" : "See everything"}
             lastAction={mobileActiveModule === "studentLoan" && loanDetailNext(d) ? {
               label: `Detailed view · up to ${loanDetailCount(d, m)} more questions`,
