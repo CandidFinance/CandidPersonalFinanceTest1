@@ -24,7 +24,7 @@ export default function PremiumButton({ d }) {
   if (hasAccess()) return null;
   return (
     <>
-      <button type="button" aria-label="Candid Premium" onClick={() => { setOpen(true); posthog.capture("premium_opened"); }}
+      <button type="button" className="tap44" aria-label="Candid Premium" onClick={() => { setOpen(true); posthog.capture("premium_opened"); }}
         style={{width:"28px",height:"28px",borderRadius:"50%",border:"none",background:CTA_BLUE,color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer",flexShrink:0}}>
         <Crown size={15} strokeWidth={2.2} aria-hidden="true"/>
       </button>

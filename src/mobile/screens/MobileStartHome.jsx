@@ -1,11 +1,13 @@
-import { MUT, TEXT, SERIF, ROW_TILE, SR_ONLY, SECTION_TITLE } from "../../design-tokens.js";
+import { SERIF, ROW_TILE, SR_ONLY, SECTION_TITLE, CREAM } from "../../design-tokens.js";
 import { moduleOrder, moduleDone, scorePicks, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { ProgressLine } from "../onboarding/OnboardingShell.jsx";
-import { StillCard } from "../CardStack.jsx";
+import { DARK } from "../CardStack.jsx";
 import ScoreDonut from "../ScoreDonut.jsx";
+import { ScreenBand, ScreenSheet, CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
+import { HomeTopBar, BAND_LABEL } from "../HomeHero.jsx";
 
 // Home before the Candid score appears: every module in one list, largest
 // rough £ first, none singled out (no "start with X": PRODUCT.md). The score waits until every pick is answered
@@ -14,7 +16,7 @@ import ScoreDonut from "../ScoreDonut.jsx";
 
 const listText = items => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
-export default function MobileStartHome({ d, m, set, onStartModule }) {
+export default function MobileStartHome({ d, m, onStartModule, onEditInputs }) {
   const propertyDone = readinessMissing(d, m).length === 0;
   const order = moduleOrder(d);
   const done = order.filter(k => moduleDone(k, d, propertyDone));
@@ -38,36 +40,39 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
       {/* No greeting (Harvey, 30 Oct 2026): the heading is for screen readers. */}
       <h1 style={SR_ONLY}>Home</h1>
 
-      {/* The score's place, held until every pick is answered: Home's
-          figures card greyed, its figure and score blank. The progress line
-          is its one indicator (screen readers get the count). */}
-      <StillCard data-tour="home-score" label="Left on the table" body={t => (
-        <>
+      {/* The score's place, held until every pick is answered: Home's band
+          with its figure and score blank. The progress line is its one
+          indicator (screen readers get the count). */}
+      <ScreenBand tone="dark">
+        <HomeTopBar d={d} onEditInputs={onEditInputs}/>
+        <section aria-label="Your figures" data-tour="home-score">
           <div style={{display:"flex",alignItems:"flex-start",gap:"14px"}}>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
-              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>
+              <div style={BAND_LABEL}>Left on the table</div>
+              <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM_FAINT,lineHeight:1.05,marginTop:"8px"}}>£–</div>
+              <p style={{fontSize:"13px",color:CREAM,lineHeight:1.5,margin:"10px 0 0"}}>
                 {needsScored
                   ? `Your Candid score covers ${listText(SCORED_MODULES.map(k => moduleMeta(k).title))}. Finish one of them to see it.`
                   : `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`}
               </p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,opacity:0.6}}>
-              <ScoreDonut value={null} size={76} stroke={7} track={t.track}/>
-              <div style={{fontSize:"11.5px",fontWeight:600,color:t.label,marginTop:"6px"}}>Candid score</div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
+              <ScoreDonut value={null} size={76} stroke={7} onDark/>
+              <div style={{fontSize:"11.5px",fontWeight:600,color:CREAM_SOFT,marginTop:"6px"}}>Candid score</div>
             </div>
           </div>
-          <ProgressLine position={reached} total={target} style={{marginTop:"14px"}}/>
-        </>
-      )}/>
+          <ProgressLine position={reached} total={target} style={{marginTop:"16px",background:DARK.track}}/>
+        </section>
+      </ScreenBand>
 
-      <div data-tour="home-modules" style={{...ROW_TILE,marginTop:"22px"}}>
-        <h2 style={SECTION_TITLE}>Your modules</h2>
-        <div style={{display:"flex",flexDirection:"column",marginTop:"8px"}}>
-          {rows.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} done={done.includes(key)} estimate={estimate} onOpen={onStartModule}/>)}
+      <ScreenSheet>
+        <div data-tour="home-modules" style={ROW_TILE}>
+          <h2 style={SECTION_TITLE}>Your modules</h2>
+          <div style={{display:"flex",flexDirection:"column",marginTop:"8px"}}>
+            {rows.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} done={done.includes(key)} estimate={estimate} onOpen={onStartModule}/>)}
+          </div>
         </div>
-      </div>
-
+      </ScreenSheet>
     </div>
   );
 }

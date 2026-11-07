@@ -26,8 +26,8 @@ export default function AccountButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" aria-label="Account" onClick={() => { setOpen(true); posthog.capture("account_opened", { signedIn: signedIn() }); }}
-        style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",background:"none",color:G,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer",flexShrink:0}}>
+      <button type="button" className="tap44" aria-label="Account" onClick={() => { setOpen(true); posthog.capture("account_opened", { signedIn: signedIn() }); }}
+        style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",background:"none",color:CREAM,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer",flexShrink:0}}>
         <CircleUser size={24} strokeWidth={1.8} aria-hidden="true"/>
       </button>
       {typeof document !== "undefined" && createPortal(

@@ -20,6 +20,9 @@ import { CREAM, SANS, SR_ONLY, BAND_STOPS, slickBg } from "../design-tokens.js";
 // browser without @property just switches.
 // The reel (BandReel) runs out to the band's edges and is cut off there.
 const BLEED = 200;
+// Text on the dark band, softer than its figures, and the dots not showing.
+export const CREAM_SOFT = "rgba(250,247,240,0.7)";
+export const CREAM_FAINT = "rgba(250,247,240,0.35)";
 const tone = ([a, b, c]) => `--band-a: ${a}; --band-b: ${b}; --band-c: ${c};`;
 const CSS = `
 @property --band-a { syntax: "<color>"; inherits: false; initial-value: transparent; }

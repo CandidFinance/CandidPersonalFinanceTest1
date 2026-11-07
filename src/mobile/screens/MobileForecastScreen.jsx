@@ -3,7 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass, CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
@@ -173,8 +173,6 @@ const signed = v => `${v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
 // edge and fades out: on the right the years after the horizon (worked out
 // the same way), on the left the first year's slope carried back, so it
 // reads as a line going somewhere rather than one that stops.
-const CREAM_SOFT = "rgba(250,247,240,0.7)";
-const CREAM_FAINT = "rgba(250,247,240,0.35)";
 // Behind a year's readout on the Surplus graph: the band's own dark green.
 const READ_BG = "rgba(14,34,25,0.9)";
 
