@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Check, SlidersHorizontal } from "lucide-react";
 import { DARK } from "./CardStack.jsx";
 import ScoreDonut from "./ScoreDonut.jsx";
 import AccountButton from "./Account.jsx";
@@ -12,7 +12,8 @@ import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER, G
 // Home's parts, on the dark band and cream sheet the other tabs have
 // (ScreenBand.jsx; the screens draw those).
 //  - HomeTopBar: Account and Candid Premium's crown on the left (no wordmark:
-//    users know they're in the app), Edit inputs on the right.
+//    users know they're in the app), and on the right a round sliders
+//    button to Your finances (the wrench is the dev tools' icon).
 //  - HomeHero, printed on the band: Left on the table or Saved, whichever is
 //    larger, and the score. Once anything's been saved, a bar splits what's
 //    been found into saved and still left.
@@ -27,13 +28,13 @@ export const BAND_LABEL = { fontSize:"11px", fontWeight:800, letterSpacing:"0.1e
 
 export function HomeTopBar({ d, onEditInputs }) {
   return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",margin:"-10px 0 20px"}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",margin:"-17px 0 20px"}}>
       <span style={{display:"inline-flex",alignItems:"center",gap:"8px"}}>
         <AccountButton/>
         <PremiumButton d={d}/>
       </span>
-      <button type="button" className="tap44" onClick={onEditInputs} style={{background:"none",border:`1.5px solid ${CREAM_FAINT}`,borderRadius:"100px",padding:"6px 14px",cursor:"pointer",color:CREAM,fontSize:"13px",fontWeight:700,fontFamily:"inherit",whiteSpace:"nowrap"}}>
-        Edit inputs
+      <button type="button" className="tap44" aria-label="Edit your finances" onClick={onEditInputs} style={{width:"32px",height:"32px",borderRadius:"50%",background:"none",border:`1.5px solid ${CREAM_FAINT}`,padding:0,cursor:"pointer",color:CREAM,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <SlidersHorizontal size={16} strokeWidth={2} aria-hidden="true"/>
       </button>
     </div>
   );

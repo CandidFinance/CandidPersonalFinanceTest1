@@ -1,9 +1,10 @@
 import posthog from "posthog-js";
 import InviteFriends from "../InviteFriends.jsx";
+import { TAB_BAR_TOP } from "../MobileTabBar.jsx";
 import { referralCode } from "../../lib/referral.js";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Mail, User } from "lucide-react";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, CTA_BLUE, SANS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, CTA_BLUE, SANS, BAND_STOPS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
@@ -126,8 +127,9 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
   };
 
   return (
-    <div>
-      <h1 style={{fontFamily:SANS,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your inputs</h1>
+    <div className="inputs-slick">
+      <style>{SLICK_CSS}</style>
+      <h1 style={{fontFamily:SANS,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your finances</h1>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
       {emailFirst && <EmailField d={d} onEmailChange={onEmailChange} spotlight/>}
 
@@ -190,7 +192,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
         const Arrow = shown.indexOf(back.key) < shown.indexOf(jump?.key) ? ArrowUp : ArrowDown;
         return (
           <button type="button" onClick={goBack}
-            style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:"calc(env(safe-area-inset-bottom, 0px) + 104px)",zIndex:30,display:"flex",alignItems:"center",gap:"8px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"11px 18px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",boxShadow:"0 6px 20px rgba(22,47,36,0.25)",whiteSpace:"nowrap"}}>
+            style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:`calc(34px + ${TAB_BAR_TOP})`,zIndex:30,display:"flex",alignItems:"center",gap:"8px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"11px 18px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",boxShadow:"0 6px 20px rgba(22,47,36,0.25)",whiteSpace:"nowrap"}}>
             <Arrow size={15} aria-hidden="true"/>Return to {title(back.key)}
           </button>
         );
@@ -218,6 +220,16 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
     </div>
   );
 }
+
+// The page on the light band's pale slick (ScreenBand), edge to edge on a
+// phone, up under the top inset and down past the tab bar; a rounded panel
+// where the column is narrower than the screen. The margins undo
+// MobileLayout's column padding.
+const [SA, SB, SC] = BAND_STOPS.light;
+const SLICK_CSS = `
+.inputs-slick { margin: calc(-16px - env(safe-area-inset-top, 0px)) -20px -120px; padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 120px; min-height: 100vh; min-height: 100dvh; box-sizing: border-box; background: linear-gradient(160deg, ${SA} 0%, ${SB} 50%, ${SC} 100%); }
+@media (min-width: 581px) { .inputs-slick { margin: 0; padding: 22px 20px; min-height: 0; border-radius: 28px; } }
+`;
 
 // An email to the address in the terms and privacy policy (api/billing.js
 // MAIL_REPLY_TO), started with the browser and the time it's tapped so a

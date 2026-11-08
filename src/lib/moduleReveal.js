@@ -336,7 +336,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
     return [
       { label: ANSWER, title: "We need your monthly spending to size your emergency fund." },
       { label: WHY, title: "It's what your savings are measured against: months of essential spending." },
-      { label: ACTION, title: "Add it in Edit inputs.", body: "Rent or mortgage, bills, food and getting around." },
+      { label: ACTION, title: "Add it in Your finances.", body: "Rent or mortgage, bills, food and getting around." },
     ];
   }
   if (m.emergencyShortfall > 0) {
@@ -357,7 +357,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
     return [
       { label: ANSWER, figure: `${fmt(opp.gain)} a year`, tone: "cost", hook: "rate", title: "lost each year to below-top savings rates, after tax." },
       withBody({ label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The highest-rate options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
-        m.expensesUnknown ? "Add your monthly spending in Edit inputs to see how much to keep as an emergency fund." : null),
+        m.expensesUnknown ? "Add your monthly spending in Your finances to see how much to keep as an emergency fund." : null),
       ASSIST_STEP,
     ];
   }
@@ -590,7 +590,7 @@ export function kidsReveal(d, m) {
       { label: ANSWER, figure: cc.atStake > 0 ? `${fmt(cc.atStake)} a year` : undefined, title: "of childcare support you and your partner could get." },
       withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000, and your partner's is.` }, join(asPay, nationNote)),
       cc.partnerPayIn == null
-        ? { label: ACTION, title: "A pension payment from your partner that brings their income to £100,000 would open it up.", body: "Their income, in Edit inputs, shows how much it would take." }
+        ? { label: ACTION, title: "A pension payment from your partner that brings their income to £100,000 would open it up.", body: "Their income, in Your finances, shows how much it would take." }
         : { label: ACTION, title: `Bringing your partner's income to £100,000 would take a pension payment of ${fmt(cc.partnerPayIn)}, more than the usual £60,000 a year allowance.`,
             body: "Allowance unused in the last three years can sometimes be carried forward: their pension provider can say." },
     ];

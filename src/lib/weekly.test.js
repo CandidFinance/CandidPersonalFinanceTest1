@@ -76,11 +76,11 @@ test("The welcome says what they get, how to sign in elsewhere and what they pay
   assert.equal(subject, "Welcome to Candid");
   assert.match(text, /^Hi Alex,/);
   assert.match(text, /sign in \(https:\/\/www\.candid-finance\.co\.uk\/signin\?utm_source=candid-email&utm_medium=email&utm_campaign=welcome\) with this email address\./);
-  assert.match(text, /Your plan: £2\.99 a month, renewing on 20 November 2026\n\nTo manage your subscription, go to Edit inputs/);
+  assert.match(text, /Your plan: £2\.99 a month, renewing on 20 November 2026\n\nTo manage your subscription, go to Your finances/);
   assert.match(text, /up to 12 months\.\n\nYour invite link: https:\/\/www\.candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
   assert.doesNotMatch(text, /cancel/i);
   // No code yet (email not confirmed): where the link is instead.
-  assert.match(welcomeEmail({ plan: "monthly", unsubscribeUrl: "https://u" }).text, /up to 12 months\. Your link is in Candid, under Edit inputs\./);
+  assert.match(welcomeEmail({ plan: "monthly", unsubscribeUrl: "https://u" }).text, /up to 12 months\. Your link is in Candid, under Your finances\./);
 });
 
 test("An issue from the editor keeps only known fields, and a safe link", () => {

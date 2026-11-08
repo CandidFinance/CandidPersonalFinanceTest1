@@ -62,7 +62,7 @@ test("A free user's welcome: rate alerts offered to a founding user who hasn't a
   const on = confirmedWelcomeEmail({ ...base, founding: true, optedIn: true });
   assert.doesNotMatch(on.text, /Turn on rate alerts/);
   assert.match(on.text, /You're signed up/);
-  assert.match(on.text, /Your link is in Candid, under Edit inputs/);
+  assert.match(on.text, /Your link is in Candid, under Your finances/);
   const later = confirmedWelcomeEmail({ ...base, founding: false, optedIn: false });
   assert.doesNotMatch(later.text, /Free rate alerts|Turn on rate alerts/i);
 });

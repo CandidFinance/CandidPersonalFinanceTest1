@@ -15,6 +15,12 @@ export const MOBILE_NAV_ITEMS = [
 ];
 export const BAR_ORDER = ["home", "modules", "chat", "progress", "forecast"];
 const SPRING = { type:"spring", stiffness:420, damping:34, mass:0.8 };
+// The gap under the bar. On an iPhone it takes most of the home indicator's
+// inset (34px), which on its own floated the bar well clear of the bottom in
+// the home-screen app (Harvey, 8 Nov 2026); 8px where there's no inset.
+// Anything placed off the bar's top uses TAB_BAR_TOP.
+export const TAB_BAR_GAP = "max(8px, calc(env(safe-area-inset-bottom, 0px) - 14px))";
+export const TAB_BAR_TOP = `calc(60px + ${TAB_BAR_GAP})`;
 
 // The phone's bar: a see-through pill floating over the page, each icon
 // with its page's name under it in small sans; the screens themselves carry
@@ -32,7 +38,7 @@ export default function MobileTabBar({ active, onNavigate }) {
   const badge = news && !news.opened ? news.count : 0;
   const glass = { background:"rgba(255,255,255,0.62)", WebkitBackdropFilter:"blur(18px) saturate(1.6)", backdropFilter:"blur(18px) saturate(1.6)" };
   return (
-    <nav data-tab-bar aria-label="Main" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:4000,padding:"0 14px env(safe-area-inset-bottom, 0px)",pointerEvents:"none"}}>
+    <nav data-tab-bar aria-label="Main" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:4000,padding:`0 14px ${TAB_BAR_GAP}`,pointerEvents:"none"}}>
       {/* Capped to MobileLayout's 580px column, so on a wide window the
           icons don't spread across the whole screen. */}
       <div style={{...glass,maxWidth:"420px",margin:"0 auto",height:"60px",borderRadius:"28px",padding:"4px",boxSizing:"border-box",display:"flex",pointerEvents:"auto",
@@ -52,7 +58,9 @@ export default function MobileTabBar({ active, onNavigate }) {
               )}
               {chat ? (
                 // The frosted ring shows the page through it, not a white edge.
-                <span style={{...glass,position:"relative",marginTop:"-21px",padding:"3px",borderRadius:"50%",display:"flex",
+                // Raised so its gap to "Chat" matches the other icons' to
+                // their names; the margins net to the 21px of those icons.
+                <span style={{...glass,position:"relative",marginTop:"-25px",marginBottom:"4px",padding:"3px",borderRadius:"50%",display:"flex",
                   border:"1px solid rgba(255,255,255,0.6)",boxShadow:"0 4px 12px rgba(22,47,36,0.16)"}}>
                   <span style={{width:"34px",height:"34px",borderRadius:"50%",background:HERO_TILE_BG,display:"flex",alignItems:"center",justifyContent:"center",
                     boxShadow:isActive ? `inset 0 0 0 1.5px ${G}` : "inset 0 0 0 1px rgba(22,47,36,0.08)"}}>

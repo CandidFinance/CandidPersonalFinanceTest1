@@ -844,7 +844,7 @@ export default function AppShell() {
     const open = params.get("open"), field = params.get("field");
     const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); scrollToTop(); };
     return (
-      <MobileLayout assist={assistNode} activeTab={null} pageLabel="Your inputs"
+      <MobileLayout assist={assistNode} activeTab={null} pageLabel="Your finances"
         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
         <MobileInputsScreen key={`${open || "all"}.${field || ""}`} d={d} m={m} set={set} open={open} field={field}
           onStartModule={key => navigate(`/app/module/${key}`)}

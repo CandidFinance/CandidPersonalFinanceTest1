@@ -2,7 +2,7 @@ import { ExplainLink } from "../ModuleScreenParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 import { useState } from "react";
-import { Check, Coins, Wrench } from "lucide-react";
+import { Check, Coins, SlidersHorizontal } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SC, SUCCESS, PROGRESS_GREEN, SANS } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
 import { MODULE_META, isOnTrack, reviewedDone } from "../../lib/moduleStatus.js";
@@ -82,8 +82,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           <div style={{alignSelf:"flex-start",display:"flex",alignItems:"center",gap:"10px",marginTop:"2px"}}>
             <ExplainLink onClick={onShowReveal}/>
             {onEditInputs && (
-              <button type="button" onClick={onEditInputs} aria-label="Edit inputs" className="tap44" style={{background:"none",border:"none",padding:"4px",margin:"-4px -4px 0 0",cursor:"pointer",color:G,display:"flex"}}>
-                <Wrench size={20} strokeWidth={2.2} aria-hidden="true"/>
+              <button type="button" onClick={onEditInputs} aria-label="Edit your finances" className="tap44" style={{background:"none",border:"none",padding:"4px",margin:"-4px -4px 0 0",cursor:"pointer",color:G,display:"flex"}}>
+                <SlidersHorizontal size={20} strokeWidth={2.2} aria-hidden="true"/>
               </button>
             )}
           </div>

@@ -9,6 +9,7 @@ import { opening, titleOf, askReplies, CHAT_QUICK } from "../../lib/chatStart.js
 import { makeVoice } from "../../lib/chatVoice.js";
 import { Bubble, Dots, DotsKeyframes, Thinking, SheenKeyframes, ModuleButton, AskNext } from "./ChatParts.jsx";
 import ChatVisual from "./ChatVisuals.jsx";
+import { TAB_BAR_TOP } from "../MobileTabBar.jsx";
 import { AreaPicker, ChatQuestion, ModuleRows } from "./ChatStartParts.jsx";
 import { useChatStart } from "./useChatStart.js";
 
@@ -227,10 +228,10 @@ export default function QAChat({ chat, d, m, onGoTo }) {
           no tab bar (MobileLayout), so the box sits near the bottom edge. */}
       <style>{`
         .qa-thread { display: flex; flex-direction: column; justify-content: flex-end;
-          min-height: calc(100vh - 16px - env(safe-area-inset-top, 0px) - 88px - env(safe-area-inset-bottom, 0px));
-          min-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - 88px - env(safe-area-inset-bottom, 0px));
+          min-height: calc(100vh - 16px - env(safe-area-inset-top, 0px) - 18px - ${TAB_BAR_TOP});
+          min-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - 18px - ${TAB_BAR_TOP});
           margin-bottom: -44px; }
-        .qa-box { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+        .qa-box { bottom: calc(18px + ${TAB_BAR_TOP}); }
         @media (min-width: 1000px) {
           .qa-thread { min-height: calc(100vh - 110px); min-height: calc(100dvh - 110px); margin-bottom: -32px; }
           .qa-box { bottom: 24px; }

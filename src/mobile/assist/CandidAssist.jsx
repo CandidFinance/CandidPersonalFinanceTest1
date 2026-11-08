@@ -10,6 +10,7 @@ import { PremiumSheetPortal } from "../Premium.jsx";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, MIN_ASSIST_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import { TAB_BAR_TOP } from "../MobileTabBar.jsx";
 import AgentPanel, { agentAvailable } from "./AgentPanel.jsx";
 import { itemisedNonCashIsa } from "../../lib/isa.js";
 import { FSCS_DEPOSIT_LIMIT } from "../../lib/cashAllocation.js";
@@ -348,7 +349,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           }}
           aria-label={premium ? `Open Candid Assist${news ? ", something new" : ""}` : "Candid Assist, part of Candid Premium"}
           style={{
-            position: "fixed", zIndex: 4500, bottom: "calc(82px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
+            position: "fixed", zIndex: 4500, bottom: `calc(12px + ${TAB_BAR_TOP})`, right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             // Active: Home's hero wash, with more lift than a tile so it
             // reads as floating over the page.

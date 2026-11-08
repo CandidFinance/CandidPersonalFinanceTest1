@@ -7,6 +7,7 @@ import { readingMs } from "../../lib/appEntry.js";
 import { windfallOptions, sourceNote, roomFor, describeSplit, settlementLines, settlementGross, SETTLEMENT_PARTS, WINDFALL_SOURCES, WINDFALL_EARMARKS, WINDFALL_WHEN } from "../../lib/windfall.js";
 import { Bubble, Dots, DotsKeyframes, Replies, ReplyButton } from "../chat/ChatParts.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import { TAB_BAR_TOP } from "../MobileTabBar.jsx";
 
 // "I've got a lump sum: what do I do with it?" as a conversation, in the
 // Chat tab. Candid asks a few things (how much, here yet or coming, where
@@ -246,7 +247,7 @@ export default function WindfallChat({ d, m, set, marketRates }) {
         {prompt === "results" && plan && (
           <motion.div {...rise} ref={optionsRef} style={{scrollMarginTop:"12px"}}>
             <Options plan={plan} split={split} setPlaced={setPlaced}/>
-            <div style={{position:"sticky",bottom:"calc(88px + env(safe-area-inset-bottom, 0px))",marginTop:"14px",background:G,color:WHITE,borderRadius:RADIUS_CARD,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 18px rgba(22,47,36,0.18)"}}>
+            <div style={{position:"sticky",bottom:`calc(18px + ${TAB_BAR_TOP})`,marginTop:"14px",background:G,color:WHITE,borderRadius:RADIUS_CARD,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 18px rgba(22,47,36,0.18)"}}>
               <div>
                 <div style={{fontFamily:SANS,fontSize:"20px",fontWeight:700}}>{fmt(placed)} <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:500,opacity:0.8}}>of {fmt(plan.amount)} placed</span></div>
               </div>
