@@ -4321,13 +4321,6 @@
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 24,
-      "amountIsLumpSum": false,
-      "line": "£24/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": [
@@ -50329,13 +50322,6 @@
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 37,
-      "amountIsLumpSum": false,
-      "line": "£37/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": [
@@ -53153,13 +53139,6 @@
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 6,
-      "amountIsLumpSum": false,
-      "line": "£6/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": [

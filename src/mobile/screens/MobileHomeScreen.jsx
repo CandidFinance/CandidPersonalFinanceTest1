@@ -5,7 +5,7 @@ import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/modu
 import MobileStartHome from "./MobileStartHome.jsx";
 import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView, worthALookShown } from "../../lib/appEntry.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
-import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
+import { whatToDoFirst, scoreHeadline } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
@@ -74,13 +74,15 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   // "What to do first", the line under the score and what's on track, all
   // from the code (src/lib/priorities.js).
   const priorities = whatToDoFirst(d, m, statuses);
-  const report = { headline: scoreHeadline(priorities), priorities, onTrack: onTrackModules(d, m, statuses) };
+  const { totalOpp, moduleList } = getModuleBreakdown(d, m, statuses, null, "amount");
+  // On track, with any £ still left (under £50 a year), which the total
+  // counts: so the areas and this line add up to it.
+  const report = { headline: scoreHeadline(priorities), priorities, onTrack: moduleList.filter(mm => mm.onTrack) };
 
   const { color: scoreColor } = scoreBand(score);
   // The opportunities by size, each marked once its module has been reviewed.
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
-  const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
   // How much of the picture the score covers: a high score from one module
   // answered mustn't read as everything being fine.
   // The £100k tax trap counts only for someone near or over £100,000.

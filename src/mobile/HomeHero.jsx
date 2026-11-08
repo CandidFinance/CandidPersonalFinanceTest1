@@ -153,7 +153,7 @@ export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
         )) : <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{headline}</p>}
         {onTrack.length > 0 && (
           <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-            <span style={{fontWeight:700,color:G}}>On track:</span> {onTrack.join(", ")}.
+            <span style={{fontWeight:700,color:G}}>On track:</span> {onTrack.map(mm => mm.amount > 0 && !mm.amountIsLumpSum ? `${mm.title} (${fmt(mm.amount)}/yr)` : mm.title).join(", ")}.
           </p>
         )}
         <button type="button" onClick={() => onOpen(null)}

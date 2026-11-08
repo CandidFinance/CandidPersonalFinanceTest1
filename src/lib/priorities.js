@@ -9,8 +9,11 @@ import { getModuleBreakdown } from "./moduleStatus.js";
 
 export const MAX_PRIORITIES = 4;
 
+// Not a module on track (under £50 a year left, moduleStatus.js isOnTrack):
+// it's listed as on track instead (Harvey, 8 Nov 2026), its £ still counted
+// in the total.
 export function whatToDoFirst(d, m, statuses, max = MAX_PRIORITIES) {
-  return getModuleBreakdown(d, m, statuses, null, "amount").modulesWithRec.slice(0, max).map(mm => ({
+  return getModuleBreakdown(d, m, statuses, null, "amount").modulesWithRec.filter(mm => !mm.onTrack).slice(0, max).map(mm => ({
     key: mm.key, title: mm.title, amount: mm.amount, amountIsLumpSum: mm.amountIsLumpSum, line: mm.summary,
   }));
 }

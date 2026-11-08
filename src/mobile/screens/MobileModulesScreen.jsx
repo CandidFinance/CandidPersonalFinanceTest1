@@ -17,7 +17,7 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Modules screen. A coloured band at the top with the page's title
-// and one card: what's at stake a year across the live modules, and what's
+// and one card: what's left on the table a year across the live modules, and what's
 // been saved with a bar splitting the two, as on Home. Below, on the page's
 // cream, how many are live, not started and need action in a small line,
 // then every module as a tile: its title, an arrow, its illustration on a
@@ -170,11 +170,11 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     return { note: statusLabel(mm) };
   };
 
-  // The hero: at stake leads; a bar splits what's been found into saved
-  // and still at stake, as on Home.
+  // The hero: left on the table leads (Home's label for the same figure); a
+  // bar splits what's been found into saved and still left, as on Home.
   const found = totalBanked + totalOpp;
   const hero = live > 0
-    ? <FrontCard label="At stake" body={t => (
+    ? <FrontCard label="Left on the table" body={t => (
         <>
           <Figure t={t} value={fmt(totalOpp)} unit="a year"/>
           {totalBanked > 0 && (
@@ -191,10 +191,10 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         </>
       )}/>
     // Before any module's answered: the card greyed, its figure blank.
-    : <StillCard label="At stake" body={t => (
+    : <StillCard label="Left on the table" body={t => (
         <>
           <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
-          <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's at stake shows here once a module is answered.</p>
+          <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's left on the table shows here once a module is answered.</p>
         </>
       )}/>;
 
@@ -203,7 +203,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       <style>{CSS}</style>
       <ScreenBand>
         <h1 style={{...SCREEN_TITLE,color:G}}>Modules</h1>
-        <section aria-label="At stake" data-tour="modules-cards">{hero}</section>
+        <section aria-label="Left on the table" data-tour="modules-cards">{hero}</section>
       </ScreenBand>
 
       <ScreenSheet>
