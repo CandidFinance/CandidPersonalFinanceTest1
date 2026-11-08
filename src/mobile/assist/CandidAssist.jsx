@@ -99,7 +99,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   if (state.step === "finished") {
     body = (
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "26px", fontWeight: 700, color: G, lineHeight: 1.2 }}>Your figures are updated.</div>
+        <div style={{ fontFamily: SANS, fontSize: "26px", fontWeight: 700, color: G, lineHeight: 1.2 }}>Your figures are updated.</div>
         <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "10px" }}>
           Candid now has your cash where you've moved it, so your score and opportunities reflect it.
           Assist will flag anything new, such as a rate change on these accounts.
@@ -111,7 +111,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     // More than one thing: a list, accounts that need a look first.
     body = (
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{items.length} things to look at{pageLabel ? ` in ${pageLabel}` : ""}</div>
+        <div style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{items.length} things to look at{pageLabel ? ` in ${pageLabel}` : ""}</div>
         <div style={{ marginTop: "14px" }}>
           {items.map(i => (
             <button key={i.id} type="button" onClick={() => update({ itemId: i.id, step: "overview" })}
@@ -136,7 +136,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     const snoozed = cashHere && d.assistSnoozed?.cash && plan && plan.upTo >= MIN_ASSIST_GAIN;
     body = (
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>
+        <div style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>
           {page && !cashHere ? `Nothing to do on ${pageLabel} right now.` : "Nothing needs doing right now."}
         </div>
         {cashHere && (
@@ -158,13 +158,13 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     body = (
       <div>
         <button type="button" style={{ ...textButton, padding: "0 0 10px", display: "inline-flex", alignItems: "center", gap: "2px" }} onClick={() => update({ step: "overview" })}><ChevronLeft size={16}/>Back</button>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Moving your cash</div>
+        <div style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Moving your cash</div>
         <p style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.55, margin: "6px 0 16px" }}>Tick each one once it's done. You can minimise this and come back at any point.</p>
         {picks.map(p => (
           <div key={p.id} style={{ ...card, padding: "14px 16px", marginBottom: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px" }}>
               <span style={{ fontSize: "15px", fontWeight: 700, color: TEXT }}>{accountName(p)}</span>
-              <span style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(p.amount)}</span>
+              <span style={{ fontFamily: SANS, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(p.amount)}</span>
             </div>
             <div style={{ fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{p.pb ? `Premium Bonds, prize fund rate ${pct(p.ratePct)} (an average)` : `${p.isa ? "Cash ISA" : "Savings account"} at ${pct(p.ratePct)}`}</div>
             <div style={{ fontSize: "13.5px", color: TEXT, fontWeight: 600, marginTop: "12px" }}>Move {fmt(p.amount)} from:</div>
@@ -204,7 +204,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     body = (
       <div>
         <button type="button" style={{ ...textButton, padding: "0 0 10px", display: "inline-flex", alignItems: "center", gap: "2px" }} onClick={() => update({ step: "how" })}><ChevronLeft size={16}/>Back</button>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Update Candid to match?</div>
+        <div style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Update Candid to match?</div>
         <p style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.55, margin: "6px 0 16px" }}>Your cash in Candid becomes:</p>
         <div style={{ ...card, padding: "6px 16px" }}>
           {done.filter(p => p.pb).map(p => (
@@ -348,7 +348,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           }}
           aria-label={premium ? `Open Candid Assist${news ? ", something new" : ""}` : "Candid Assist, part of Candid Premium"}
           style={{
-            position: "fixed", zIndex: 4500, bottom: "calc(70px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
+            position: "fixed", zIndex: 4500, bottom: "calc(82px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             // Active: Home's hero wash, with more lift than a tile so it
             // reads as floating over the page.

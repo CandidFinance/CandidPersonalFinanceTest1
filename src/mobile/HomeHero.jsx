@@ -7,7 +7,7 @@ import AccountButton from "./Account.jsx";
 import PremiumButton from "./Premium.jsx";
 import { CREAM_SOFT, CREAM_FAINT } from "./ScreenBand.jsx";
 import { fmt } from "../lib/format.js";
-import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER } from "../design-tokens.js";
+import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER, GAIN_ON_DARK, STRIPE_ON_DARK } from "../design-tokens.js";
 
 // Home's parts, on the dark band and cream sheet the other tabs have
 // (ScreenBand.jsx; the screens draw those).
@@ -108,21 +108,26 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, unchecked
         </div>
       </div>
       {/* What's been found so far, once anything's been saved (as Modules):
-          saved in gold, still left as the track, plain. */}
+          saved fills in the gain green, what's still to fill is striped. The
+          figure that isn't leading sits at the bar's end, on its line: "Saved
+          +£x" in the gain green, or "Still left £x" in cream. */}
       {saved > 0 && (
-        <div style={{marginTop:"18px"}}>
-          <div aria-hidden="true" style={{height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:DARK.track}}>
-            <div style={{width:`${saved / found * 100}%`,background:GOLD}}/>
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
+          <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:DARK.track}}>
+            <div style={{width:`${saved / found * 100}%`,background:GAIN_ON_DARK}}/>
+            <div style={{flex:1,background:STRIPE_ON_DARK}}/>
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginTop:"10px"}}>
-            {/* Only the figure that isn't leading, under its end of the bar. */}
-            {[["Saved", saved, !leadSaved], ["Still left", totalOpp, leadSaved && totalOpp > 0]].map(([l, v, shown], i) => shown && (
-              <div key={l} style={{display:"flex",flexDirection:"column",gap:"2px",textAlign:i ? "right" : "left",marginLeft:i ? "auto" : 0}}>
-                <span style={{fontSize:"12px",fontWeight:600,color:CREAM_SOFT}}>{l}</span>
-                <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:CREAM}}>{fmt(v)}</span>
-              </div>
-            ))}
-          </div>
+          {!leadSaved ? (
+            <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
+              <span style={{fontSize:"12px",fontWeight:600,color:CREAM_SOFT}}>Saved</span>
+              <span style={{fontSize:"12px",fontWeight:800,color:GAIN_ON_DARK}}>+{fmt(saved)}</span>
+            </span>
+          ) : totalOpp > 0 && (
+            <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
+              <span style={{fontSize:"12px",fontWeight:600,color:CREAM_SOFT}}>Still left</span>
+              <span style={{fontSize:"12px",fontWeight:800,color:CREAM}}>{fmt(totalOpp)}</span>
+            </span>
+          )}
         </div>
       )}
     </section>
@@ -145,7 +150,7 @@ export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
               {p.done && <Check size={11} strokeWidth={3}/>}
             </span>
             <span style={{flex:1,minWidth:0,fontSize:"14px",fontWeight:600,color:TEXT}}>{p.title}</span>
-            <span style={{whiteSpace:"nowrap",fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:G}}>
+            <span style={{whiteSpace:"nowrap",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G}}>
               {fmt(p.amount)}<span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>{p.amountIsLumpSum ? " by 18" : "/yr"}</span>
             </span>
             <ChevronRight size={15} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>

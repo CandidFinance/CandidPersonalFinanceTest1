@@ -282,7 +282,7 @@ export function SheetGlass({ view, children }) {
 export function BandViewCaption({ views, view, moved, onPick, ink, soft, faint, marks }) {
   return (
     <>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"-12px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",margin:"-12px 0"}}>
         <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:soft}}>{views[view]}</div>
         <div style={{display:"flex",marginRight:"-10px"}}>
           {views.map((label, i) => {
@@ -300,6 +300,3 @@ export function BandViewCaption({ views, view, moved, onPick, ink, soft, faint, 
     </>
   );
 }
-
-// A page title as Modules has it, large in the sans.
-export const SCREEN_TITLE = { fontFamily: SANS, fontSize: "30px", fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1, margin: "0 0 16px" };

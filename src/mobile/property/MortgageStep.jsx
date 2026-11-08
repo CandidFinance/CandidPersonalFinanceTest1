@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import { PillSlider } from "../PillSlider.jsx";
-import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE, CDARK } from "../../design-tokens.js";
+import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE, CDARK, SANS } from "../../design-tokens.js";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
@@ -168,7 +168,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
               </div>
               {budget ? (<>
                 {/* In the tile's colour: this figure is what sets it. */}
-                <div style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:status ? status.figure : TEXT,lineHeight:1.2}}>
+                <div style={{fontFamily:SANS,fontSize:"22px",fontWeight:700,color:status ? status.figure : TEXT,lineHeight:1.2}}>
                   {budget.left < 0 ? `${fmt(-budget.left)} short` : fmt(budget.left)}
                 </div>
                 {budgetNote && <p style={{fontSize:"12.5px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}

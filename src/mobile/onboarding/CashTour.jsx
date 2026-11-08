@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
-import { G, MUT, TEXT, SERIF, SANS, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SANS, WHITE } from "../../design-tokens.js";
 import { EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { validEmailShape } from "../../lib/emailCheck.js";
 import { PillSlider } from "../PillSlider.jsx";
@@ -102,7 +102,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   if (step.id === "exact") {
     content = (
       <div style={card}>
-        <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>Your answer uses estimates</h2>
+        <h2 id="tour-title" style={{ fontFamily: SANS, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>Your answer uses estimates</h2>
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{estimates.join(", ")}.</p>
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "6px 0 14px" }}>Your exact figures make it precise: {estimates.length} more {estimates.length === 1 ? "question" : "questions"}.</p>
         <button ref={nextRef} type="button" style={{ ...main, width: "100%", padding: "14px" }} onClick={() => { end("finished", { via: "exact_figures" }); onExactFigures(); }}>Use your exact figures</button>
@@ -124,7 +124,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
     content = (
       <div style={card}>
         <PageDots position={step.position} total={step.of} from={step.position - 1} style={{ marginBottom: "14px" }}/>
-        <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
+        <h2 id="tour-title" style={{ fontFamily: SANS, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{step.body}</p>
         {step.id === "fund" && (
           <div style={{ marginTop: "12px" }}>

@@ -1,7 +1,7 @@
 import { Suspense, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { Home, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, WHITE, SANS } from "../../design-tokens.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "../../lib/waterfall.js";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
@@ -116,7 +116,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
           <Home size={18} color={G}/>
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>Property</h1>
+          <h1 style={{fontFamily:SANS,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>Property</h1>
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Buying a home</div>
         </div>
       </div>

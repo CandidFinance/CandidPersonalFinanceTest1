@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MotionConfig, motion } from "framer-motion";
 import posthog from "posthog-js";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import { readingMs } from "../../lib/appEntry.js";
 import { windfallOptions, sourceNote, roomFor, describeSplit, settlementLines, settlementGross, SETTLEMENT_PARTS, WINDFALL_SOURCES, WINDFALL_EARMARKS, WINDFALL_WHEN } from "../../lib/windfall.js";
@@ -246,9 +246,9 @@ export default function WindfallChat({ d, m, set, marketRates }) {
         {prompt === "results" && plan && (
           <motion.div {...rise} ref={optionsRef} style={{scrollMarginTop:"12px"}}>
             <Options plan={plan} split={split} setPlaced={setPlaced}/>
-            <div style={{position:"sticky",bottom:"calc(76px + env(safe-area-inset-bottom, 0px))",marginTop:"14px",background:G,color:WHITE,borderRadius:RADIUS_CARD,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 18px rgba(22,47,36,0.18)"}}>
+            <div style={{position:"sticky",bottom:"calc(88px + env(safe-area-inset-bottom, 0px))",marginTop:"14px",background:G,color:WHITE,borderRadius:RADIUS_CARD,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 18px rgba(22,47,36,0.18)"}}>
               <div>
-                <div style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700}}>{fmt(placed)} <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:500,opacity:0.8}}>of {fmt(plan.amount)} placed</span></div>
+                <div style={{fontFamily:SANS,fontSize:"20px",fontWeight:700}}>{fmt(placed)} <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:500,opacity:0.8}}>of {fmt(plan.amount)} placed</span></div>
               </div>
               <button type="button" disabled={!placed} onClick={finish} style={{background:WHITE,color:G,border:"none",borderRadius:"100px",padding:"10px 16px",fontSize:"14px",fontWeight:700,fontFamily:SANS,cursor:placed ? "pointer" : "default",opacity:placed ? 1 : 0.5}}>That's my split</button>
             </div>
@@ -282,7 +282,7 @@ function Options({ plan, split, setPlaced }) {
       <div key={option.key} style={card}>
         <div style={{fontSize:"15px",fontWeight:700,color:TEXT}}>{option.title}</div>
         <div style={{marginTop:"6px"}}>
-          <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:G}}>{figure}</span>
+          <span style={{fontFamily:SANS,fontSize:"22px",fontWeight:700,color:G}}>{figure}</span>
           <span style={{fontSize:"13px",color:MUT,marginLeft:"6px"}}>{per}</span>
         </div>
         {option.detail && <p style={muted}>{option.detail}</p>}

@@ -52,7 +52,7 @@ const label = { fontWeight:600, color:OPPORTUNITY_TILE_LABEL, lineHeight:1.35, m
 const chip = { display:"inline-flex", fontSize:"12.5px", fontWeight:600, color:OPPORTUNITY_TILE_BODY, border:"1px solid rgba(180,189,178,0.45)", borderRadius:"999px", padding:"5px 11px", lineHeight:1.3 };
 
 const Figure = ({ f }) => (
-  <div style={figure}>{f.value}{f.suffix && <span style={{fontSize:"0.4em",fontWeight:600}}>{f.suffix}</span>}</div>
+  <div style={{...figure,fontFamily:/£/.test(String(f.value)) ? SERIF : SANS}}>{f.value}{f.suffix && <span style={{fontSize:"0.4em",fontWeight:600}}>{f.suffix}</span>}</div>
 );
 
 export default function OpportunityTile({ over: overline = "Opportunity", figures, chips = [], note, tour, stacked = false, alert, action, style, children }) {

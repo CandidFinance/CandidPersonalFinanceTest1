@@ -13,9 +13,9 @@ import Alert from "../../mobile/AlertBox.jsx";
 import FilterMenu from "../../mobile/FilterMenu.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../../mobile/ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../../mobile/ScreenBand.jsx";
 import {
-  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
+  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SR_ONLY, PROGRESS_GREEN, MODULE_CHART_COLOR, CRITICAL, GAIN_ON_LIGHT,
 } from "../../design-tokens.js";
 import { kicker, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
@@ -118,7 +118,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
     <div>
       <style>{GOALS_CSS}</style>
       <ScreenBand tone={tone} {...bandProps}>
-        <h1 style={{...SCREEN_TITLE,color:G,margin:"0 0 4px"}}>Progress</h1>
+        <h1 style={SR_ONLY}>Progress</h1>
         <section aria-label="Your figures" data-tour="progress-cards">
           <BandViewCaption views={views.map(v => v.label)} view={view} moved={moved} onPick={showView} ink={t.figure} soft={t.label} faint={t.dot}
             marks={warn && { [SHIELD]: { color: WARN[warn].icon, note: income.zone === "in" ? "in the £100k trap" : "near the £100k trap" } }}/>
@@ -284,7 +284,7 @@ function WorthTiles({ picture, assets, notes, switchable, by, onBy, onOpenModule
         {items.map(p => (
           <li key={p.id}>
             <PartTile label={p.label} value={`${sign}${fmtK1(p.value)}`} color={p.color} note={p.note}
-              share={items.length > 1 && total > 0 ? Math.round((p.value / total) * 100) : null}
+              share={items.length > 1 && total > 0 ? Math.round((p.value / total) * 100) : null} loss={sign === "−"}
               onOpen={PART_MODULE[p.id] && (() => onOpenModule(PART_MODULE[p.id]))}/>
           </li>
         ))}
@@ -332,7 +332,10 @@ function WorthSwitch({ value, onChange }) {
 // its line, and its value in the serif over its share (when it isn't the
 // only one); a chevron when it opens a module, or its room kept, so the
 // figures line up.
-function PartTile({ label, value, color, note, share, onOpen }) {
+function PartTile({ label, value, color, note, share, loss = false, onOpen }) {
+  // Its share of the group: +x% in the gain green for an asset, −x% in red
+  // for a debt (Harvey, 8 Nov 2026).
+  const shareText = share != null ? `${loss ? "−" : "+"}${share}%` : null;
   const inner = (
     <>
       <span aria-hidden="true" style={{alignSelf:"stretch",width:"4px",borderRadius:"4px",background:color,flexShrink:0}}/>
@@ -341,15 +344,15 @@ function PartTile({ label, value, color, note, share, onOpen }) {
         {note && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{note}</span>}
       </span>
       <span style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px",flexShrink:0}}>
-        <span style={{fontFamily:SERIF,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"}}>{value}</span>
-        {share != null && <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{share}%</span>}
+        <span style={{fontFamily:SANS,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"}}>{value}</span>
+        {shareText && <span style={{fontSize:"11.5px",fontWeight:700,color:loss ? CRITICAL : GAIN_ON_LIGHT,fontVariantNumeric:"tabular-nums"}}>{shareText}</span>}
       </span>
       {onOpen ? <ChevronRight size={16} color={MUT} aria-hidden="true" style={{flexShrink:0,marginRight:"-4px"}}/> : <span aria-hidden="true" style={{width:"16px",flexShrink:0,marginRight:"-4px"}}/>}
     </>
   );
   const box = {display:"flex",alignItems:"center",gap:"12px",width:"100%",minHeight:"64px",padding:"12px 14px",background:WHITE,
     border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)",fontFamily:"inherit",textAlign:"left"};
-  const said = `${label}, ${value}${share != null ? `, ${share}%` : ""}${note ? `. ${note}` : ""}`;
+  const said = `${label}, ${value}${shareText ? `, ${shareText}` : ""}${note ? `. ${note}` : ""}`;
   return onOpen
     ? <button type="button" onClick={onOpen} aria-label={`${said} Open ${label}.`} style={{...box,cursor:"pointer"}}>{inner}</button>
     : <div style={box}>{inner}</div>;
@@ -384,7 +387,7 @@ function Ring({ pct, hits, total, t, size = 104, stroke = 9 }) {
         )}
       </svg>
       <div aria-hidden="true" style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:SERIF,fontSize:"calc(var(--ring) * 0.23)",fontWeight:700,color:pct == null ? t.body : t.figure,lineHeight:1}}>{pct == null ? "–" : `${pct}%`}</span>
+        <span style={{fontFamily:SANS,fontSize:"calc(var(--ring) * 0.23)",fontWeight:700,color:pct == null ? t.body : t.figure,lineHeight:1}}>{pct == null ? "–" : `${pct}%`}</span>
         {pct != null && <span style={{fontSize:"clamp(11px, calc(var(--ring) * 0.08), 13.5px)",color:t.body,marginTop:"4px"}}>{hits} of {total} reached</span>}
       </div>
     </div>

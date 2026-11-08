@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Lock, Plus, ShieldCheck, TriangleAlert } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
-import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG, TILE_KICKER } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG, TILE_KICKER, SANS } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
 import { SubscriberCrown } from "../../mobile/Premium.jsx";
 
@@ -108,7 +108,7 @@ export const lockedBar = <span style={{display:"block",height:"14px",borderRadiu
 export function Figure({ current, target = 0 }) {
   return (
     <>
-      <span style={{fontFamily:SERIF,fontSize:"14px",fontWeight:700,color:TEXT}}>{fmtCompact(current)}</span>
+      <span style={{fontFamily:SANS,fontSize:"14px",fontWeight:700,color:TEXT}}>{fmtCompact(current)}</span>
       {target > 0 && <span style={{fontSize:"11px",color:MUT}}>/{fmtCompact(target)}</span>}
     </>
   );

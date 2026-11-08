@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CircleAlert, CircleCheck, CircleDashed, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SC, WHITE, SANS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
 import { capField } from "../../lib/onboarding.js";
@@ -161,7 +161,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
               <button type="button" onClick={() => setOpenKey(k => k === c.key ? null : c.key)} aria-expanded={isOpen} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"16px 18px",background:"none",border:"none",fontFamily:"inherit",textAlign:"left",cursor:"pointer"}}>
                 <Icon size={20} color={color} style={{flexShrink:0}}/>
                 <span style={{flex:1,minWidth:0,fontSize:"15px",fontWeight:600,color:TEXT}}>{TITLES[c.key]}</span>
-                {value && <span style={{fontFamily:value.muted ? "inherit" : SERIF,fontSize:value.muted ? "13px" : "16px",fontWeight:700,color:value.muted ? G : TEXT,flexShrink:0}}>{value.text}</span>}
+                {value && <span style={{fontFamily:value.muted ? "inherit" : SANS,fontSize:value.muted ? "13px" : "16px",fontWeight:700,color:value.muted ? G : TEXT,flexShrink:0}}>{value.text}</span>}
                 <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:isOpen ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>
               </button>
               {isOpen && (

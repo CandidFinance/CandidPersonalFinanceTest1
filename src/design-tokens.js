@@ -39,6 +39,10 @@ export const INPUT_BG_DARK = "#0f2018";
 // unintentional one-off rather than a deliberate distinct colour.
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
 export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid green, lighter than G
+export const GAIN_ON_DARK = "#4fd18b"; // a gain (saved £) on the dark band: bar fill and "+£x" (Harvey, 8 Nov 2026)
+export const GAIN_ON_LIGHT = "#17803d"; // the same gain on white or cream: a vivid green that still reads (5:1 on white)
+// The track still to fill under a saved bar on the dark band: diagonal stripes.
+export const STRIPE_ON_DARK = "repeating-linear-gradient(135deg, rgba(246,234,208,0.28) 0 4px, rgba(246,234,208,0.1) 4px 8px)";
 export const ON_TRACK_FILL = "#edf6f1"; // a very pale PROGRESS_GREEN: the fill of an on-track module tile
 export const REVIEWED_FILL = "#f4f2ec"; // muted: a reviewed module tile with something still to act on
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
@@ -126,7 +130,7 @@ export const FORECAST_SHORT_LABEL = {
 };
 
 // ── Typography ───────────────────────────────────────────────────────────
-export const SERIF = "'Playfair Display',serif"; // headlines, hero £ figures
+export const SERIF = "'Playfair Display',serif"; // headline £ figures only (Harvey, 8 Nov 2026)
 export const SANS  = "'DM Sans',sans-serif";      // body copy, UI chrome
 
 // ── Marketing site (Statement design, Oct 2026) ─────────────────────────
@@ -205,7 +209,7 @@ export const CARD = { background: WHITE, border: "1px solid rgba(22,47,36,0.08)"
 // inside at the top, a hairline above each row, the tile's edge below the
 // last. Harvey, 31 Oct 2026: rows need a tile under them in the app.
 export const ROW_TILE = { ...CARD, padding: "16px 18px 4px" };
-// A section's heading on an app screen: Playfair, sentence case, no caps
+// A section's heading on an app screen: DM Sans, sentence case, no caps
 // label above it.
 // The small line above a notice's title (what it is, when): sentence case,
 // 12.5px, MUT (5.3:1 on WHITE).
@@ -213,7 +217,7 @@ export const NOTICE_LABEL = { fontSize: "12.5px", fontWeight: 600, color: MUT, l
 // A tile's title on Home and Progress ("Your years with Candid", "Coming up"):
 // small tracked caps in MUT.
 export const TILE_KICKER = { fontSize: "11px", fontWeight: 600, color: MUT, letterSpacing: "0.09em", textTransform: "uppercase", margin: 0 };
-export const SECTION_TITLE = { fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, lineHeight: 1.25, margin: 0 };
+export const SECTION_TITLE = { fontFamily: SANS, fontSize: "18px", fontWeight: 700, color: G, lineHeight: 1.25, margin: 0 };
 
 // "Where to open an account" provider tiles (Cash/Investments/Pension) —
 // white fading to a light grey, top to bottom, for a raised/glossy feel, so
@@ -339,7 +343,7 @@ export const OPPORTUNITY_TILE_BG     = STACK_SLICK_BG;
 export const OPPORTUNITY_TILE_BORDER = "1px solid rgba(255,255,255,0.122)";
 export const OPPORTUNITY_TILE_SHADOW = "0 10px 28px rgba(22,47,36,0.16)";
 export const OPPORTUNITY_TILE_LABEL  = "#d8d0bb"; // "OPPORTUNITY" overline, sub-labels
-export const OPPORTUNITY_TILE_FIGURE = "#f6ead0"; // serif £ figures
+export const OPPORTUNITY_TILE_FIGURE = "#f6ead0"; // £ figures (serif when a £)
 export const OPPORTUNITY_TILE_BODY   = "#b4bdb2"; // chips and supporting sentences
 export const OPPORTUNITY_TILE_RADIUS = "18px";
 export const OPPORTUNITY_TILE_SHEEN  = STACK_SLICK_SHEEN; // white at the sheen's peak

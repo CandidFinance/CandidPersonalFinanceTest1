@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
-import { G, MUT, TEXT, SERIF, SANS, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SANS, WHITE } from "../../design-tokens.js";
 import { getConsent } from "../../lib/consent.js";
 import { PageDots } from "./OnboardingShell.jsx";
 import TourOverlay, { targetOf } from "./TourOverlay.jsx";
@@ -171,7 +171,7 @@ export default function AppTour({ screen, scoreShowing, set, returnTo, onStart, 
   const content = (
     <div style={card}>
       {!done && <PageDots position={position} total={total} from={from} style={{ marginBottom: "14px" }}/>}
-      <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
+      <h2 id="tour-title" style={{ fontFamily: SANS, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
       <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{body}</p>
       {done ? (
         <button ref={nextRef} type="button" style={{ ...main, width: "100%", padding: "14px", marginTop: "14px" }} onClick={finish}>Done</button>

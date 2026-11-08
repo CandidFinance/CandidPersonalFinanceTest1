@@ -10,7 +10,7 @@ import SubscribeButtons from "./SubscribeButtons.jsx";
 import { SubscriberCrown } from "../Premium.jsx";
 import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.js";
 import { TileRow, ROW, withIcon, Nested } from "../MobileTile.jsx";
-import { G, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT, SANS } from "../../design-tokens.js";
 
 // "Scenario modelling", a row of the student loan page's What ifs tile
 // (MobileTile.jsx), marked as a subscriber feature for everyone: its icon in
@@ -148,7 +148,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
   const stat = (name, value) => (
     <div style={tile}>
       <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{name}</div>
-      <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
+      <div style={{fontFamily:SANS,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
     </div>
   );
   const saved = run ? run.base.totalPaid - run.totalPaid : 0;
@@ -332,7 +332,7 @@ function Locked({ d }) {
     <div style={{position:"relative",paddingTop:"10px"}}>
       <div aria-hidden="true" inert="" style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
         {example.map(t => <div key={t} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",fontSize:"13.5px",fontWeight:600,color:TEXT}}>{t}</div>)}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px",fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:G}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G}}>
           <span>3 yrs</span><span>£4,210</span><span>£16,900</span>
         </div>
       </div>

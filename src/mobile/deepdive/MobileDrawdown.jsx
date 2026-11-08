@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fmt } from "../../lib/format.js";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE, MUT_ON_CDARK } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE, MUT_ON_CDARK } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { calcDrawdown, bestDrawdown, defaultDrawdownYears, drawdownYearOptions, phaseChange, pensionIhtLine } from "../../lib/drawdown.js";
@@ -38,7 +38,7 @@ export function Pill({ value, caption, info }) {
   return (
     <div style={{background:"rgba(22,47,36,0.05)",borderRadius:"12px",padding:"10px 12px"}}>
       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-        <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,lineHeight:1.1}}>{value}</div>
+        <div style={{fontFamily:SANS,fontSize:"20px",color:G,fontWeight:700,lineHeight:1.1}}>{value}</div>
         {info}
       </div>
       <div style={{fontSize:"11.5px",color:MUT,marginTop:"3px"}}>{caption}</div>
@@ -87,7 +87,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
           ].map(([k, v]) => (
             <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"4px 0"}}>
               <span style={{fontSize:"13px",color:TEXT}}>{k}</span>
-              <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{v}</span>
+              <span style={{fontFamily:SANS,fontSize:"17px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{v}</span>
             </div>
           ))}
         </div>
@@ -149,7 +149,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
         {tableRows.map(r => (
           <div key={r.name} style={{display:"grid",gridTemplateColumns:cols,gap:"6px",padding:"5px 0",borderBottom:"1px solid rgba(22,47,36,0.06)",fontWeight:r.bold ? 700 : 400,color:r.muted ? MUT : r.bold ? G : TEXT}}>
             <span>{r.name}</span>
-            {phases.map(p => <span key={p.fromAge} style={{textAlign:"right",fontFamily:r.bold ? SERIF : undefined}}>{r.get(p) ? compact(r.get(p)) : "–"}</span>)}
+            {phases.map(p => <span key={p.fromAge} style={{textAlign:"right",fontFamily:r.bold ? SANS : undefined}}>{r.get(p) ? compact(r.get(p)) : "–"}</span>)}
           </div>
         ))}
         <div style={{display:"grid",gridTemplateColumns:cols,gap:"6px",padding:"5px 0",color:MUT,fontSize:"11px"}}>

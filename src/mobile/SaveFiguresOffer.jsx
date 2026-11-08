@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { X } from "lucide-react";
-import { MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE, SERIF, CRITICAL, FIELD_BORDER } from "../design-tokens.js";
+import { MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE, CRITICAL, FIELD_BORDER, SANS } from "../design-tokens.js";
 import { validEmailShape } from "../lib/emailCheck.js";
 import { referralCode } from "../lib/referral.js";
 import { useEmailCheck, DidYouMean } from "./emailCheckForm.jsx";
@@ -53,7 +53,7 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
       {onDismiss && (
         <button type="button" onClick={onDismiss} aria-label="Dismiss" style={{position:"absolute",top:"8px",right:"8px",background:"none",border:"none",padding:"6px",color:MUT,cursor:"pointer",display:"flex"}}><X size={18}/></button>
       )}
-      {rateCost && <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:TEXT,lineHeight:1.3,paddingRight:onDismiss ? "24px" : 0}}>Your rate is costing you <span style={{color:CRITICAL}}>{rateCost}</span>.</div>}
+      {rateCost && <div style={{fontFamily:SANS,fontSize:"19px",fontWeight:700,color:TEXT,lineHeight:1.3,paddingRight:onDismiss ? "24px" : 0}}>Your rate is costing you <span style={{color:CRITICAL}}>{rateCost}</span>.</div>}
       <div style={{fontSize:rateCost ? "15px" : "16px",fontWeight:700,color:TEXT,lineHeight:1.4,margin:rateCost ? "2px 0 12px" : "0 0 12px",paddingRight:onDismiss && !rateCost ? "24px" : 0}}>
         {rateCost ? "Get an email if that gets worse." : "Get an email if your answer changes."}
       </div>

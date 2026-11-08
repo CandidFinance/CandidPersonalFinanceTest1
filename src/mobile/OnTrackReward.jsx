@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import posthog from "posthog-js";
-import { G, MUT, TEXT, SERIF } from "../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
 import { NATIONAL_STATS } from "../lib/nationalStats.js";
 import Burst from "./Burst.jsx";
 
@@ -20,7 +20,7 @@ export default function OnTrackReward({ moduleKey, celebrate = true }) {
   return (
     <div style={{position:"relative",marginTop:"28px",padding:"20px",borderRadius:"14px",background:"rgba(196,150,58,0.10)"}}>
       {celebrate && <Burst/>}
-      <div style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:G,lineHeight:1.1}}>{stat.figure}</div>
+      <div style={{fontFamily:/£/.test(stat.figure) ? SERIF : SANS,fontSize:"34px",fontWeight:700,color:G,lineHeight:1.1}}>{stat.figure}</div>
       <p style={{fontSize:"15px",color:TEXT,lineHeight:1.45,margin:"6px 0 0"}}>{stat.line}</p>
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.4,margin:"8px 0 0"}}>Source: {stat.source}</p>
     </div>

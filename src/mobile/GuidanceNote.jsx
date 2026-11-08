@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { CREAM, G, MUT, TEXT, SERIF } from "../design-tokens.js";
+import { CREAM, G, MUT, TEXT, SANS } from "../design-tokens.js";
 
 // Candid is guidance, not advice, said where people read their figures:
 // briefly as a module page opens (GuidanceIntro), then once more at the foot
@@ -45,7 +45,7 @@ export function GuidanceIntro() {
       style={{ position: "fixed", inset: 0, zIndex: 4800, background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: [0, 1, 1, 0], y: [6, 0, 0, 0] }} transition={{ duration: INTRO_MS / 1000, times: [0, 0.15, 0.7, 0.85] }}
         style={{ textAlign: "center" }}>
-        <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G }}>Guidance, not advice</div>
+        <div style={{ fontFamily: SANS, fontSize: "22px", fontWeight: 700, color: G }}>Guidance, not advice</div>
         <div style={{ fontSize: "14px", color: TEXT, marginTop: "6px" }}>Candid does the maths on your figures. The choices are yours.</div>
       </motion.div>
     </motion.div>

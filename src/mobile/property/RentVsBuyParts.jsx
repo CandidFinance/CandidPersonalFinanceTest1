@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useElementWidth } from "../useElementWidth.js";
 import { CircleAlert } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, CDARK } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, WHITE, SC, CDARK, SANS } from "../../design-tokens.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 
@@ -161,7 +161,7 @@ export function Comparison({ heading, rows }) {
     if (v < 0 && (kind === "net" || kind === "month")) return <span style={{color:SC.ok}}>{fmt(-v)} gain</span>;
     return fmt(v);
   };
-  const style = kind => kind === "net" ? { ...cell, fontFamily:SERIF, fontSize:"17px", fontWeight:700, paddingTop:"6px" }
+  const style = kind => kind === "net" ? { ...cell, fontFamily:SANS, fontSize:"17px", fontWeight:700, paddingTop:"6px" }
     : kind === "month" || kind === "own" ? { ...cell, color:MUT, fontSize:"12px" } : cell;
   const head = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"right" };
   return (

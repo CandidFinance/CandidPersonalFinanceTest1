@@ -227,10 +227,10 @@ export default function QAChat({ chat, d, m, onGoTo }) {
           no tab bar (MobileLayout), so the box sits near the bottom edge. */}
       <style>{`
         .qa-thread { display: flex; flex-direction: column; justify-content: flex-end;
-          min-height: calc(100vh - 16px - env(safe-area-inset-top, 0px) - 76px - env(safe-area-inset-bottom, 0px));
-          min-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - 76px - env(safe-area-inset-bottom, 0px));
+          min-height: calc(100vh - 16px - env(safe-area-inset-top, 0px) - 88px - env(safe-area-inset-bottom, 0px));
+          min-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - 88px - env(safe-area-inset-bottom, 0px));
           margin-bottom: -44px; }
-        .qa-box { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+        .qa-box { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
         @media (min-width: 1000px) {
           .qa-thread { min-height: calc(100vh - 110px); min-height: calc(100dvh - 110px); margin-bottom: -32px; }
           .qa-box { bottom: 24px; }

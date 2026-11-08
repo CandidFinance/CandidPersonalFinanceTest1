@@ -5,7 +5,7 @@ import { fmt } from "../../lib/format.js";
 import { childcareSupport, kidsSituation, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
 import { childBenefitCharge } from "../../lib/pension.js";
 import { thisTaxYear, allowanceLeft } from "../../lib/taxTrap.js";
-import { G, MUT, TEXT, SERIF } from "../../design-tokens.js";
+import { G, MUT, TEXT, SANS } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
 // Kids & family: childcare support (Tax-Free Childcare and, in England, the
@@ -43,7 +43,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
   const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
   const rowLabel = { fontSize:"13.5px", color:TEXT, fontWeight:600 };
   const rowNote = { fontSize:"12px", color:MUT, marginTop:"2px", lineHeight:1.45 };
-  const rowFigure = { fontFamily:SERIF, fontSize:"17px", color:G, fontWeight:700, whiteSpace:"nowrap" };
+  const rowFigure = { fontFamily:SANS, fontSize:"17px", color:G, fontWeight:700, whiteSpace:"nowrap" };
   const stateLine = !cc ? null
     : cc.state === "lost" ? `Your income is ${fmt(Math.round(cc.ani))}, over the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support stops for the whole year.`
     : cc.state === "partner" ? (cc.recoverable

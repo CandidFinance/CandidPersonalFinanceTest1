@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout } from "../../lib/entitlement.js";
-import { G, WHITE, MUT, SERIF, CRITICAL, CTA_BLUE } from "../../design-tokens.js";
+import { G, WHITE, MUT, CRITICAL, CTA_BLUE, SANS } from "../../design-tokens.js";
 
 // CTA blue's pale wash, for what's picked.
 export const CTA_WASH = "#EAF3FE";
@@ -36,7 +36,7 @@ export function PlanPicker({ d, module, from }) {
       }}>
         {p === "yearly" && <span style={{position:"absolute",top:"-10px",left:"12px",background:CTA_BLUE,color:WHITE,fontSize:"10.5px",fontWeight:700,letterSpacing:"0.04em",borderRadius:"100px",padding:"3px 8px"}}>SAVE {ANNUAL_SAVING_PCT}%</span>}
         <span style={{display:"block",fontSize:"12px",fontWeight:700,color: on ? "#0058b0" : MUT}}>{p === "yearly" ? "Yearly" : "Monthly"}</span>
-        <span style={{display:"block",fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G,marginTop:"2px"}}>{PLANS[p].price}</span>
+        <span style={{display:"block",fontFamily:SANS,fontSize:"24px",fontWeight:700,color:G,marginTop:"2px"}}>{PLANS[p].price}</span>
         <span style={{display:"block",fontSize:"11.5px",color:MUT,marginTop:"2px"}}>{PLANS[p].note}</span>
       </button>
     );

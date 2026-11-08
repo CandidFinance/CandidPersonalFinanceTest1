@@ -5,7 +5,7 @@ import { reportStorageFailure } from "../../lib/storage.js";
 import { signedIn } from "../../lib/entitlement.js";
 import posthog from "posthog-js";
 import { NavBar } from "../../NavBar.jsx";
-import { G, CREAM, MUT, SERIF } from "../../design-tokens.js";
+import { G, CREAM, MUT, SANS } from "../../design-tokens.js";
 import { ENTRY_QUESTIONS, firstPick } from "../../lib/appEntry.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import GuidedFlow from "../property/GuidedFlow.jsx";
@@ -58,7 +58,7 @@ export default function MobileEntryScreen({ d, m, set, onEntered, onDone }) {
                 {meta?.icon && <meta.icon size={24} color={G}/>}
               </div>
               <div style={{fontSize:"13px",color:MUT,fontWeight:600}}>Opening</div>
-              <div style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.2,marginTop:"-8px"}}>{meta?.title}</div>
+              <div style={{fontFamily:SANS,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.2,marginTop:"-8px"}}>{meta?.title}</div>
             </motion.div>
           ) : (
             <motion.div key="question" exit={{ opacity: 0, y: reduceMotion ? 0 : -12, transition: { duration: 0.2, ease: "easeIn" } }}>

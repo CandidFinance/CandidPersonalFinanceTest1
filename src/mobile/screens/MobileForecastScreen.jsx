@@ -3,7 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE, useBandViews, BandViewCaption, BandReel, SheetGlass, CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
+import { ScreenBand, ScreenSheet, useBandViews, BandViewCaption, BandReel, SheetGlass, CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
 import posthog from "posthog-js";
@@ -116,7 +116,7 @@ export default function MobileForecastScreen({ d, m }) {
   return (
     <div>
       <ScreenBand tone="dark" {...bandProps}>
-        <h1 style={{...SCREEN_TITLE,color:CREAM,margin:"0 0 4px"}}>Forecasts</h1>
+        <h1 style={SR_ONLY}>Forecasts</h1>
         <BandViewCaption views={VIEWS} view={view} moved={viewMoved} onPick={showView} ink={CREAM} soft={CREAM_SOFT} faint={CREAM_FAINT}/>
 
         <BandReel reel={reel} measureRef={chartRef}>
@@ -372,7 +372,7 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
                 {meta.locked && <Lock size={12} color={t.body}/>}
               </div>
               <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:row.negative ? CRITICAL : t.figure}}>{row.negative?"−":""}{fmt(row.value)}</span>
+                <span style={{fontFamily:SANS,fontSize:"18px",fontWeight:700,color:row.negative ? CRITICAL : t.figure}}>{row.negative?"−":""}{fmt(row.value)}</span>
                 <ChevronRight size={13} color={t.body} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
               </div>
             </div>
@@ -383,7 +383,7 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
               <div style={note(t)} onClick={e => e.stopPropagation()}>
                 {row.label === "Pension" && age && (
                   <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                    <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:t.figure}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+                    <span style={{fontFamily:SANS,fontSize:"20px",fontWeight:700,color:t.figure}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
                     <span style={{fontSize:"12.5px",color:t.body}}>years until available (from age {PENSION_ACCESS_AGE})</span>
                   </div>
                 )}
@@ -644,7 +644,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
               </div>
               <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
                 <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.low)}</span>
-                <span style={{fontFamily:SERIF,fontSize:"12.5px",color:t.figure,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
+                <span style={{fontFamily:SANS,fontSize:"12.5px",color:t.figure,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
                 <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.high)}</span>
               </div>
             </div>

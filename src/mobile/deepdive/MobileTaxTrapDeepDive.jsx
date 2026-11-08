@@ -11,7 +11,7 @@ import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK, SANS } from "../../design-tokens.js";
 import posthog from "posthog-js";
 import { undoSacrifice, recordTopUps, removeTopUp } from "../../lib/taxTrapRecord.js";
 import { CHOICE_IDS, choiceFor } from "../../lib/opportunityChoices.js";
@@ -63,7 +63,7 @@ function Cell({ label, text, tone = "plain", wide = false }) {
   return (
     <div style={{background:TONE[tone].bg,borderRadius:"10px",padding:"8px 10px",gridColumn:wide ? "1 / -1" : undefined}}>
       <div style={cellLabel}>{label}</div>
-      <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:TONE[tone].fg,marginTop:"2px"}}>{text}</div>
+      <div style={{fontFamily:SANS,fontSize:"17px",fontWeight:700,color:TONE[tone].fg,marginTop:"2px"}}>{text}</div>
     </div>
   );
 }
@@ -232,7 +232,7 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
         <div style={{marginTop:"14px",display:"flex",gap:"12px",alignItems:"flex-start",background:WHITE,border:"1.5px solid rgba(192,57,43,0.35)",borderRadius:"14px",padding:"14px"}}>
           <TriangleAlert size={22} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
           <div>
-            <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"24px",lineHeight:1.1,color:"#a8301f"}}>{stake.figure}</div>
+            <div style={{fontFamily:/£/.test(String(stake.figure)) ? SERIF : SANS,fontWeight:700,fontSize:"24px",lineHeight:1.1,color:"#a8301f"}}>{stake.figure}</div>
             <div style={{fontSize:"13px",lineHeight:1.45,marginTop:"4px",color:TEXT}}>{stake.body}</div>
           </div>
         </div>
@@ -388,7 +388,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       )}
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginTop:"14px"}}>
         <span style={{fontSize:"12px",color:MUT}}>{bonus ? "One-off, from your bonus" : single ? "One payment before 5 April" : `A month, for ${n} payday${n === 1 ? "" : "s"}`}</span>
-        <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{fmt(each)}</span>
+        <span style={{fontFamily:SANS,fontSize:"24px",fontWeight:700,color:G}}>{fmt(each)}</span>
       </div>
       <input type="range" min={0} max={max} step={single ? SLIDER_STEP_BONUS : SLIDER_STEP} value={each} aria-label={single ? "Paid into your pension" : "Paid into your pension a month"}
         onChange={e => setChosen(+e.target.value)} style={{width:"100%",accentColor:G,margin:"4px 0 0"}}/>
@@ -400,7 +400,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       {!sacrifice && !single && <div style={{fontSize:"12.5px",color:TEXT,marginTop:"4px"}}>{fmt(total)} by 5 April, a month at a time or in one payment</div>}
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"8px",marginTop:"12px",padding:"10px 12px",borderRadius:"10px",background:CDARK}}>
         <span style={{fontSize:"12px",color:MUT}}>Adjusted net income this tax year</span>
-        <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}>{fmt(t.ani)} to <b style={{fontFamily:SERIF,fontSize:"17px",color:p.ani <= TRAP_START ? G : CRITICAL}}>{fmt(p.ani)}</b></span>
+        <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}>{fmt(t.ani)} to <b style={{fontFamily:SANS,fontSize:"17px",color:p.ani <= TRAP_START ? G : CRITICAL}}>{fmt(p.ani)}</b></span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}}>
         <Cell label="Into your pension" text={signed(p.pension)} tone={p.pension > 0 ? "gain" : "plain"}/>
@@ -592,11 +592,11 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"18px"}}>
             <div style={smallTile("cost")}>
               <div style={{...smallLabel,color:"#8a2c22"}}>{plan.n} payday{plan.n === 1 ? "" : "s"} left</div>
-              <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:"#a3301f"}}>{plan.pctNow}% to {plan.pctTo}%</div>
+              <div style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:"#a3301f"}}>{plan.pctNow}% to {plan.pctTo}%</div>
             </div>
             <div style={smallTile()}>
               <div style={smallLabel}>Paydays from April</div>
-              <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{plan.pctNow}% to {pctYear}%</div>
+              <div style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{plan.pctNow}% to {pctYear}%</div>
             </div>
           </div>
         )}
@@ -647,7 +647,7 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
               <div key={x.label}>
                 <div style={{display:"flex",justifyContent:"space-between",gap:"6px",fontSize:"12px"}}>
                   <span style={{color:x.good ? "#1f6b45" : MUT,fontWeight:x.good ? 700 : 400}}>{x.label}</span>
-                  <span style={{fontFamily:SERIF,fontWeight:700,color:x.good ? "#1f6b45" : "#a3301f"}}>{x.good ? "" : "−"}{fmt(counted(3, x.value))}</span>
+                  <span style={{fontFamily:SANS,fontWeight:700,color:x.good ? "#1f6b45" : "#a3301f"}}>{x.good ? "" : "−"}{fmt(counted(3, x.value))}</span>
                 </div>
                 <div style={{height:"6px",borderRadius:"3px",background:CDARK,marginTop:"3px",overflow:"hidden"}}>
                   <div style={{height:"6px",borderRadius:"3px",background:x.good ? "#2f9461" : "rgba(192,57,43,0.7)",width:`${on(3, 2) ? x.value / t.needed * 100 : 0}%`,transition:`width ${motionMs(WALK_TIMING.bars)}ms cubic-bezier(0.2,0.7,0.2,1)`}}/>
@@ -727,7 +727,7 @@ function TopUps({ d, m, ups, onRemove }) {
         return (
           <div key={u.group || u.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
             <span style={{flex:1,fontSize:"13px",color:TEXT,lineHeight:1.4}}>{label}</span>
-            <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{fmt(sum)}</span>
+            <span style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{fmt(sum)}</span>
             <button type="button" onClick={() => onRemove(u.group || u.id)} aria-label={`Remove the ${fmt(sum)} top-up`} className="tap44"
               style={{display:"inline-flex",background:"none",border:"none",padding:"4px",cursor:"pointer",color:MUT}}>
               <X size={16} aria-hidden="true"/>
@@ -779,7 +779,7 @@ function RateTile({ d, m, t }) {
     <section style={tile}>
       <h2 style={tileTitle}>Marginal tax rate by income</h2>
       <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"4px"}}>
-        <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
+        <span style={{fontFamily:SANS,fontSize:"28px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
         <span style={{fontSize:"12.5px",color:TEXT,lineHeight:1.4}}>
           {t.over ? `yours: ${pence(t.rate.rate)} of every extra £1 you earn goes in ${lostTo(t.rate)}.` : `yours now. Past ${K} it's ${pct(t.trapRate)}.`}
         </span>
@@ -876,7 +876,7 @@ function CheckRow({ state, topic, line, value }) {
         <span style={{display:"block",fontSize:"14px",fontWeight:700,color:state === "off" ? MUT : TEXT}}>{topic}</span>
         <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>{line}</span>
       </span>
-      <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:state === "on" ? G : MUT,whiteSpace:"nowrap"}}>{value}</span>
+      <span style={{fontFamily:SANS,fontSize:"18px",fontWeight:700,color:state === "on" ? G : MUT,whiteSpace:"nowrap"}}>{value}</span>
     </div>
   );
 }

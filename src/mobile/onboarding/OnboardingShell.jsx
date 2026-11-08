@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN, LABEL_CAPS } from "../../design-tokens.js";
+import { G, MUT, TEXT, SANS, WHITE, PROGRESS_GREEN, LABEL_CAPS } from "../../design-tokens.js";
 
 // The pieces every question flow shares (QuickStart, GuidedFlow, the answer
 // reveal), so they all look alike: Back and the page dots across the top, the
@@ -74,7 +74,7 @@ export function QuestionHeading({ ask, why, lead, compact = false, focusOnMount 
   return (
     <>
       {lead && <div style={{ ...LABEL_CAPS, marginBottom: "8px" }}>{lead}</div>}
-      <H ref={ref} tabIndex={focusOnMount ? -1 : undefined} style={{ fontFamily: SERIF, fontSize: compact ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{ask}</H>
+      <H ref={ref} tabIndex={focusOnMount ? -1 : undefined} style={{ fontFamily: SANS, fontSize: compact ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{ask}</H>
       {why && <p style={{ fontSize: compact ? "14px" : "15px", color: MUT, lineHeight: 1.5, margin: compact ? "8px 0 18px" : "10px 0 24px" }}>{why}</p>}
     </>
   );

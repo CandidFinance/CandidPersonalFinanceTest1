@@ -3,7 +3,7 @@ import BankConfirm from "../BankConfirm.jsx";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 import { useState } from "react";
 import { Check, Coins, Wrench } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS, PROGRESS_GREEN } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SC, SUCCESS, PROGRESS_GREEN, SANS } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
 import { MODULE_META, isOnTrack, reviewedDone } from "../../lib/moduleStatus.js";
 import { moduleLimits } from "../../lib/moduleLimits.js";
@@ -67,7 +67,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
+            <h1 style={{fontFamily:SANS,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
             {/* Reviewed shows once, on the button below. */}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"3px"}}>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronUp, ChevronDown, TriangleAlert, Check } from "lucide-react";
-import { G, MUT, MUT_ON_CDARK, SR_ONLY, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, STACK_SLICK_BG, STACK_SLICK_SHEEN, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS } from "../design-tokens.js";
+import { G, MUT, MUT_ON_CDARK, SR_ONLY, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, STACK_SLICK_BG, STACK_SLICK_SHEEN, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS } from "../design-tokens.js";
 
 // Cards stacked one in front of another, like a wallet: Home's hero
 // (HomeHero.jsx) and Progress's figures. The front card wears a
@@ -207,7 +207,7 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
                 </span>
                 {/* The top line's amount: only for a card behind, as the
                     front card shows it in full. */}
-                <span style={{fontFamily:c.amountSans ? SANS : SERIF,fontSize:c.amountSans ? "13px" : "16px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget || edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
+                <span style={{fontFamily:SANS,fontSize:c.amountSans ? "13px" : "16px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget || edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
               </div>
               {/* Behind, only the top line shows: the body fades out so
                   nothing pokes into that line. It stays while a card turns
@@ -260,14 +260,17 @@ export function StillCard({ label, body, fill = false, ...rest }) {
 // below it rather than turning. `label`, `badge` and `body` as a stack's card.
 // `on`: the card's showing (its sheen sweeps each time it comes on). `fill`
 // as StillCard.
+// Its type is white, as on the app's other dark surfaces (Home's band), not
+// the stack's cream (Harvey, 8 Nov 2026).
+const FRONT = { ...DARK, label: "rgba(255,255,255,0.72)", figure: WHITE, body: "rgba(255,255,255,0.72)" };
 export function FrontCard({ label, badge = null, body, on = true, fill = false, ...rest }) {
   return (
     <div className="card-stack" {...rest} style={{...rest.style,...(fill && {height:"100%"})}}>
       <style>{CSS}</style>
       <div className="card-stack-card" style={{background:LIGHT.bg,border:DARK.border,boxShadow:DARK.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",display:"flex",flexDirection:"column",...(fill && {height:"100%",boxSizing:"border-box"})}}>
         <div className={`card-stack-dark${on ? " on" : ""}`} aria-hidden="true"/>
-        <div style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:DARK.label,minHeight:"18px"}}>{label}{badge}</div>
-        {body(DARK)}
+        <div style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:FRONT.label,minHeight:"18px"}}>{label}{badge}</div>
+        {body(FRONT)}
       </div>
     </div>
   );

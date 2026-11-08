@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLoca
 import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import { NavBar } from "./NavBar.jsx"
-import { G, GOLD, CREAM, MUT, SERIF, SANS } from "./design-tokens.js"
+import { G, GOLD, CREAM, MUT, SANS } from "./design-tokens.js"
 import ErrorBoundary, { reloadForNewBuild } from "./ErrorBoundary.jsx"
 import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
 import CookieNotice from "./CookieNotice.jsx"
@@ -151,14 +151,14 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
         padding:"40px 24px", textAlign:"center", fontFamily:SANS,
       }}>
         <div style={{
-          fontFamily:SERIF, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
+          fontFamily:SANS, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
           color:G, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
         }}>
           {name || "Welcome"}
         </div>
         <div style={{
           fontSize:"20px", color:MUT,
-          marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
+          marginBottom:"48px", fontFamily:SANS, fontStyle:"italic",
         }}>
           Welcome back.
         </div>

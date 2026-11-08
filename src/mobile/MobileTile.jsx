@@ -1,7 +1,7 @@
 import { useState, useRef, useId, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MoreHorizontal, ChevronRight } from "lucide-react";
-import { G, TEXT, MUT, WHITE, SANS, SERIF, CARD, HAIRLINE, GOLD_TEXT, CRITICAL } from "../design-tokens.js";
+import { G, TEXT, MUT, WHITE, SANS, CARD, HAIRLINE, GOLD_TEXT, CRITICAL } from "../design-tokens.js";
 import useDialogFocus from "./useDialogFocus.js";
 
 // A module answer tile, after Monzo's: a short bold title top left, a gold
@@ -72,7 +72,7 @@ export const ROW = {
   line: { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px" },
   label: { fontSize:"14px", color:TEXT, lineHeight:1.4 },
   note: { fontSize:"12px", color:MUT, lineHeight:1.45, marginTop:"2px" },
-  figure: { fontFamily:SERIF, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" },
+  figure: { fontFamily:SANS, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" },
   text: { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:0 },
   action: { display:"flex", alignItems:"center", gap:"10px", fontSize:"14px", fontWeight:600, color:G },
 };

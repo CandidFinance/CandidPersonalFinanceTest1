@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { G, TEXT, MUT, SERIF } from "../../design-tokens.js";
+import { G, TEXT, MUT, SANS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
 import { neededAtStart, visibleQuestions } from "../../lib/propertyGuide.js";
@@ -36,7 +36,7 @@ export default function MobileModuleGuide({ moduleKey, d, m, set, onDone, questi
           {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
+          <h1 style={{fontFamily:SANS,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{subtitle || "A few questions first"}</div>
         </div>
       </div>

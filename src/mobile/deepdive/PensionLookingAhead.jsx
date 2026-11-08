@@ -7,7 +7,7 @@ import { taxYearFor } from "../../lib/taxYear.js";
 import { AlertTriangle, PiggyBank, Users, CalendarClock } from "lucide-react";
 import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
 import { fmt, fmtBig } from "../../lib/format.js";
-import { G, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT, SANS } from "../../design-tokens.js";
 import MobileTile, { TileRow } from "../MobileTile.jsx";
 import { ADVISER_LINK } from "../GuidanceNote.jsx";
 
@@ -48,7 +48,7 @@ function AmountBar({ label, value, color, scale, size = 17, pounds = fmt }) {
     <div style={{marginTop:"10px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"10px"}}>
         <span style={{fontSize:"12.5px",color:TEXT}}>{label}</span>
-        <span style={{fontFamily:SERIF,fontSize:`${size}px`,fontWeight:700,color,whiteSpace:"nowrap"}}>{pounds(value)}</span>
+        <span style={{fontFamily:SANS,fontSize:`${size}px`,fontWeight:700,color,whiteSpace:"nowrap"}}>{pounds(value)}</span>
       </div>
       <div style={{height:"8px",borderRadius:"100px",background:"rgba(22,47,36,0.07)",marginTop:"4px",overflow:"hidden"}}>
         <div style={{height:"100%",width:`${(value / scale) * 100}%`,background:color,borderRadius:"100px",transition:"width 0.3s ease"}}/>
@@ -125,7 +125,7 @@ export function LookingAhead({ d, outlook, cliff, menu }) {
   const figure = (value, label) => (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",marginTop:"8px"}}>
       <span style={{fontSize:"13px",color:TEXT}}>{label}</span>
-      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:AMBER,whiteSpace:"nowrap"}}>{fmtBig(value)}</span>
+      <span style={{fontFamily:SANS,fontSize:"20px",fontWeight:700,color:AMBER,whiteSpace:"nowrap"}}>{fmtBig(value)}</span>
     </div>
   );
 

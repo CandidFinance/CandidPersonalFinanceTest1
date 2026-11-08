@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, ChevronRight } from "lucide-react";
 import ProviderLogo from "./ProviderLogo.jsx";
-import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE, SANS } from "../design-tokens.js";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -26,7 +26,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
     <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
       {!embedded && <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{background:"none",border:"none",padding:0,width:"100%",textAlign:"left",font:"inherit",color:"inherit",display:"block",cursor:"pointer"}}>
         <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
-          <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</span>
+          <span style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{heading}</span>
           <ChevronRight size={14} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
         </span>
         {subheading && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{subheading}</span>}
@@ -51,7 +51,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
             </div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-              <span style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>{p.rate}</span>
+              <span style={{fontFamily:SANS,fontSize:"15px",fontWeight:700,color:G}}>{p.rate}</span>
               <ExternalLink size={13} color={MUT}/>
             </div>
             {/* Under the whole row, lined up with the name past the logo. */}

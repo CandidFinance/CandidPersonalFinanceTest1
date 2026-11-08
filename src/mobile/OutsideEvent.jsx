@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { outsideEvent, withApproved, EVENTS } from "../lib/outsideEvents.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { closingTile } from "./SinceLastVisit.jsx";
-import { G, MUT, TEXT, CARD, HAIRLINE, NOTICE_LABEL, SERIF } from "../design-tokens.js";
+import { G, MUT, TEXT, CARD, HAIRLINE, NOTICE_LABEL, SANS } from "../design-tokens.js";
 
 // Home's outside event (src/lib/outsideEvents.js): a Bank Rate decision or
 // a Budget, coming up or just announced, and what it means for their
@@ -70,7 +70,7 @@ export default function OutsideEvent({ d, m, approved = null }) {
                 <X size={16} aria-hidden="true"/>
               </button>
             </div>
-            <h2 style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,lineHeight:1.25,color:G,marginTop:"6px"}}>{event.title}</h2>
+            <h2 style={{fontFamily:SANS,fontSize:"18px",fontWeight:700,lineHeight:1.25,color:G,marginTop:"6px"}}>{event.title}</h2>
             {event.text && <p style={{fontSize:"13px",lineHeight:1.5,margin:"6px 0 0",color:MUT}}>{event.text}</p>}
             {event.lines.length > 0 && (
               <ul style={{listStyle:"none",margin:"10px 0 0",padding:"10px 0 0",borderTop:HAIRLINE,display:"flex",flexDirection:"column",gap:"8px"}}>

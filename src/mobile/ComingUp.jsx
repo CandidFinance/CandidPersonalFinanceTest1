@@ -1,6 +1,6 @@
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ChevronUp } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, TEXT, MUT, SERIF, SANS, CARD, TILE_KICKER } from "../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, TEXT, MUT, SANS, CARD, TILE_KICKER } from "../design-tokens.js";
 
 // Coming up on Home: the next dates that touch their money (src/lib/comingUp.js)
 // on a timeline. The month leads (it's what places the date), the day under
@@ -67,12 +67,19 @@ export default function ComingUp({ items, min, onMinimise }) {
                       <Dot i={i} k={c.key}/>
                       {!last && <motion.span {...fade} aria-hidden="true" style={{flex:1,width:"2px",background:LINE,marginTop:"3px",marginBottom:"-6px"}}/>}
                     </div>
-                    <motion.div {...fade} style={{flex:1,minWidth:0,display:"flex",alignItems:"flex-start",gap:"10px",paddingBottom:last ? 0 : "20px"}}>
+                    <motion.div {...fade} style={{flex:1,minWidth:0,paddingBottom:last ? 0 : "20px"}}>
+                     <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:"14.5px",fontWeight:600,color:TEXT,lineHeight:1.35}}>{c.title}</div>
                         <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{c.sub}</div>
                       </div>
-                      {c.amount && <div style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G,whiteSpace:"nowrap",lineHeight:1.2}}>{c.amount}</div>}
+                      {/* Sized and placed as Areas to explore's £ (HomeHero.jsx): 18px,
+                          centred on the row, its last digit in line with theirs.
+                          Their "/yr" and chevron sit after the digits (18px padding
+                          + 15px chevron + 10px gap, less this tile's 16px), so the
+                          same "/yr", unseen, holds the space here. */}
+                      {c.amount && <div style={{marginRight:"27px",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G,whiteSpace:"nowrap",lineHeight:1.2}}>{c.amount}<span aria-hidden="true" style={{visibility:"hidden",fontSize:"12px",fontWeight:600}}>/yr</span></div>}
+                     </div>
                     </motion.div>
                   </div>
                 );

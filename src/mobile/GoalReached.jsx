@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Trophy, TriangleAlert } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, WARNING, WHITE, TEXT, MUT, SERIF, CREAM, PROGRESS_GREEN, CTA_BLUE, RADIUS_CARD } from "../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WARNING, WHITE, TEXT, MUT, SERIF, CREAM, PROGRESS_GREEN, CTA_BLUE, RADIUS_CARD, SANS } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { taxYearShort } from "../lib/taxYear.js";
 import { tap } from "./haptics.js";
@@ -53,7 +53,7 @@ export default function GoalReached({ goals, taxYear, onShown, onClose, onProgre
         <p style={{margin:"16px 0 0",fontSize:"11px",fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:warn ? "#864a0f" : GOLD_TEXT}}>
           {warn ? `Allowance used, ${taxYearShort(taxYear)}` : one ? "Goal reached" : `${goals.length} goals reached`}
         </p>
-        <h2 id="goal-reached-title" style={{margin:"6px 0 0",fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.2}}>
+        <h2 id="goal-reached-title" style={{margin:"6px 0 0",fontFamily:SANS,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.2}}>
           {warn ? (one ? one.usedTitle : "Allowances used") : "Congratulations!"}
         </h2>
         {one ? <>
@@ -66,7 +66,7 @@ export default function GoalReached({ goals, taxYear, onShown, onClose, onProgre
             {goals.map(g => (
               <li key={g.key} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"8px 0",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
                 <span style={{fontSize:"14px",fontWeight:600,color:TEXT}}>{g.label}</span>
-                <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:TEXT,whiteSpace:"nowrap"}}>{amount(g)}</span>
+                <span style={{fontFamily:SANS,fontSize:"17px",fontWeight:700,color:TEXT,whiteSpace:"nowrap"}}>{amount(g)}</span>
               </li>
             ))}
           </ul>

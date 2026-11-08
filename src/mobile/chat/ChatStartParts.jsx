@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SANS, SUCCESS } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import { CHAT_AREAS, suggestedFor, tileLabel } from "../../lib/chatStart.js";
 import { askFor } from "../../lib/quickStart.js";
@@ -77,7 +77,7 @@ function SliderReply({ q, ctx, onAnswer }) {
     <div style={{ ...col, alignItems: "stretch", alignSelf: "flex-end", width: "88%" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: "10px" }}>
         {live && <span style={{ fontSize: "12.5px", color: MUT }}>{live}</span>}
-        <span aria-live="polite" style={{ fontFamily: SERIF, fontSize: "34px", fontWeight: 700, color: G, lineHeight: 1 }}>{value}%</span>
+        <span aria-live="polite" style={{ fontFamily: SANS, fontSize: "34px", fontWeight: 700, color: G, lineHeight: 1 }}>{value}%</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <button type="button" aria-label="Less" onClick={() => setValue(v => clamp(v - 1))} style={step}><Minus size={18}/></button>
@@ -111,7 +111,7 @@ export function ModuleRows({ rows, build, onOpen }) {
               <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px" }}>
                 <span style={{ fontSize: "14px", fontWeight: 700, color: TEXT, lineHeight: "20px" }}>{r.title}</span>
                 {r.amount != null
-                  ? <span style={{ fontSize: "14px", color: G, whiteSpace: "nowrap" }}><span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, fontVariantNumeric: "tabular-nums lining-nums" }}>{fmt(r.amount)}</span>{r.lumpSum ? "" : <span style={{ fontWeight: 400 }}>/yr</span>}</span>
+                  ? <span style={{ fontSize: "14px", color: G, whiteSpace: "nowrap" }}><span style={{ fontFamily: SANS, fontSize: "15px", fontWeight: 700, fontVariantNumeric: "tabular-nums lining-nums" }}>{fmt(r.amount)}</span>{r.lumpSum ? "" : <span style={{ fontWeight: 400 }}>/yr</span>}</span>
                   : r.onTrack && <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600, color: SUCCESS, whiteSpace: "nowrap" }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: SUCCESS }}/>On track</span>}
               </span>
               {r.line && !r.onTrack && <span style={{ display: "block", fontSize: "12.5px", color: MUT, lineHeight: 1.4, marginTop: "1px" }}>{r.line}</span>}

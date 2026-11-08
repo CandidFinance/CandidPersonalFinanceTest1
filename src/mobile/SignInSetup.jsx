@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, CREAM, FIELD_BORDER, SANS } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, signedIn, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
@@ -165,7 +165,7 @@ export function CreateSignIn({ email, onDone }) {
       style={{position:"fixed",inset:0,zIndex:6000,background:CREAM,overflowY:"auto"}}>
       <NavBar light center="Sign-in"/>
       <div style={{maxWidth:"420px",margin:"0 auto",padding:"32px 20px 40px"}}>
-        <h1 id="create-sign-in-title" style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Create your sign-in</h1>
+        <h1 id="create-sign-in-title" style={{fontFamily:SANS,fontSize:"30px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Create your sign-in</h1>
         <p style={{fontSize:"15px",color:MUT,lineHeight:1.6,margin:"12px 0 0"}}>So you can open Candid on another device and pick up where you left off. Your account is {email}.</p>
 
         {/* Google, when its address is the one they subscribed with. */}

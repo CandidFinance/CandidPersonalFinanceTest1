@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, CREAM, CDARK, GOLD_TEXT, SUCCESS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SANS, CREAM, CDARK, GOLD_TEXT, SUCCESS } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import { ratesFigures, impactFigures, childcareFigures } from "../../lib/chatTopics.js";
 
@@ -13,7 +13,7 @@ const cardTitle = {fontSize:"12px",fontWeight:700,color:MUT,letterSpacing:"0.02e
 const foot = {fontSize:"12px",color:MUT,lineHeight:1.4};
 const pair = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"};
 const tileStyle = {background:CREAM,borderRadius:"12px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"2px"};
-const num = {fontFamily:SERIF,fontVariantNumeric:"tabular-nums lining-nums"};
+const num = {fontFamily:SANS,fontVariantNumeric:"tabular-nums lining-nums"};
 // The class and stagger for the i-th piece to come in.
 const step = (build, i, cls = "chat-in") => (build ? { className: cls, style: { "--i": i } } : { style: {} });
 

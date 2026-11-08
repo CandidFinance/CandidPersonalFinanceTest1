@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
-import { G, TEXT, SERIF, SANS, WHITE, SUCCESS } from "../design-tokens.js";
+import { G, TEXT, SANS, WHITE, SUCCESS } from "../design-tokens.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
 import Burst from "./Burst.jsx";
 import { tap } from "./haptics.js";
@@ -31,7 +31,7 @@ export function CheckedCardBody({ moduleKey, onDone, buttonRef }) {
         style={{ width: "48px", height: "48px", borderRadius: "50%", background: SUCCESS, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
         <Check size={26} strokeWidth={3}/>
       </motion.div>
-      <h2 id="checked-title" style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.2 }}>{checkedTitle(moduleKey)}</h2>
+      <h2 id="checked-title" style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.2 }}>{checkedTitle(moduleKey)}</h2>
       <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 16px" }}>{LINES[moduleKey] || DEFAULT_LINE}</p>
       <button ref={buttonRef} type="button" onClick={onDone}
         style={{ width: "100%", background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "14px", fontSize: "14.5px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" }}>Done</button>

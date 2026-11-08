@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, X } from "lucide-react";
-import { G, WHITE, TEXT, MUT, SERIF, SUCCESS } from "../design-tokens.js";
+import { G, WHITE, TEXT, MUT, SUCCESS, SANS } from "../design-tokens.js";
 import { pendingBank, bankPatch, gainedSoFar } from "../lib/moduleStatus.js";
 import { fmt } from "../lib/format.js";
 import Burst from "./Burst.jsx";
@@ -66,7 +66,7 @@ export default function BankConfirm({ d, set, moduleKey, title, amount, compact 
             <Check size={compact ? 16 : 20} strokeWidth={3}/>
           </motion.div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: SERIF, fontSize: compact ? "17px" : "20px", fontWeight: 700, color: G, lineHeight: 1.25 }}>
+            <div style={{ fontFamily: SANS, fontSize: compact ? "17px" : "20px", fontWeight: 700, color: G, lineHeight: 1.25 }}>
               <CountUpFigure text={`+${fmt(saved.amount)} a year saved`} run={!compact}/>
             </div>
             <div style={{ fontSize: compact ? "12px" : "13px", color: MUT, lineHeight: 1.5, marginTop: "2px" }}>

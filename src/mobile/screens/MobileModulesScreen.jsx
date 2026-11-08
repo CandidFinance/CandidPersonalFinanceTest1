@@ -3,8 +3,8 @@ import { AnimatePresence } from "framer-motion";
 import { ChevronRight, Lock, Star } from "lucide-react";
 import { FrontCard, StillCard } from "../CardStack.jsx";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE } from "../../design-tokens.js";
-import { ScreenBand, ScreenSheet, SCREEN_TITLE } from "../ScreenBand.jsx";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, GAIN_ON_DARK, STRIPE_ON_DARK } from "../../design-tokens.js";
+import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, ELSEWHERE } from "../statusLabel.js";
@@ -178,14 +178,17 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         <>
           <Figure t={t} value={fmt(totalOpp)} unit="a year"/>
           {totalBanked > 0 && (
-            <div style={{marginTop:"18px"}}>
-              <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,lineHeight:1,color:t.figure}}>{fmt(totalBanked)}</span>
-                <span style={{fontSize:"13px",fontWeight:600,color:t.figure}}>a year saved</span>
+            // As Home's bar (HomeHero.jsx): saved fills in the gain green, the
+            // rest striped, "Saved +£x" at its end on the same line.
+            <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
+              <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:t.track}}>
+                <div style={{width:`${totalBanked / found * 100}%`,background:GAIN_ON_DARK}}/>
+                <div style={{flex:1,background:STRIPE_ON_DARK}}/>
               </div>
-              <div aria-hidden="true" style={{height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:t.track,marginTop:"10px"}}>
-                <div style={{width:`${totalBanked / found * 100}%`,background:GOLD}}/>
-              </div>
+              <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
+                <span style={{fontSize:"12px",fontWeight:600,color:t.label}}>Saved</span>
+                <span style={{fontSize:"12px",fontWeight:800,color:GAIN_ON_DARK}}>+{fmt(totalBanked)}</span>
+              </span>
             </div>
           )}
         </>
@@ -202,7 +205,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     <div>
       <style>{CSS}</style>
       <ScreenBand>
-        <h1 style={{...SCREEN_TITLE,color:G}}>Modules</h1>
+        <h1 style={SR_ONLY}>Modules</h1>
         <section aria-label="Left on the table" data-tour="modules-cards">{hero}</section>
       </ScreenBand>
 

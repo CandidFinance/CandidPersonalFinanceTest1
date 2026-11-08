@@ -3,7 +3,7 @@ import InviteFriends from "../InviteFriends.jsx";
 import { referralCode } from "../../lib/referral.js";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Mail, User } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, CTA_BLUE, SANS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
@@ -127,7 +127,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
 
   return (
     <div>
-      <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your inputs</h1>
+      <h1 style={{fontFamily:SANS,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your inputs</h1>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
       {emailFirst && <EmailField d={d} onEmailChange={onEmailChange} spotlight/>}
 
@@ -293,7 +293,7 @@ function EmailField({ d, onEmailChange, spotlight = false }) {
   const accent = spotlight ? CTA_BLUE : G;
   return (
     <div style={spotlight ? {background:"#EAF3FE",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"16px",padding:"18px",marginBottom:"20px"} : {}}>
-      {spotlight && <h2 style={{fontFamily:SERIF,fontSize:"21px",color:G,fontWeight:700,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
+      {spotlight && <h2 style={{fontFamily:SANS,fontSize:"21px",color:G,fontWeight:700,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
       {/* In About you, laid out as its other answers (fieldState.js): the
           question, the field, the note under it. */}
       <label htmlFor="inputs-email" style={spotlight ? fieldLabel : {...QUESTION_HEADING,display:"block"}}>Email</label>

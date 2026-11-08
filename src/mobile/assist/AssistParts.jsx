@@ -63,7 +63,7 @@ export function OptionList({ options, picked, onPick, absolute = false }) {
             {pct(o.ratePct)}{o.pb ? " prize fund rate (an average)" : ""} · <TakeOf o={o}/>{bondsIn(o) ? ` · ${fmtCompact(bondsIn(o))} of it from your Premium Bonds` : ""}{o.appOnly ? " · app only" : ""}
           </span>
         </span>
-        <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
+        <span style={{ fontFamily: SANS, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
       </button>
     );
   });
@@ -159,11 +159,11 @@ export function AccountFlow({ item, state, update, d, set, backToList }) {
     return (
       <div>
         <button type="button" style={{ ...textButton, padding: "0 0 10px", display: "inline-flex", alignItems: "center", gap: "2px" }} onClick={() => update({ step: "overview" })}><ChevronLeft size={16}/>Back</button>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{a.isa ? "Transferring your ISA" : "Moving your savings"}</div>
+        <div style={{ fontFamily: SANS, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{a.isa ? "Transferring your ISA" : "Moving your savings"}</div>
         <div style={{ ...card, padding: "14px 16px", marginTop: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px" }}>
             <span style={{ fontSize: "15px", fontWeight: 700, color: TEXT }}>{accountName(pick)}</span>
-            <span style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(pick.amount)}</span>
+            <span style={{ fontFamily: SANS, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(pick.amount)}</span>
           </div>
           <div style={{ fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{a.isa ? "Cash ISA" : "Savings account"} at {pct(pick.ratePct)}</div>
           <ul style={{ margin: "12px 0 12px", paddingLeft: "18px", fontSize: "13.5px", color: TEXT, lineHeight: 1.6 }}>
@@ -194,7 +194,7 @@ export function AccountFlow({ item, state, update, d, set, backToList }) {
     <div>
       {backToList}
       <div style={sectionLabel}>{item.kind === "bonus" ? (ended ? "Rate ended" : "Rate ending") : "Rate cut"}</div>
-      <div style={{ fontFamily: SERIF, fontSize: "30px", fontWeight: 700, color: G, lineHeight: 1.15, marginTop: "4px" }}>
+      <div style={{ fontFamily: item.loss != null ? SERIF : SANS, fontSize: "30px", fontWeight: 700, color: G, lineHeight: 1.15, marginTop: "4px" }}>
         {item.loss != null ? `${fmt(item.loss)} a year less` : `${ended ? "Ended" : "Ends"} ${fmtDate(item.date)}`}
       </div>
       <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "8px" }}>

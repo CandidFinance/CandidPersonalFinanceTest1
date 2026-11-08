@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Home, Lock, Star } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, HAIRLINE } from "../design-tokens.js";
+import { G, GOLD, MUT, TEXT, HAIRLINE, SANS } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
 import { pitchFor, MODULE_DORMANT_LINE, isNewModule } from "../lib/appEntry.js";
@@ -64,7 +64,7 @@ export default function ModuleStartRow({ moduleKey, d = null, done = false, esti
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
           <span style={ROW_TITLE}>{mm.title}</span>
-          {estimate && !done && <span style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{estimateText(estimate)}</span>}
+          {estimate && !done && <span style={{fontFamily:SANS,fontSize:"15px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{estimateText(estimate)}</span>}
         </div>
         {estimate && !done ? (
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>Estimate: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}</div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CircleAlert, Check, LoaderCircle, Sparkles } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING_TEXT, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING_TEXT, HERO_TILE_BG, SANS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { ShellTopRow, PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
 import CountUpFigure from "../CountUpFigure.jsx";
@@ -92,7 +92,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
+          <h1 style={{fontFamily:SANS,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{large ? "Your answer, step by step" : "Your position, step by step"}</div>
         </div>
       </div>}
@@ -118,7 +118,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           <div style={{fontSize:"var(--rv-label, 10.5px)",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{step.label}</div>
           {step.lead && <div style={{fontSize:"var(--rv-lead, 15px)",fontWeight:600,color:TEXT,lineHeight:1.4,marginTop:"10px"}}>{step.lead}</div>}
           {step.figure && (
-            <div style={{fontFamily:SERIF,fontSize:"var(--rv-figure, 34px)",fontWeight:700,color:TONE[step.tone] || TEXT,lineHeight:1.15,marginTop:step.lead ? "2px" : "10px"}}><CountUpFigure text={step.figure} run={counting}/></div>
+            <div style={{fontFamily:/£/.test(String(step.figure)) ? SERIF : SANS,fontSize:"var(--rv-figure, 34px)",fontWeight:700,color:TONE[step.tone] || TEXT,lineHeight:1.15,marginTop:step.lead ? "2px" : "10px"}}><CountUpFigure text={step.figure} run={counting}/></div>
           )}
           <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:step.figure ? "4px" : "10px"}}>
             {/* Candid Assist's icon, as on its button at the bottom right. */}
@@ -127,7 +127,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
                 <Sparkles size={20} color={G}/>
               </span>
             )}
-            <p style={{fontFamily:step.figure ? "inherit" : SERIF,fontSize:step.figure ? "var(--rv-title, 15px)" : "var(--rv-lead, 19px)",fontWeight:step.figure ? 600 : 700,color:TEXT,lineHeight:1.4,margin:0}}>
+            <p style={{fontFamily:step.figure ? "inherit" : SANS,fontSize:step.figure ? "var(--rv-title, 15px)" : "var(--rv-lead, 19px)",fontWeight:step.figure ? 600 : 700,color:TEXT,lineHeight:1.4,margin:0}}>
               {step.title}
             </p>
           </div>
@@ -151,7 +151,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
 function Working({ checks, shown, ticked, reduceMotion }) {
   return (
     <div style={{marginTop:"22px"}}>
-      <p style={{fontFamily:SERIF,fontSize:"clamp(24px, 7vw, 30px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>Checking your figures</p>
+      <p style={{fontFamily:SANS,fontSize:"clamp(24px, 7vw, 30px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>Checking your figures</p>
       <ul aria-live="polite" style={{listStyle:"none",margin:"22px 0 0",padding:0,display:"flex",flexDirection:"column",gap:"18px"}}>
         {checks.slice(0, shown).map((c, i) => {
           const done = i < ticked;
@@ -190,8 +190,8 @@ function LargeStep({ step, counting = false }) {
       {rows ? rows.map((r, i) => (
         <div key={i} style={{marginTop: i ? "30px" : 0}}>
           {r.lead && <div style={{fontSize:"19px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{r.lead}</div>}
-          <div style={{fontFamily:SERIF,fontSize:SIZE[r.size] || SIZE.l,fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>
-            {r.prefix && <span style={{fontFamily:"inherit",fontSize:"0.45em",fontWeight:600,color:MUT,marginRight:"8px"}}>{r.prefix}</span>}
+          <div style={{fontFamily:/£/.test(String(r.figure)) ? SERIF : SANS,fontSize:SIZE[r.size] || SIZE.l,fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>
+            {r.prefix && <span style={{fontFamily:SANS,fontSize:"0.45em",fontWeight:600,color:MUT,marginRight:"8px"}}>{r.prefix}</span>}
             <CountUpFigure text={r.figure} run={counting && i === 0}/>
           </div>
           {r.note && <div style={{fontSize:"16px",color:MUT,lineHeight:1.45}}>{r.note}</div>}
@@ -202,7 +202,7 @@ function LargeStep({ step, counting = false }) {
           )}
         </div>
       )) : (
-        <p style={{fontFamily:SERIF,fontSize:"clamp(26px, 7.5vw, 32px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>{step.title}</p>
+        <p style={{fontFamily:SANS,fontSize:"clamp(26px, 7.5vw, 32px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>{step.title}</p>
       )}
       {step.checks && (
         <ul style={{listStyle:"none",margin:"22px 0 0",padding:0,display:"flex",flexDirection:"column",gap:"14px"}}>

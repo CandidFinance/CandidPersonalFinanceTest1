@@ -66,7 +66,7 @@ export default function YourYears({ d }) {
                   style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:"12px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                   <span style={{fontSize:"13px",fontWeight:700,color:G,minWidth:"64px"}}>{taxYearShort(y.year)}{y.closed ? "" : " so far"}</span>
                   <span style={{flex:1,display:"flex",flexDirection:"column",gap:"2px",minWidth:0}}>
-                    <span style={{fontSize:"12.5px",color:TEXT}}>Saved <b style={{fontFamily:SERIF}}>{fmt(y.saved)}</b></span>
+                    <span style={{fontSize:"12.5px",color:TEXT}}>Saved <b style={{fontFamily:SANS}}>{fmt(y.saved)}</b></span>
                     <span style={{fontSize:"12px",color:MUT}}>Still open{y.closed ? " at year end" : ""} {fmt(y.stillOpen)} a year{asAtNote(y)}</span>
                   </span>
                   <ChevronRight size={16} color={MUT} style={{transform:open === y.year ? "rotate(90deg)" : "none",transition:"transform .2s",flexShrink:0}}/>
@@ -144,7 +144,7 @@ function ModuleRows({ saved, open, perYear = false, savedLabel = "Saved" }) {
   const keys = [...new Set([...Object.keys(saved), ...Object.keys(open)])]
     .sort((a, b) => (saved[b] || 0) - (saved[a] || 0) || (open[b] || 0) - (open[a] || 0));
   if (!keys.length) return null;
-  const num = { fontFamily:SERIF, fontSize:"13px", fontWeight:700, color:TEXT, textAlign:"right", minWidth:"72px" };
+  const num = { fontFamily:SANS, fontSize:"13px", fontWeight:700, color:TEXT, textAlign:"right", minWidth:"72px" };
   const yr = <span style={{fontFamily:SANS,fontSize:"10.5px",fontWeight:600,color:MUT}}>/yr</span>;
   return (
     <div style={{marginTop:"14px",display:"flex",flexDirection:"column",gap:"8px"}}>

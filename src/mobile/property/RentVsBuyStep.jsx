@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { ArrowUp, CircleAlert } from "lucide-react";
-import { MUT, TEXT, SERIF, WHITE, SC, WARNING, CDARK } from "../../design-tokens.js";
+import { MUT, TEXT, WHITE, SC, WARNING, CDARK, SANS } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
 import { breakevenLine } from "../../lib/propertyReveal.js";
@@ -233,7 +233,7 @@ function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageY
           <div style={{textAlign:"center"}}>
             <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
             <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:"10px",flexWrap:"wrap",marginTop:"2px"}}>
-              <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
+              <span style={{fontFamily:SANS,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
               <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT}}>
                 <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
                 ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}

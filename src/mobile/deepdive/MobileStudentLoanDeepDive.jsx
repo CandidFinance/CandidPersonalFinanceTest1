@@ -22,7 +22,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { AnimatePresence } from "framer-motion";
 import MobileTile, { TileRow, ROW, RowText, withIcon, Nested, TilePopover, anchor } from "../MobileTile.jsx";
 import InfoButton from "../InfoButton.jsx";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT } from "../../design-tokens.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT, SANS } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
@@ -382,7 +382,7 @@ function ClearOrWriteOff({ sl }) {
   const dot = <span aria-hidden="true" style={{color:MUT,margin:"0 6px"}}>•</span>;
   return (
     <div>
-      <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
+      <div style={{fontFamily:SANS,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
       <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>
         <span style={{color:G,fontWeight:700}}>{lead}:</span> {turning}{dot}{parts[0]}{dot}{parts[1]}
       </div>
@@ -460,7 +460,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
   const stat = (label, value) => (
     <div>
       <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
-      <div style={{fontFamily:SERIF,fontSize:"19px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
+      <div style={{fontFamily:SANS,fontSize:"19px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
     </div>
   );
   return (

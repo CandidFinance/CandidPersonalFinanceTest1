@@ -13,7 +13,7 @@ import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, CRITICAL, NOTICE_LABEL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, CRITICAL, NOTICE_LABEL } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
@@ -138,8 +138,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
           <TileRow first>
             <div style={{fontSize:"12.5px",fontWeight:600,color:G}}>{runwayLabel}</div>
             <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",flexWrap:"wrap",margin:"4px 0 10px"}}>
-              <div style={{fontFamily:SERIF,fontWeight:700,color:TEXT,lineHeight:1.15}}>
-                <span style={{fontSize:"26px"}}>{fmt(runwayCurrent)}</span>
+              <div style={{fontFamily:SANS,fontWeight:700,color:TEXT,lineHeight:1.15}}>
+                <span style={{fontFamily:SERIF,fontSize:"26px"}}>{fmt(runwayCurrent)}</span>
                 {runwayTarget > 0 && <span style={{fontSize:"17px",color:MUT}}> of {fmt(runwayTarget)}</span>}
               </div>
               <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} of {m.bufferMonths} months</span>

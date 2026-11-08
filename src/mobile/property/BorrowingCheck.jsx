@@ -311,7 +311,7 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
           {times && r.loanNeeded > 0 && (
             <div>
               <div style={figureLabel}>Times income</div>
-              <div style={{...figure,color:bandColor || TEXT}}>{times}x</div>
+              <div style={{...figure,fontFamily:SANS,color:bandColor || TEXT}}>{times}x</div>
             </div>
           )}
         </div>

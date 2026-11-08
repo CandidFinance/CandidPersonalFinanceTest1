@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Minus, Plus } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../design-tokens.js";
+import { G, MUT, TEXT, WHITE, SANS } from "../design-tokens.js";
 import { questionOrder, askFor } from "../lib/quickStart.js";
 import { shellScreen, ShellTopRow, QuestionHeading, AnswerGroup, AnswerTile, PrimaryButton, SkipLink, TextLink } from "./onboarding/OnboardingShell.jsx";
 
@@ -150,7 +150,7 @@ function SliderAnswer({ q, ctx, label, onAnswer }) {
   const step = { width: "48px", height: "48px", borderRadius: "50%", border: "1.5px solid rgba(22,47,36,0.18)", background: WHITE, color: G, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "8px" }}>
-      <div aria-live="polite" style={{ fontFamily: SERIF, fontSize: "clamp(72px, 22vw, 96px)", fontWeight: 700, color: G, lineHeight: 1 }}>{value}%</div>
+      <div aria-live="polite" style={{ fontFamily: SANS, fontSize: "clamp(72px, 22vw, 96px)", fontWeight: 700, color: G, lineHeight: 1 }}>{value}%</div>
       <div style={{ fontSize: "16px", color: MUT, minHeight: "24px", margin: "10px 0 22px", textAlign: "center" }}>{live}</div>
       <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
         <button type="button" aria-label="Less" onClick={() => setValue(v => clamp(v - 1))} style={step}><Minus size={20}/></button>
@@ -173,9 +173,9 @@ function Intro({ intro, onBegin }) {
   const go = () => { if (begun.current) return; begun.current = true; onBegin(); };
   return (
     <div style={shellScreen}>
-      <h1 style={{ fontFamily: SERIF, fontSize: "clamp(44px, 13vw, 60px)", fontWeight: 700, color: G, lineHeight: 1.02, margin: "12px 0 0" }}>{intro.title}</h1>
-      <p style={{ fontFamily: SERIF, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 500, color: TEXT, lineHeight: 1.22, margin: "18px 0 0" }}>{intro.subtitle}</p>
-      <p style={{ fontFamily: SERIF, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 700, color: G, lineHeight: 1.22, margin: "22px 0 0" }}>{intro.question}</p>
+      <h1 style={{ fontFamily: SANS, fontSize: "clamp(44px, 13vw, 60px)", fontWeight: 700, color: G, lineHeight: 1.02, margin: "12px 0 0" }}>{intro.title}</h1>
+      <p style={{ fontFamily: SANS, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 500, color: TEXT, lineHeight: 1.22, margin: "18px 0 0" }}>{intro.subtitle}</p>
+      <p style={{ fontFamily: SANS, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 700, color: G, lineHeight: 1.22, margin: "22px 0 0" }}>{intro.question}</p>
       <div style={{ marginTop: "auto", paddingTop: "32px" }}>
         <PrimaryButton onClick={go}>Let's begin</PrimaryButton>
       </div>
