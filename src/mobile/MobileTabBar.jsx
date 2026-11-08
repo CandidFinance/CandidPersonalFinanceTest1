@@ -32,7 +32,7 @@ export default function MobileTabBar({ active, onNavigate }) {
   const badge = news && !news.opened ? news.count : 0;
   const glass = { background:"rgba(255,255,255,0.62)", WebkitBackdropFilter:"blur(18px) saturate(1.6)", backdropFilter:"blur(18px) saturate(1.6)" };
   return (
-    <nav data-tab-bar aria-label="Main" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:4000,padding:"0 14px calc(10px + env(safe-area-inset-bottom, 0px))",pointerEvents:"none"}}>
+    <nav data-tab-bar aria-label="Main" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:4000,padding:"0 14px env(safe-area-inset-bottom, 0px)",pointerEvents:"none"}}>
       {/* Capped to MobileLayout's 580px column, so on a wide window the
           icons don't spread across the whole screen. */}
       <div style={{...glass,maxWidth:"420px",margin:"0 auto",height:"60px",borderRadius:"28px",padding:"4px",boxSizing:"border-box",display:"flex",pointerEvents:"auto",

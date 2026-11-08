@@ -15,7 +15,7 @@ import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import { ScreenBand, ScreenSheet, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../../mobile/ScreenBand.jsx";
 import {
-  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SR_ONLY, PROGRESS_GREEN, MODULE_CHART_COLOR, CRITICAL, GAIN_ON_LIGHT,
+  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SR_ONLY, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
 import { kicker, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
@@ -284,7 +284,6 @@ function WorthTiles({ picture, assets, notes, switchable, by, onBy, onOpenModule
         {items.map(p => (
           <li key={p.id}>
             <PartTile label={p.label} value={`${sign}${fmtK1(p.value)}`} color={p.color} note={p.note}
-              share={items.length > 1 && total > 0 ? Math.round((p.value / total) * 100) : null} loss={sign === "−"}
               onOpen={PART_MODULE[p.id] && (() => onOpenModule(PART_MODULE[p.id]))}/>
           </li>
         ))}
@@ -329,13 +328,10 @@ function WorthSwitch({ value, onChange }) {
 }
 
 // One part's tile: a bar of its colour down the left edge, its name and
-// its line, and its value in the serif over its share (when it isn't the
-// only one); a chevron when it opens a module, or its room kept, so the
-// figures line up.
-function PartTile({ label, value, color, note, share, loss = false, onOpen }) {
-  // Its share of the group: +x% in the gain green for an asset, −x% in red
-  // for a debt (Harvey, 8 Nov 2026).
-  const shareText = share != null ? `${loss ? "−" : "+"}${share}%` : null;
+// its line, and its value; a chevron when it opens a module, or its room
+// kept, so the figures line up. No share-of-total % under the value: it read
+// as a change, and the share alone isn't worth the space (Harvey, 8 Nov 2026).
+function PartTile({ label, value, color, note, onOpen }) {
   const inner = (
     <>
       <span aria-hidden="true" style={{alignSelf:"stretch",width:"4px",borderRadius:"4px",background:color,flexShrink:0}}/>
@@ -343,16 +339,13 @@ function PartTile({ label, value, color, note, share, loss = false, onOpen }) {
         <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.25}}>{label}</span>
         {note && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{note}</span>}
       </span>
-      <span style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px",flexShrink:0}}>
-        <span style={{fontFamily:SANS,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"}}>{value}</span>
-        {shareText && <span style={{fontSize:"11.5px",fontWeight:700,color:loss ? CRITICAL : GAIN_ON_LIGHT,fontVariantNumeric:"tabular-nums"}}>{shareText}</span>}
-      </span>
+      <span style={{fontFamily:SANS,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",flexShrink:0}}>{value}</span>
       {onOpen ? <ChevronRight size={16} color={MUT} aria-hidden="true" style={{flexShrink:0,marginRight:"-4px"}}/> : <span aria-hidden="true" style={{width:"16px",flexShrink:0,marginRight:"-4px"}}/>}
     </>
   );
   const box = {display:"flex",alignItems:"center",gap:"12px",width:"100%",minHeight:"64px",padding:"12px 14px",background:WHITE,
     border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)",fontFamily:"inherit",textAlign:"left"};
-  const said = `${label}, ${value}${shareText ? `, ${shareText}` : ""}${note ? `. ${note}` : ""}`;
+  const said = `${label}, ${value}${note ? `. ${note}` : ""}`;
   return onOpen
     ? <button type="button" onClick={onOpen} aria-label={`${said} Open ${label}.`} style={{...box,cursor:"pointer"}}>{inner}</button>
     : <div style={box}>{inner}</div>;
