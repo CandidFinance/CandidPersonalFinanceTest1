@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { scoreBand, SR_ONLY, SECTION_TITLE, ROW_TILE } from "../../design-tokens.js";
+import { scoreBand, SR_ONLY, TILE_KICKER, ROW_TILE } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/moduleStatus.js";
 import MobileStartHome from "./MobileStartHome.jsx";
 import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView, worthALookShown } from "../../lib/appEntry.js";
@@ -76,7 +76,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const priorities = whatToDoFirst(d, m, statuses);
   const report = { headline: scoreHeadline(priorities), priorities, onTrack: onTrackModules(d, m, statuses) };
 
-  const { color: scoreColor, label: scoreLabel } = scoreBand(score);
+  const { color: scoreColor } = scoreBand(score);
   // The opportunities by size, each marked once its module has been reviewed.
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
@@ -96,7 +96,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <style>{CSS}</style>
       <ScreenBand tone="dark">
         <HomeTopBar d={d} onEditInputs={onEditInputs}/>
-        <HomeHero totalOpp={totalOpp} saved={gainedSoFar(d).perYear} score={score} scoreColor={scoreColor} scoreLabel={scoreLabel} unchecked={unchecked}/>
+        <HomeHero totalOpp={totalOpp} saved={gainedSoFar(d).perYear} score={score} scoreColor={scoreColor} unchecked={unchecked}/>
       </ScreenBand>
 
       <ScreenSheet>
@@ -128,7 +128,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
           {!mock && stillToDo.length > 0 && (
             <div data-tour="home-modules" style={ROW_TILE}>
-              <h2 style={SECTION_TITLE}>Not answered yet</h2>
+              <h2 style={TILE_KICKER}>Not answered yet</h2>
               <div style={{display:"flex",flexDirection:"column",marginTop:"8px"}}>
                 {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
               </div>

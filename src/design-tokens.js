@@ -210,6 +210,9 @@ export const ROW_TILE = { ...CARD, padding: "16px 18px 4px" };
 // The small line above a notice's title (what it is, when): sentence case,
 // 12.5px, MUT (5.3:1 on WHITE).
 export const NOTICE_LABEL = { fontSize: "12.5px", fontWeight: 600, color: MUT, lineHeight: 1.4, margin: 0 };
+// A tile's title on Home and Progress ("Your years with Candid", "Coming up"):
+// small tracked caps in MUT.
+export const TILE_KICKER = { fontSize: "11px", fontWeight: 600, color: MUT, letterSpacing: "0.09em", textTransform: "uppercase", margin: 0 };
 export const SECTION_TITLE = { fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, lineHeight: 1.25, margin: 0 };
 
 // "Where to open an account" provider tiles (Cash/Investments/Pension) —

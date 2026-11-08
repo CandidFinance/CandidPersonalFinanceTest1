@@ -7,7 +7,7 @@ import AccountButton from "./Account.jsx";
 import PremiumButton from "./Premium.jsx";
 import { CREAM_SOFT, CREAM_FAINT } from "./ScreenBand.jsx";
 import { fmt } from "../lib/format.js";
-import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, SECTION_TITLE } from "../design-tokens.js";
+import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER } from "../design-tokens.js";
 
 // Home's parts, on the dark band and cream sheet the other tabs have
 // (ScreenBand.jsx; the screens draw those).
@@ -77,7 +77,7 @@ function useScoreCountUp(score) {
   return [shown, gain];
 }
 
-export default function HomeHero({ totalOpp, saved, score, scoreColor, scoreLabel, unchecked }) {
+export default function HomeHero({ totalOpp, saved, score, scoreColor, unchecked }) {
   const [scoreShown, gain] = useScoreCountUp(score);
   // The lead figure isn't repeated under the bar, nor the bar's figure in the
   // line under the lead: one indicator each (CLAUDE.md rule 4).
@@ -87,7 +87,7 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, scoreLabe
     ? { label: "Saved", value: fmt(saved),
         sub: totalOpp > 0 ? "From the changes you've made, each year." : "Nothing left on the table in what you've answered." }
     : { label: "Left on the table", value: fmt(totalOpp),
-        sub: totalOpp > 0 ? "Your money left on the table each year, across what you've answered."
+        sub: totalOpp > 0 ? "Opportunity from topics covered."
           : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
           : "Nothing left on the table in what you've answered." };
 
@@ -104,10 +104,7 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, scoreLabe
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
           <ScoreDonut value={scoreShown} color={gain > 0 ? GOLD : scoreColor} size={76} stroke={7} onDark/>
           <div style={{fontSize:"11.5px",fontWeight:600,color:CREAM_SOFT,marginTop:"6px"}}>Candid score</div>
-          <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"1px"}}>
-            <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{scoreLabel}</span>
-            {gain > 0 && <span style={{fontSize:"11px",fontWeight:700,color:CREAM,background:"rgba(196,150,58,0.35)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>}
-          </div>
+          {gain > 0 && <span style={{fontSize:"11px",fontWeight:700,color:CREAM,background:"rgba(196,150,58,0.35)",borderRadius:"100px",padding:"2px 8px",marginTop:"4px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>}
         </div>
       </div>
       {/* What's been found so far, once anything's been saved (as Modules):
@@ -135,8 +132,8 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, scoreLabe
 export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
   return (
     <section aria-label="Areas to explore" style={ROW_TILE}>
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"12px"}}>
-        <h2 style={SECTION_TITLE}>Areas to explore</h2>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+        <h2 style={TILE_KICKER}>Areas to explore</h2>
         {plan.length > 0 && <span style={{fontSize:"12.5px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{stepsDone} of {plan.length} reviewed</span>}
       </div>
       <div style={{marginTop:"6px"}}>

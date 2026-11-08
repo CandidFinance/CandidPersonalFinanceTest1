@@ -1,6 +1,6 @@
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ChevronUp } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, TEXT, MUT, SERIF, SANS, CARD } from "../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, TEXT, MUT, SERIF, SANS, CARD, TILE_KICKER } from "../design-tokens.js";
 
 // Coming up on Home: the next dates that touch their money (src/lib/comingUp.js)
 // on a timeline. The month leads (it's what places the date), the day under
@@ -8,7 +8,7 @@ import { G, GOLD, GOLD_TEXT, TEXT, MUT, SERIF, SANS, CARD } from "../design-toke
 // the same dates move onto one shallow horizontal line across the tile with
 // nothing else on it, so there's always a sign that something's coming; a tap
 // opens it again.
-const TILE_HEAD = { margin:0, fontFamily:SANS, fontSize:"17px", fontWeight:700, color:G, lineHeight:1.3 };
+const TILE_HEAD = TILE_KICKER;
 const DOT = 11;
 const LINE = "rgba(22,47,36,0.15)";
 
@@ -38,7 +38,7 @@ export default function ComingUp({ items, min, onMinimise }) {
               {items.map((c, i) => (
                 <span key={c.key} style={{display:"flex",justifyContent:"center"}}>
                   <span style={{display:"inline-flex",alignItems:"baseline",gap:"5px",background:"#fff",padding:"0 10px"}}>
-                    <motion.span layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G,lineHeight:1.2}}>{c.mon}</motion.span>
+                    <motion.span layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G,lineHeight:1.2}}>{c.mon}</motion.span>
                     <motion.span layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"13px",fontWeight:600,color:MUT}}>{c.day}</motion.span>
                   </span>
                 </span>
@@ -59,8 +59,8 @@ export default function ComingUp({ items, min, onMinimise }) {
                 const last = i === items.length - 1;
                 return (
                   <div key={c.key} style={{display:"flex",gap:"12px",alignItems:"stretch"}}>
-                    <div style={{width:"38px",flexShrink:0,paddingTop:"1px"}}>
-                      <motion.div layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:G,lineHeight:1.1}}>{c.mon}</motion.div>
+                    <div style={{width:"38px",flexShrink:0,paddingTop:"1px",textAlign:"center"}}>
+                      <motion.div layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G,lineHeight:1.1}}>{c.mon}</motion.div>
                       <motion.div layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"12.5px",fontWeight:600,color:MUT,marginTop:"2px"}}>{c.day}</motion.div>
                     </div>
                     <div style={{width:`${DOT}px`,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"6px"}}>

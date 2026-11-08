@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Lock, Plus, ShieldCheck, TriangleAlert } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
-import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG, TILE_KICKER } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
 import { SubscriberCrown } from "../../mobile/Premium.jsx";
 
 // Pieces shared by the Progress tab's sections (ProgressTrackerDashboard,
 // GoalVaults).
 
-export const kicker = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase", margin:0 };
+export const kicker = TILE_KICKER;
 export const helpText = { fontSize:"12px", color:MUT, lineHeight:1.5, margin:0 };
 
 // A section's tile: white, or `wash` for the headline pair (Home's hero
