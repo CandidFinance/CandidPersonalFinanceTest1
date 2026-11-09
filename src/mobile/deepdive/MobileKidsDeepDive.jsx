@@ -49,7 +49,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
     : cc.state === "partner" ? (cc.recoverable
         ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support stops for you both, until a pension payment brings it back under.`
         : cc.partnerPayIn == null
-          ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support stops for you both. Their income, in Your finances, shows the pension payment that would open it up.`
+          ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support stops for you both. Their income, in Your finances (the sliders button at the top of Home), shows the pension payment that would open it up.`
           : `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}. Bringing it back would take a pension payment of ${fmt(cc.partnerPayIn)}, more than the usual ${fmt(60000)} allowance.`)
     : cc.state === "near" ? `You're ${fmt(cc.headroom)} under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit. A pay rise or bonus that takes you over would stop it for the whole year.`
     : cc.state === "notWorking" ? "Tax-Free Childcare needs each parent to be working."
@@ -60,7 +60,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
   if (kidsSituation(d) === "no") {
     return (
       <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>
-        You told us you don't have children and aren't planning any in the next year or two, so nothing here applies. If that changes, updating your answers in Your finances brings it in.
+        You told us you don't have children and aren't planning any in the next year or two, so nothing here applies. If that changes, updating your answers in Your finances (the sliders button at the top of Home) brings it in.
       </p>
     );
   }
@@ -142,7 +142,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
       )}
 
       {!cc && !(cb && cb.charge > 0) && (
-        <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>No childcare support or Child Benefit to check on what you've told us. Changing your answers in Your finances brings it in.</p>
+        <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>No childcare support or Child Benefit to check on what you've told us. Changing your answers in Your finances (the sliders button at the top of Home) brings it in.</p>
       )}
     </div>
   );

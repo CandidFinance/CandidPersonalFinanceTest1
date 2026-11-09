@@ -404,7 +404,7 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCo
       ...(price ? [{ panel: { label: "Your plan", text: `${price}${renews ? `, renewing on ${renews}` : ""}` } }] : []),
       { small: ["To manage your subscription, go to ", { a: "Your finances", href: `${SITE}/app/inputs` }, " in Candid, then Manage subscription."] },
       { h: "Share Candid" },
-      { p: `Know someone who'd find Candid useful? For each friend who joins with your link and confirms their email, you get a month of Candid Premium free, up to ${REFERRAL_MONTHS} months.${invite ? "" : " Your link is in Candid, under Your finances."}` },
+      { p: `Know someone who'd find Candid useful? For each friend who joins with your link and confirms their email, you get a month of Candid Premium free, up to ${REFERRAL_MONTHS} months.${invite ? "" : " Your link is in Candid, under Your finances (the sliders button at the top of Home)."}` },
       ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
       { p: "Any questions or feedback, just reply to this email." },
     ],

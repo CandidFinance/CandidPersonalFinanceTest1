@@ -80,7 +80,7 @@ test("The welcome says what they get, how to sign in elsewhere and what they pay
   assert.match(text, /up to 12 months\.\n\nYour invite link: https:\/\/www\.candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
   assert.doesNotMatch(text, /cancel/i);
   // No code yet (email not confirmed): where the link is instead.
-  assert.match(welcomeEmail({ plan: "monthly", unsubscribeUrl: "https://u" }).text, /up to 12 months\. Your link is in Candid, under Your finances\./);
+  assert.match(welcomeEmail({ plan: "monthly", unsubscribeUrl: "https://u" }).text, /up to 12 months\. Your link is in Candid, under Your finances \(the sliders button at the top of Home\)\./);
 });
 
 test("An issue from the editor keeps only known fields, and a safe link", () => {

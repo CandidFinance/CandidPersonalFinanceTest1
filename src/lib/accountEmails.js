@@ -81,7 +81,7 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
         ...(optedIn ? [] : [{ button: { label: "Turn on rate alerts", href: optInUrl } }]),
       ] : []),
       { h: "Share Candid" },
-      { p: `Know a partner, friend or colleague who could do with a hand with their money? Send them your link. When they join and confirm their email, you get a free month of Candid Premium, up to ${cap} months.${invite ? "" : " Your link is in Candid, under Your finances."}` },
+      { p: `Know a partner, friend or colleague who could do with a hand with their money? Send them your link. When they join and confirm their email, you get a free month of Candid Premium, up to ${cap} months.${invite ? "" : " Your link is in Candid, under Your finances (the sliders button at the top of Home)."}` },
       ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
       { p: "Any questions or feedback, just reply to this email." },
     ],
@@ -93,7 +93,7 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
 // `kind`: "stripe_credit" (a month off a paid subscription's next bill) or
 // "free_month" (until `until`, turned on by `url` on their device).
 export function referralRewardEmail({ kind, until = null, url = null, cap, creditPence = null }) {
-  const where = `You can earn up to ${cap} months this way. Your link is in Candid, under Your finances.`;
+  const where = `You can earn up to ${cap} months this way. Your link is in Candid, under Your finances (the sliders button at the top of Home).`;
   if (kind === "stripe_credit") {
     const off = creditPence > 0 ? `£${(creditPence / 100).toFixed(2)}` : "A month of Candid";
     return renderEmail({ campaign: "referral",
