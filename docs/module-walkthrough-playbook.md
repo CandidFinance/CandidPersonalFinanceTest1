@@ -49,7 +49,21 @@ Harvey's words: "I do NOT want my codebase going to deepseek."
 
 Open with a role, and require one fenced code block containing the whole file and nothing else.
 
-Before the next module, **extract the shared helpers from `ExplainerScenes.jsx` into their own file** (`useStage`, `StageFrame`, `useBeats`, `useCountUp`, `useTween`, `TextZone`, `introLead`, `setBack`, `TILE_SHADOW`). Then describe their interfaces in the brief and have DeepSeek import them from a neutral path, generating scenes only. That removes the largest source of regenerated defects. Fix the path on integration.
+**Generate scenes only.** The shared helpers live in `src/mobile/explainer/ExplainerKit.jsx`, so DeepSeek doesn't rewrite them. Describe them in the brief using the interface below, have the scenes import from a neutral path such as `./kit`, and change the path on integration. Don't paste the file's source.
+
+```
+useStage(reduceMotion) -> { rootRef, s, W, H, A, ready }. Call at the top of every scene.
+StageFrame({ stage, ariaLabel, children }). The scene's root element.
+TextZone({ text, active, reduceMotion, W, theme }). The opening text and captions, built word by word.
+introLead(intro, pace = 0.6) -> ms before the first beat.
+useBeats(active, reduceMotion, times, onSettled) -> how many times have passed. Times must ascend. Pass onSettled through from props.
+useTween(on, ms, reduceMotion) -> 0 to 1, eased.
+useCountUp(target, running, ms, reduceMotion, from = 0) -> the counting value.
+useLinearRise(target, running, ms, reduceMotion) -> a value rising steadily to target.
+setBack(t) -> style for an item giving way to a newer one (t from 0 to 1).
+clamp(v, lo, hi), lerp(a, b, t), interpArray(t, arr).
+TILE_SHADOW, EASE_ENTRANCE, EASE_LANDING, EASE_GROWTH.
+```
 
 Every brief states:
 
@@ -211,7 +225,8 @@ Open each page's last frame at full size. Judge it as a finished design, not as 
 | `src/lib/moduleExplainer.js` | Pages as plain data, figures from the engine, `MODULE_EXPLAINERS` |
 | `src/lib/moduleExplainer.test.js` | Figures tally, tax follows the user's rate, no directive words |
 | `src/mobile/explainer/StepPlayer.jsx` | Page player, Back, Replay, Next fill |
-| `src/mobile/explainer/ExplainerScenes.jsx` | Scene components and shared helpers |
+| `src/mobile/explainer/ExplainerScenes.jsx` | Investments' scene components |
+| `src/mobile/explainer/ExplainerKit.jsx` | Shared stage, text and timing helpers |
 | `src/mobile/explainer/ModuleExplainer.jsx` | Theme, `KINDS`, formatting, choice screen |
 | `src/CandidApp.jsx` | Offer and playback, `explainer_*` events |
 

@@ -15,6 +15,7 @@
 - Report diagnosis before fixing a bug, unless told "just fix it". Don't touch code outside the task. Ask before installing tools or dependencies.
 - Stop every dev or preview server you start once the check that needed it is done. Old ones pile up and slow the machine.
 - When compacting, keep: the task goal, the files changed, what's been verified, and decisions Harvey made.
+- Building a module walk-through, or delegating any code to DeepSeek: read `docs/module-walkthrough-playbook.md` first. Repo code must never be sent to DeepSeek.
 - One-off Playwright checks: put the script in `scripts/_*.mjs` (the scratchpad can't resolve `node_modules`), run it there, and delete it straight after.
 - A new question in a module's walk-through must go in `ADDED_LATER` in `src/lib/moduleStatus.js`. It changes the answers fingerprint, so otherwise every existing user of that module gets a false "did you make a change?" (BankConfirm) prompt.
 - In an effect, copy any callback-ref array (`refs.current[i] = el`) when the effect starts (`[...refs.current]`). React nulls those entries on unmount before the effect's cleanup runs; using the live array crashed the site on leaving the landing page (37ef43d).
