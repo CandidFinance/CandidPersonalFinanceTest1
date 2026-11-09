@@ -136,7 +136,7 @@ export function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
             background:active ? G : CDARK, color:active ? WHITE : TEXT, textAlign:"center",
           }}>
             <div style={{fontSize:"10.5px",fontWeight:600,color:active ? "rgba(255,255,255,0.8)" : MUT}}>{o.label}</div>
-            <div style={{fontSize:"14px",fontWeight:700,margin:"1px 0"}}>{Math.round(rateFor(o.scenario) * 100) / 100}%</div>
+            <div style={{fontSize:"12px",fontWeight:700,margin:"1px 0"}}>{Math.round(rateFor(o.scenario) * 100) / 100}%</div>
             {wide && <div style={{fontSize:"11px",fontWeight:600}}>{buyAhead ? "Buy" : "Rent"} +{fmtCompact(Math.abs(result.gapAtHorizon))}</div>}
           </button>
         );
@@ -163,7 +163,7 @@ export function Comparison({ heading, rows }) {
   };
   const style = kind => kind === "net" ? { ...cell, fontFamily:SANS, fontSize:"17px", fontWeight:700, paddingTop:"6px" }
     : kind === "month" || kind === "own" ? { ...cell, color:MUT, fontSize:"12px" } : cell;
-  const head = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"right" };
+  const head = { fontSize:"11px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", textAlign:"right" };
   return (
     <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto auto",columnGap:"16px",alignItems:"baseline"}}>
       <div style={{fontSize:"11px",color:MUT}}>{heading}</div>
@@ -198,10 +198,10 @@ export function Comparison({ heading, rows }) {
 export function NegativeEquity({ result, shown, fixedYears, onShowRatesUp, ratesUpShown }) {
   const ne = result.negativeEquityYears;
   if (!ne.length && !(shown.saleShortfall > 0)) return null;
-  const body = { fontSize:"12.5px", color:TEXT, lineHeight:1.5, margin:"4px 0 0" };
+  const body = { fontSize:"12px", color:TEXT, lineHeight:1.5, margin:"4px 0 0" };
   return (
     <div style={{borderLeft:`3px solid ${SC.critical}`,padding:"2px 0 2px 10px",margin:"0 0 14px"}}>
-      <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
+      <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",fontWeight:700,color:SC.critical}}>
         <CircleAlert size={15} style={{flexShrink:0}}/>
         {ne.length ? negativeEquityText(ne) : "Selling wouldn't clear the mortgage"}
       </div>

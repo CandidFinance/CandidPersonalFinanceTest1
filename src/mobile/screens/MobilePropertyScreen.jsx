@@ -169,7 +169,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
             )}
             <button type="button" disabled={!unlocked} onClick={() => onSelectStep("mortgage")} style={{
               width:"100%", background:unlocked ? G : "rgba(22,47,36,0.2)", color:WHITE, border:"none", borderRadius:"100px",
-              padding:"13px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:unlocked ? "pointer" : "not-allowed",
+              padding:"10px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:unlocked ? "pointer" : "not-allowed",
               display:"flex", flexDirection:"column", alignItems:"center", gap:"2px",
             }}>
               <span style={{display:"flex",alignItems:"center",gap:"4px"}}>Continue to your mortgage{unlocked && <ChevronRight size={16}/>}</span>

@@ -207,7 +207,7 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
                 </span>
                 {/* The top line's amount: only for a card behind, as the
                     front card shows it in full. */}
-                <span style={{fontFamily:SANS,fontSize:c.amountSans ? "13px" : "16px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget || edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
+                <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget || edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
               </div>
               {/* Behind, only the top line shows: the body fades out so
                   nothing pokes into that line. It stays while a card turns

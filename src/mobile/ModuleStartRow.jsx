@@ -29,7 +29,7 @@ const tileStyle = {
 // Every module row's icon sits on its title's line, however many lines the
 // text under it runs to (Modules' own rows use these too); the chevron or
 // lock at the end is centred on the row.
-export const ROW_TITLE = { fontSize:"14.5px", fontWeight:600, color:TEXT, lineHeight:"20px" };
+export const ROW_TITLE = { fontSize:"12px", fontWeight:600, color:TEXT, lineHeight:"20px" };
 export const ROW_ICON = { size:18, strokeWidth:1.8, style:{ flexShrink:0, marginTop:"1px" } };
 const END = { flexShrink:0, alignSelf:"center" };
 
@@ -64,7 +64,7 @@ export default function ModuleStartRow({ moduleKey, d = null, done = false, esti
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
           <span style={ROW_TITLE}>{mm.title}</span>
-          {estimate && !done && <span style={{fontFamily:SANS,fontSize:"15px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{estimateText(estimate)}</span>}
+          {estimate && !done && <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{estimateText(estimate)}</span>}
         </div>
         {estimate && !done ? (
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>Estimate: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}</div>

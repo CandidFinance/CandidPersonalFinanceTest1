@@ -60,7 +60,7 @@ export default function InviteFriends({ d, source, moduleKey = null, onDismiss =
 
   const wrap = { position:"relative", background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"14px", padding:"16px 18px", marginTop:"16px" };
   const textLink = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
-  const pill = { border:"none", borderRadius:"100px", padding:"12px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"7px", boxSizing:"border-box" };
+  const pill = { border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"7px", boxSizing:"border-box" };
   const choice = { ...pill, flex:1, background:WHITE, color:G, border:`1.5px solid ${G}`, padding:"10px", textDecoration:"none" };
   return (
     <div style={wrap}>

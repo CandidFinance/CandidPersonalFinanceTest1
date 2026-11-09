@@ -4,7 +4,7 @@ import { TAB_BAR_TOP } from "../MobileTabBar.jsx";
 import { referralCode } from "../../lib/referral.js";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Mail, User } from "lucide-react";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, CTA_BLUE, SANS, BAND_STOPS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, CTA_BLUE, SANS, BAND_STOPS, TILE_KICKER } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
@@ -116,7 +116,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
   const title = key => key === "about" ? "About you" : MODULE_META.find(mm => mm.key === key)?.title || key;
   const icon = key => key === "about" ? User : MODULE_META.find(mm => mm.key === key)?.icon;
   const tile = { background:WHITE, border:"1px solid rgba(22,47,36,0.1)", borderRadius:"16px" };
-  const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
+  const label = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
   const iconBox = key => {
     const Icon = icon(key);
     return (
@@ -127,10 +127,10 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
   };
 
   return (
-    <div className="inputs-slick">
+    <div className="inputs-slick" style={{"--pill-height":"37px"}}>
       <style>{SLICK_CSS}</style>
-      <h1 style={{fontFamily:SANS,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your finances</h1>
-      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
+      <h1 style={{...TILE_KICKER,fontFamily:SANS,margin:"0 0 6px"}}>Your finances</h1>
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
       {emailFirst && <EmailField d={d} onEmailChange={onEmailChange} spotlight/>}
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
@@ -145,7 +145,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
                 style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",background:"none",border:"none",padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                 {iconBox(key)}
                 <span style={{flex:1,minWidth:0}}>
-                  <span style={{display:"block",fontSize:"16px",fontWeight:700,color:TEXT}}>{title(key)}</span>
+                  <span style={{...TILE_KICKER,display:"block"}}>{title(key)}</span>
                   {sub && <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>{sub}</span>}
                 </span>
                 <ChevronDown size={18} color={MUT} style={{transform:isOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
@@ -170,12 +170,12 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
                           for one answered only as far as Student loan needs, to
                           Student loan, and the rest of its questions after. */}
                       <button type="button" onClick={() => onOpenModule(isPartly ? "studentLoan" : key)}
-                        style={{marginTop:"22px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                        style={{marginTop:"22px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
                         Back to {title(isPartly ? "studentLoan" : key)}<ChevronRight size={16}/>
                       </button>
                       {isPartly && (
                         <button type="button" onClick={() => onStartModule(key)}
-                          style={{marginTop:"10px",width:"100%",background:"none",border:"none",padding:"8px",fontSize:"13.5px",fontWeight:700,color:G,fontFamily:"inherit",cursor:"pointer"}}>
+                          style={{marginTop:"10px",width:"100%",background:"none",border:"none",padding:"10px",fontSize:"13px",fontWeight:700,color:G,fontFamily:"inherit",cursor:"pointer"}}>
                           Answer the rest of {title(key)}
                         </button>
                       )}
@@ -192,7 +192,7 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
         const Arrow = shown.indexOf(back.key) < shown.indexOf(jump?.key) ? ArrowUp : ArrowDown;
         return (
           <button type="button" onClick={goBack}
-            style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:`calc(34px + ${TAB_BAR_TOP})`,zIndex:30,display:"flex",alignItems:"center",gap:"8px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"11px 18px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",boxShadow:"0 6px 20px rgba(22,47,36,0.25)",whiteSpace:"nowrap"}}>
+            style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:`calc(34px + ${TAB_BAR_TOP})`,zIndex:30,display:"flex",alignItems:"center",gap:"8px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"10px 18px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",boxShadow:"0 6px 20px rgba(22,47,36,0.25)",whiteSpace:"nowrap"}}>
             <Arrow size={15} aria-hidden="true"/>Return to {title(back.key)}
           </button>
         );
@@ -206,8 +206,8 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
               <button key={key} type="button" onClick={() => onStartModule(key)}
                 style={{...tile,display:"flex",alignItems:"center",gap:"12px",padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%"}}>
                 {iconBox(key)}
-                <span style={{flex:1,fontSize:"16px",fontWeight:700,color:TEXT}}>{title(key)}</span>
-                <span style={{fontSize:"13px",fontWeight:700,color:G}}>Start</span>
+                <span style={{...TILE_KICKER,flex:1}}>{title(key)}</span>
+                <span style={{fontSize:"12px",fontWeight:700,color:G}}>Start</span>
                 <ChevronRight size={16} color={MUT}/>
               </button>
             ))}
@@ -247,8 +247,8 @@ ${navigator.userAgent}`;
 function ContactSupport() {
   return (
     <div style={{marginTop:"28px",paddingTop:"16px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
-      <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Something not working?</div>
-      <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Email {SUPPORT_EMAIL} and we'll reply.</div>
+      <div style={TILE_KICKER}>Something not working?</div>
+      <div style={{fontSize:"12px",color:MUT,marginTop:"3px"}}>Email {SUPPORT_EMAIL} and we'll reply.</div>
       <a href={`mailto:${SUPPORT_EMAIL}`} onClick={e => { e.currentTarget.href = supportHref(); posthog.capture("support_contact_clicked", { from: "edit_inputs" }); }}
         style={{display:"inline-flex",alignItems:"center",gap:"6px",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,textDecoration:"none"}}>
         <Mail size={15} color={G} aria-hidden="true"/>Contact support
@@ -305,27 +305,27 @@ function EmailField({ d, onEmailChange, spotlight = false }) {
   const accent = spotlight ? CTA_BLUE : G;
   return (
     <div style={spotlight ? {background:"#EAF3FE",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"16px",padding:"18px",marginBottom:"20px"} : {}}>
-      {spotlight && <h2 style={{fontFamily:SANS,fontSize:"21px",color:G,fontWeight:700,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
+      {spotlight && <h2 style={{...TILE_KICKER,fontFamily:SANS,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
       {/* In About you, laid out as its other answers (fieldState.js): the
           question, the field, the note under it. */}
       <label htmlFor="inputs-email" style={spotlight ? fieldLabel : {...QUESTION_HEADING,display:"block"}}>Email</label>
-      {spotlight && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>}
+      {spotlight && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>}
       <input ref={inputRef} id="inputs-email" type="email" className={!spotlight && !draft ? EMPTY_CLASS : undefined} autoComplete="email" value={draft} placeholder="your@email.com"
         onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
-        style={{width:"100%",boxSizing:"border-box",border:spotlight ? `1.5px solid ${CTA_BLUE}` : draft ? HAIRLINE : "1px solid transparent",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:spotlight ? WHITE : draft ? FILLED : EMPTY_FILL}}/>
+        style={{width:"100%",boxSizing:"border-box",border:spotlight ? `1.5px solid ${CTA_BLUE}` : draft ? HAIRLINE : "1px solid transparent",borderRadius:"100px",padding:"7.5px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:spotlight ? WHITE : draft ? FILLED : EMPTY_FILL}}/>
       {!spotlight && <p style={QUESTION_HINT}>{EMAIL_WHY}</p>}
-      {link && !changed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
-      {unconfirmed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>This email isn't confirmed yet.</p>}
+      {link && !changed && <p role="status" style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
+      {unconfirmed && <p role="status" style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>This email isn't confirmed yet.</p>}
       {(changed || unsent || unconfirmed) && (
         <>
           <button type="button" onClick={confirm} disabled={check.busy}
-            style={{marginTop:"10px",width:"100%",background:accent,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
+            style={{marginTop:"10px",width:"100%",background:accent,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
             {check.busy ? "Checking…" : changed ? "Confirm this email" : unsent ? "Send the link again" : "Send a confirmation link"}
           </button>
           {changed && !check.error && !check.suggestion && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0",textAlign:"center"}}>We'll send a link to confirm it's yours.</p>}
         </>
       )}
-      {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
+      {check.error && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
       <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setDraft)}/>
     </div>
   );

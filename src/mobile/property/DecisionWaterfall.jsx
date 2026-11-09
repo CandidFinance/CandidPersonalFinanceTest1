@@ -88,8 +88,8 @@ function linkedModule(key, selected) {
 // Edit inputs, so it's never asked twice. `onOpenModule(key)` opens a module deep dive.
 export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule }) {
   const selected = new Set(d.selectedModules || []);
-  const line = { fontSize:"13.5px", color:TEXT, lineHeight:1.5, margin:0 };
-  const why = { fontSize:"12.5px", color:MUT, lineHeight:1.5, margin:0 };
+  const line = { fontSize:"12px", color:TEXT, lineHeight:1.5, margin:0 };
+  const why = { fontSize:"12px", color:MUT, lineHeight:1.5, margin:0 };
   const input = waterfallInputs(d, m);
   const checks = runWaterfall(input).filter(c => VISIBLE_CHECKS.includes(c.key));
   const [openKey, setOpenKey] = useState(null);
@@ -150,7 +150,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Left on the table, before a deposit</div>
+      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Left on the table, before a deposit</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {checks.map(c => {
           const { Icon, color } = stateIcon(c.state);
@@ -160,15 +160,15 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
             <div key={c.key} style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",overflow:"hidden"}}>
               <button type="button" onClick={() => setOpenKey(k => k === c.key ? null : c.key)} aria-expanded={isOpen} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"16px 18px",background:"none",border:"none",fontFamily:"inherit",textAlign:"left",cursor:"pointer"}}>
                 <Icon size={20} color={color} style={{flexShrink:0}}/>
-                <span style={{flex:1,minWidth:0,fontSize:"15px",fontWeight:600,color:TEXT}}>{TITLES[c.key]}</span>
-                {value && <span style={{fontFamily:value.muted ? "inherit" : SANS,fontSize:value.muted ? "13px" : "16px",fontWeight:700,color:value.muted ? G : TEXT,flexShrink:0}}>{value.text}</span>}
+                <span style={{flex:1,minWidth:0,fontSize:"12px",fontWeight:600,color:TEXT}}>{TITLES[c.key]}</span>
+                {value && <span style={{fontFamily:value.muted ? "inherit" : SANS,fontSize:"13px",fontWeight:700,color:value.muted ? G : TEXT,flexShrink:0}}>{value.text}</span>}
                 <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:isOpen ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>
               </button>
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"8px"}}>
                   {details(c)}
                   {onOpenModule && linkedModule(c.key, selected) && (
-                    <button type="button" onClick={() => onOpenModule(linkedModule(c.key, selected))} style={{marginTop:"4px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                    <button type="button" onClick={() => onOpenModule(linkedModule(c.key, selected))} style={{marginTop:"4px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
                       Deep dive · {MODULE_META.find(mm => mm.key === linkedModule(c.key, selected))?.title}
                     </button>
                   )}

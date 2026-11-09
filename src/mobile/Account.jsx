@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
 import { Bell, BookOpen, ChevronLeft, ChevronRight, CircleUser, Lock, SlidersHorizontal, X } from "lucide-react";
-import { G, MUT, TEXT, WHITE, CREAM, ERROR_TEXT, FIELD_BORDER, LABEL_CAPS, PROGRESS_GREEN } from "../design-tokens.js";
+import { G, MUT, TEXT, WHITE, CREAM, ERROR_TEXT, FIELD_BORDER, LABEL_CAPS, PROGRESS_GREEN, TILE_KICKER } from "../design-tokens.js";
 import { accessInfo, accountSignIns, deleteAccount, hasAccess, openBillingPortal, setEmailAlerts, signedIn, PLANS } from "../lib/entitlement.js";
 import { getConsent, setConsent } from "../lib/consent.js";
 import { PAID_PLANS } from "../lib/weekly.js";
@@ -54,7 +54,7 @@ const PAGE_TITLES = { account: "Account settings", privacy: "Privacy", notificat
 
 // The list's look: white groups on the cream sheet, a hairline between rows.
 const group = { background:WHITE, borderRadius:"16px", overflow:"hidden", marginTop:"14px" };
-const rowStyle = { display:"flex", alignItems:"center", gap:"14px", width:"100%", minHeight:"56px", padding:"10px 16px", background:"none", border:"none", fontFamily:"inherit", fontSize:"15.5px", fontWeight:600, color:TEXT, textAlign:"left", cursor:"pointer", boxSizing:"border-box", textDecoration:"none" };
+const rowStyle = { display:"flex", alignItems:"center", gap:"14px", width:"100%", minHeight:"56px", padding:"10px 16px", background:"none", border:"none", fontFamily:"inherit", fontSize:"12px", fontWeight:600, color:TEXT, textAlign:"left", cursor:"pointer", boxSizing:"border-box", textDecoration:"none" };
 const hairline = { height:"1px", background:"rgba(22,47,36,0.08)", marginLeft:"16px" };
 const iconTile = { width:"32px", height:"32px", borderRadius:"9px", background:"rgba(22,47,36,0.07)", color:G, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 };
 
@@ -66,7 +66,7 @@ function Row({ Icon, label, sub, onClick, href, bare, color }) {
       {Icon && <span style={iconTile}><Icon size={17} strokeWidth={2} aria-hidden="true"/></span>}
       <span style={{flex:1,minWidth:0}}>
         <span style={{display:"block",color:color || TEXT,overflowWrap:"anywhere"}}>{label}</span>
-        {sub && <span style={{display:"block",fontSize:"13px",fontWeight:400,color:MUT,marginTop:"2px"}}>{sub}</span>}
+        {sub && <span style={{display:"block",fontSize:"12px",fontWeight:400,color:MUT,marginTop:"2px"}}>{sub}</span>}
       </span>
       {!bare && <ChevronRight size={18} color={MUT} aria-hidden="true" style={{flexShrink:0}}/>}
     </>
@@ -92,7 +92,7 @@ function SwitchRow({ label, sub, on, busy, onChange }) {
     <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={onChange} style={{...rowStyle,cursor:busy ? "default" : "pointer"}}>
       <span style={{flex:1,minWidth:0}}>
         <span style={{display:"block"}}>{label}</span>
-        {sub && <span style={{display:"block",fontSize:"13px",fontWeight:400,color:MUT,marginTop:"2px",lineHeight:1.45}}>{sub}</span>}
+        {sub && <span style={{display:"block",fontSize:"12px",fontWeight:400,color:MUT,marginTop:"2px",lineHeight:1.45}}>{sub}</span>}
       </span>
       <span aria-hidden="true" style={{position:"relative",width:"44px",height:"26px",borderRadius:"13px",background:on ? PROGRESS_GREEN : "rgba(22,47,36,0.2)",transition:"background 0.25s",flexShrink:0,opacity:busy ? 0.6 : 1}}>
         <span style={{position:"absolute",top:"3px",left:on ? "21px" : "3px",width:"20px",height:"20px",borderRadius:"50%",background:WHITE,boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.25s cubic-bezier(0.4,0,0.2,1)"}}/>
@@ -123,7 +123,7 @@ function AccountSheet({ onClose }) {
   const open = p => { setPage(p); posthog.capture("account_page_opened", { page: p }); };
 
   const loadError = loadFailed && !account && (
-    <p role="alert" style={{margin:"14px 0 0",fontSize:"13px",color:ERROR_TEXT}}>
+    <p role="alert" style={{margin:"14px 0 0",fontSize:"12px",color:ERROR_TEXT}}>
       Your account couldn't load.{" "}
       <button type="button" onClick={reload} style={{background:"none",border:"none",padding:0,color:G,fontWeight:700,fontSize:"13px",fontFamily:"inherit",textDecoration:"underline",cursor:"pointer"}}>Try again</button>
     </p>
@@ -131,9 +131,9 @@ function AccountSheet({ onClose }) {
 
   const list = !isSignedIn ? (
     <>
-      <p style={{margin:"8px 0 0",fontSize:"14px",lineHeight:1.55,color:TEXT}}>With an account, your answers are saved, so they come back on any device.</p>
+      <p style={{margin:"8px 0 0",fontSize:"12px",lineHeight:1.55,color:TEXT}}>With an account, your answers are saved, so they come back on any device.</p>
       <button type="button" onClick={() => { posthog.capture("account_sign_in_clicked"); onClose(); navigate("/app/signin"); }}
-        style={{...primaryButtonStyle({ size: "regular" }),marginTop:"18px"}}>
+        style={{...primaryButtonStyle({ size: "regular" }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",marginTop:"18px"}}>
         Sign in or create an account
       </button>
       <Group style={{marginTop:"22px"}}>
@@ -148,7 +148,7 @@ function AccountSheet({ onClose }) {
           <span style={{...iconTile,width:"44px",height:"44px",borderRadius:"50%",background:CREAM}}><CircleUser size={26} strokeWidth={1.6} aria-hidden="true"/></span>
           <span style={{flex:1,minWidth:0}}>
             <span style={{display:"block",overflowWrap:"anywhere"}}>{held.email}</span>
-            <span style={{display:"block",fontSize:"13px",fontWeight:400,color:MUT,marginTop:"2px"}}>Account settings · {planLine(held, hasAccess())}</span>
+            <span style={{display:"block",fontSize:"12px",fontWeight:400,color:MUT,marginTop:"2px"}}>Account settings · {planLine(held, hasAccess())}</span>
           </span>
           <ChevronRight size={18} color={MUT} aria-hidden="true" style={{flexShrink:0}}/>
         </button>
@@ -186,7 +186,7 @@ function AccountSheet({ onClose }) {
               <ChevronLeft size={19} aria-hidden="true"/>
             </button>
           ) : <span/>}
-          <h2 id="account-title" style={{margin:0,fontSize:"18px",lineHeight:1.25,fontWeight:700,color:G,textAlign:"center"}}>{page ? PAGE_TITLES[page] : "Account"}</h2>
+          <h2 id="account-title" style={{...TILE_KICKER,lineHeight:1.25,textAlign:"center"}}>{page ? PAGE_TITLES[page] : "Account"}</h2>
           <button type="button" onClick={onClose} aria-label="Close"
             style={{width:"34px",height:"34px",borderRadius:"50%",border:"none",background:WHITE,color:G,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer"}}>
             <X size={16} aria-hidden="true"/>
@@ -205,7 +205,7 @@ function AccountSheet({ onClose }) {
         )}
         {page === "delete" && (account
           ? <DeleteAccount paidLive={!!account.paidLive} onCancel={() => setPage(null)}/>
-          : loadError || <p style={{margin:"18px 4px 0",fontSize:"14px",color:MUT}}>Loading…</p>)}
+          : loadError || <p style={{margin:"18px 4px 0",fontSize:"12px",color:MUT}}>Loading…</p>)}
       </motion.div>
     </motion.div>
   );
@@ -217,8 +217,8 @@ function AccountSettings({ held, account, reload, loadError }) {
   const [error, setError] = useState(null);
   const line = (label, value) => (
     <div style={{padding:"12px 16px"}}>
-      <div style={{fontSize:"13px",color:MUT}}>{label}</div>
-      <div style={{fontSize:"15.5px",fontWeight:600,color:TEXT,marginTop:"2px",overflowWrap:"anywhere"}}>{value}</div>
+      <div style={{fontSize:"12px",color:MUT}}>{label}</div>
+      <div style={{fontSize:"12px",fontWeight:600,color:TEXT,marginTop:"2px",overflowWrap:"anywhere"}}>{value}</div>
     </div>
   );
   return (
@@ -264,8 +264,8 @@ function Privacy() {
 function Notifications({ account, setAccount, loadError }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  if (!account) return loadError || <p style={{margin:"18px 4px 0",fontSize:"14px",color:MUT}}>Loading…</p>;
-  if (account.alerts === null) return <p role="alert" style={{margin:"18px 4px 0",fontSize:"13px",color:ERROR_TEXT}}>Your email settings couldn't load. Close this and try again.</p>;
+  if (!account) return loadError || <p style={{margin:"18px 4px 0",fontSize:"12px",color:MUT}}>Loading…</p>;
+  if (account.alerts === null) return <p role="alert" style={{margin:"18px 4px 0",fontSize:"12px",color:ERROR_TEXT}}>Your email settings couldn't load. Close this and try again.</p>;
   const flip = async () => {
     setBusy(true); setError(null);
     try {
@@ -306,21 +306,21 @@ function DeleteAccount({ paidLive, onCancel }) {
       window.location.replace("/");
     } catch (err) { setError(err.message); setBusy(false); }
   };
-  const text = { margin:0, fontSize:"14px", lineHeight:1.55, color:TEXT };
+  const text = { margin:0, fontSize:"12px", lineHeight:1.55, color:TEXT };
   if (paidLive) return (
     <p style={{...text,margin:"18px 4px 0"}}>Your subscription is still running. Cancel it in Manage subscription (Account settings) first, then you can delete your account here.</p>
   );
   return (
     <form onSubmit={remove} style={{...group,marginTop:"18px",padding:"16px"}}>
       <p style={text}>This deletes your account, your saved answers, your sign-ins and any emails Candid holds for you. It can't be undone.</p>
-      <label htmlFor={inputId} style={{display:"block",margin:"14px 0 6px",fontSize:"13px",color:MUT}}>Type DELETE to confirm</label>
+      <label htmlFor={inputId} style={{display:"block",margin:"14px 0 6px",fontSize:"12px",color:MUT}}>Type DELETE to confirm</label>
       <input id={inputId} value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false}
         aria-invalid={!!error} aria-describedby={error ? errorId : undefined}
         style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-        <button type="button" onClick={onCancel} style={{...primaryButtonStyle({ size: "regular", outline: true }),flex:1}}>Cancel</button>
+        <button type="button" onClick={onCancel} style={{...primaryButtonStyle({ size: "regular", outline: true }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",flex:1}}>Cancel</button>
         <button type="submit" disabled={!confirmed || busy}
-          style={{...primaryButtonStyle({ size: "regular", disabled: !confirmed || busy }),flex:1,background:ERROR_TEXT}}>
+          style={{...primaryButtonStyle({ size: "regular", disabled: !confirmed || busy }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",flex:1,background:ERROR_TEXT}}>
           {busy ? "Deleting…" : "Delete everything"}
         </button>
       </div>

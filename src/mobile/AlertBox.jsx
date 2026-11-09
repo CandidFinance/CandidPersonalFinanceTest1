@@ -14,7 +14,7 @@ export default function AlertBox({ tone, t, title, children }) {
   const a = ALERT[tone][t === DARK ? "dark" : "light"];
   return (
     <div style={{marginTop:"10px",borderRadius:"12px",padding:"12px 14px",background:a.bg,border:`1px solid ${a.border}`,borderLeft:`4px solid ${a.edge}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13.5px",fontWeight:800,color:t.figure,lineHeight:1.3}}>
+      <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"11px",fontWeight:800,color:t.figure,lineHeight:1.3}}>
         <TriangleAlert size={14} strokeWidth={2.4} color={a.edge} aria-hidden="true" style={{flexShrink:0}}/>{title}
       </div>
       {children}

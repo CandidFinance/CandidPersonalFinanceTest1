@@ -37,8 +37,8 @@ export const stateFill = (state, fill) => state === "empty" ? EMPTY_FILL : state
 // One layout for every answer on Edit inputs: the question, its control,
 // a note under it, a link under that, and the same gap between answers.
 export const QUESTION_GAP = "20px";
-export const QUESTION_HEADING = { fontSize: "13.5px", fontWeight: 700, color: TEXT, lineHeight: 1.35, marginBottom: "8px" };
-export const QUESTION_HINT = { fontSize: "11.5px", color: MUT, lineHeight: 1.5, margin: "6px 0 0" };
+export const QUESTION_HEADING = { fontSize: "12px", fontWeight: 700, color: TEXT, lineHeight: 1.35, marginBottom: "8px" };
+export const QUESTION_HINT = { fontSize: "12px", color: MUT, lineHeight: 1.5, margin: "6px 0 0" };
 export const QUESTION_LINK = { background: "none", border: "none", padding: "6px 0 0", color: G, fontSize: "12px", fontWeight: 700, fontFamily: "inherit", cursor: "pointer", textAlign: "left" };
 // A choice too long for a slider, one per row: pill-shaped on one line.
 export const CHOICE_RADIUS = "22px";

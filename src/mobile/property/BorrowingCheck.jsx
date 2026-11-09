@@ -4,7 +4,7 @@ import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBa
 import { Plus, Minus } from "lucide-react";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
-import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, CDARK } from "../../design-tokens.js";
+import { G, MUT, TEXT, SANS, SC, WARNING, WHITE, CDARK, TILE_FIGURE } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { affordableMaxPrice } from "../../lib/monthlyBudget.js";
@@ -70,7 +70,7 @@ function MultipleBar({ multiple, band }) {
         ))}
         {capped && <span style={{...markerLabel,right:0}}>{BAR_MAX_MULTIPLE}x+</span>}
       </div>
-      <div style={{fontSize:"13px",fontWeight:700,color,marginTop:"4px"}}>{text}</div>
+      <div style={{fontSize:"12px",fontWeight:700,color,marginTop:"4px"}}>{text}</div>
     </div>
   );
 }
@@ -127,8 +127,8 @@ export function PurchaseInputs({ d, m, set }) {
   const [firstTimeInfoOpen, setFirstTimeInfoOpen] = useState(false);
   const [soleInfoOpen, setSoleInfoOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const caption = { fontSize:"12px", color:MUT, lineHeight:1.5, margin:0 };
+  const explainer = { fontSize:"12px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"6px", display:"flex", alignItems:"center", gap:"6px" };
   const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
   const column = { flex:1, minWidth:COLUMN_MIN };
@@ -187,7 +187,7 @@ export function PurchaseInputs({ d, m, set }) {
 
       {together && (
         <div style={{marginTop:"18px"}}>
-          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>Your partner</div>
+          <div style={{fontSize:"12px",fontWeight:600,color:G,marginBottom:"3px"}}>Your partner</div>
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
             Used to check their employer match and ISA allowance, and added to your income for the borrowing check.
           </p>
@@ -268,7 +268,7 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>How much you'd need to borrow</div>
+        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>How much you'd need to borrow</div>
         <ExplainLink onClick={input.price > 0 ? onExplain : null}/>
       </div>
       {input.price > 0 ? (
@@ -284,9 +284,9 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
 // behind it.
 function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyInfoOpen, incomeInfoOpen, setIncomeInfoOpen, setBreakdownOpen, d, m }) {
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
-  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
-  const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
+  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"12px", color:TEXT, padding:"6px 0" };
+  const figureLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+  const figure = { fontSize:"13px", fontWeight:700, color:TEXT, lineHeight:1.2 };
   const r = calcBorrowingCheck(input);
   const together = input.incomes.length > 1;
   const sd = input.stampDutyDetail;
@@ -317,26 +317,26 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
         </div>
 
         {r.loanNeeded === 0 ? (
-          <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
+          <p style={{fontSize:"12px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : r.multiple == null ? (
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
         ) : (
           <>
             <MultipleBar multiple={r.multiple} band={r.band}/>
             {r.band === "stretch" && (
-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
                 That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
               </p>
             )}
             {r.band === "beyond" && (
-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
                 That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
               </p>
             )}
           </>
         )}
         {r.depositShort > 0 && (
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
             Most lenders need a deposit of at least {minDeposit}. You'd need {fmt(r.depositShort)} more.
           </p>
         )}
@@ -347,8 +347,8 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
           <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
             <div style={figureLabel}>The most you could afford</div>
             {most.price > 0 ? (<>
-              <div style={{...figure,fontSize:"22px"}}>{fmt(most.price)}</div>
-              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
+              <div style={{...figure,fontSize:"13px"}}>{fmt(most.price)}</div>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
                 {most.limit === "deposit"
                   ? `Your deposit sets this: most lenders need at least ${minDeposit} of the price. Your income alone would allow more.`
                   : most.limit === "budget"
@@ -356,7 +356,7 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
                     : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
               </p>
             </>) : (
-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
                 {most.limit === "budget"
                   ? "Your spending already uses your take-home pay, so there's no room for a mortgage."
                   : `Your cash needs to cover the fees and a ${minDeposit} deposit first.`}
@@ -369,7 +369,7 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
             headline result and the inputs below fit on one screen. */}
         {breakdownOpen && (<>
         <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
-        <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
+        <div style={row}><span>Cash available</span><span style={TILE_FIGURE}>{fmt(input.cashAvailable)}</span></div>
         <div style={row}>
           <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
             Stamp duty
@@ -383,13 +383,13 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
         </div>
         {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
         <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
-        <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
+        <div style={{...row,fontWeight:700}}><span>Deposit</span><span style={TILE_FIGURE}>{fmt(r.usableDeposit)}</span></div>
         <div style={row}>
           <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
             {together ? "Combined income" : "Income"}
             <InfoButton open={incomeInfoOpen} onClick={() => setIncomeInfoOpen(o => !o)}/>
           </span>
-          <span>{fmt(r.income)}</span>
+          <span style={TILE_FIGURE}>{fmt(r.income)}</span>
         </div>
         {incomeInfoOpen && (
           <p style={{...explainer,marginTop:"4px"}}>
@@ -397,7 +397,7 @@ function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyIn
           </p>
         )}
         {r.upfrontShortfall > 0 && (
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
             Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
           </p>
         )}
@@ -420,7 +420,7 @@ export function LoanSummaryBar({ d, m, watchRef }) {
   return (
     <StickySummaryBar watchRef={watchRef} label="Back to how much you'd need to borrow">
       {r.loanNeeded === 0 ? (
-        <span style={{fontSize:"13px",fontWeight:700,color:SC.ok}}>No mortgage needed</span>
+        <span style={{fontSize:"12px",fontWeight:700,color:SC.ok}}>No mortgage needed</span>
       ) : (
         <>
           <SummaryLabel>Loan needed</SummaryLabel>

@@ -12,9 +12,9 @@ export default function EmptyResultCard({ text, compact = false }) {
     <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"12px 16px 13px"}}>
       <div aria-hidden="true" style={{display:"flex",alignItems:"flex-end",gap:"14px",filter:"blur(3px)",opacity:0.8}}>
         <div>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+          <div style={{fontSize:"11px",fontWeight:600,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
           <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"4px"}}>
-            <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE,lineHeight:1}}>£</span>
+            <span style={{fontFamily:SERIF,fontSize:"44px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE,lineHeight:1}}>£</span>
             <div style={{width:"96px",height:"20px",borderRadius:"5px",background:OPPORTUNITY_TILE_FIGURE,opacity:0.5}}/>
           </div>
         </div>
@@ -23,7 +23,7 @@ export default function EmptyResultCard({ text, compact = false }) {
           <div style={{width:"55%",height:"7px",borderRadius:"4px",background:OPPORTUNITY_TILE_LABEL,opacity:0.45}}/>
         </div>
       </div>
-      <p style={{fontSize:"13px",fontWeight:600,color:OPPORTUNITY_TILE_FIGURE,lineHeight:1.45,margin:"10px 0 0"}}>{text}</p>
+      <p style={{fontSize:"12px",fontWeight:600,color:OPPORTUNITY_TILE_FIGURE,lineHeight:1.45,margin:"10px 0 0"}}>{text}</p>
     </div>
   );
   return (
@@ -38,7 +38,7 @@ export default function EmptyResultCard({ text, compact = false }) {
         <div style={{marginTop:"8px",marginBottom:"8px"}}>{bar("55%")}</div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-        <p style={{fontSize:"13.5px",fontWeight:600,color:TEXT,lineHeight:1.5,margin:0,textAlign:"center",background:"rgba(255,255,255,0.85)",borderRadius:"10px",padding:"10px 14px"}}>
+        <p style={{fontSize:"12px",fontWeight:600,color:TEXT,lineHeight:1.5,margin:0,textAlign:"center",background:"rgba(255,255,255,0.85)",borderRadius:"10px",padding:"10px 14px"}}>
           {text}
         </p>
       </div>

@@ -75,7 +75,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   useDecisionLog(d, set, m.loanBal > 0 ? studentLoanDecision(d, m) : null);
 
   if (d.studentLoan === "none" || m.loanBal <= 0) {
-    return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>No student loan on record.</p>;
+    return <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>No student loan on record.</p>;
   }
 
   const sl = calcStudentLoanScenario(d, m);
@@ -382,8 +382,8 @@ function ClearOrWriteOff({ sl }) {
   const dot = <span aria-hidden="true" style={{color:MUT,margin:"0 6px"}}>•</span>;
   return (
     <div>
-      <div style={{fontFamily:SANS,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
-      <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>
+      <div style={{fontFamily:SANS,fontSize:"13px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
+      <div style={{fontSize:"12px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>
         <span style={{color:G,fontWeight:700}}>{lead}:</span> {turning}{dot}{parts[0]}{dot}{parts[1]}
       </div>
     </div>
@@ -459,8 +459,8 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
   const saved = scenario ? base.totalPaid - scenario.totalPaid : 0;
   const stat = (label, value) => (
     <div>
-      <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
-      <div style={{fontFamily:SANS,fontSize:"19px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
+      <div style={{fontSize:"11px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
+      <div style={{fontFamily:SANS,fontSize:"13px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
     </div>
   );
   return (
@@ -468,9 +468,9 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
       <PillSlider compact label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
       {/* Whether it's spare: against cash above the emergency buffer. */}
       {overpayAmt > 0 && (m.expensesUnknown
-        ? <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash to check you could spare this.</p>
+        ? <p style={{fontSize:"12px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash to check you could spare this.</p>
         : overpayAmt > (m.surplusCash || 0) && (
-          <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:TEXT,marginTop:"6px"}}>
+          <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"12px",lineHeight:1.45,color:TEXT,marginTop:"6px"}}>
             <CircleAlert size={13} color={CRITICAL} style={{flexShrink:0,marginTop:"1px"}}/>
             {(m.surplusCash || 0) > 0
               ? `More than the ${fmt(Math.round(m.surplusCash))} you have above your ${m.bufferMonths}-month cash buffer.`
@@ -478,7 +478,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
           </div>
         ))}
       {!scenario && tip && (
-        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Under {k(tip)} it mostly shrinks what's written off. From {k(tip)} it clears before write-off.</p>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Under {k(tip)} it mostly shrinks what's written off. From {k(tip)} it clears before write-off.</p>
       )}
       {scenario && (
         <>
@@ -487,7 +487,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
             {stat(saved >= 0 ? "Saves in all" : "Costs more", fmt(Math.abs(saved)))}
             {stat("You'd pay in all", fmt(scenario.totalPaid))}
           </div>
-          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
             Against {base.clearYr ? `clearing in ${base.clearYr} yrs` : `${fmt(base.writeOffBal)} written off`} and {fmt(base.totalPaid)} paid in all, as it is.{saved < 0 && !scenario.clearYr ? " It would mostly shrink what's written off." : ""}
             {!base.clearYr && scenario.clearYr > 0 && (() => {
               const diff = scenario.paidToday - base.paidToday;
@@ -497,7 +497,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
           </p>
           {worthOverpaying && (m.surplusCash || 0) > 0 && (
             <a href="https://www.gov.uk/sign-in-to-manage-your-student-loan-balance" target="_blank" rel="noopener noreferrer" style={{
-              marginTop:"12px",width:"100%",background:G,color:WHITE,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,
+              marginTop:"12px",width:"100%",background:G,color:WHITE,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,
               display:"flex",alignItems:"center",justifyContent:"center",gap:"7px",textDecoration:"none",boxSizing:"border-box",
             }}>
               Overpay on the SLC site <ExternalLink size={14}/>
@@ -523,12 +523,12 @@ function LockedOpportunity({ d }) {
   const row = { width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"none", border:"none", borderTop:"1px solid rgba(255,255,255,0.12)", padding:"11px 0", fontFamily:"inherit" };
   const step = (done, to, label) => done ? (
     <div style={row}>
-      <span style={{fontSize:"14px",fontWeight:700,color:OPPORTUNITY_TILE_BODY}}>{label}</span>
+      <span style={{fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_BODY}}>{label}</span>
       <Check size={17} color={OPPORTUNITY_TILE_BODY} strokeWidth={3}/>
     </div>
   ) : (
     <button type="button" onClick={() => navigate(to)} style={{...row,cursor:"pointer"}}>
-      <span style={{fontSize:"14px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}>Add {label}</span>
+      <span style={{fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}>Add {label}</span>
       <ChevronRight size={17} color={OPPORTUNITY_TILE_FIGURE}/>
     </button>
   );
@@ -538,12 +538,12 @@ function LockedOpportunity({ d }) {
       <div style={{fontSize:"11px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
       <div style={{position:"relative"}}>
         <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(4px)",userSelect:"none",pointerEvents:"none"}}>
-          <div style={{fontFamily:SERIF,fontSize:"58px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1}}>£0,000</div>
+          <div style={{fontFamily:SERIF,fontSize:"44px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1}}>£0,000</div>
           {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
         </div>
         <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 1px 12px rgba(0,0,0,0.12)",borderRadius:"12px",padding:"14px 16px 4px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}><Clock size={14} color={OPPORTUNITY_TILE_FIGURE}/>Is paying it off early worth it?</div>
-          <p style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}><Clock size={14} color={OPPORTUNITY_TILE_FIGURE}/>Is paying it off early worth it?</div>
+          <p style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
             A few more details show the full trade-offs of paying off early.
           </p>
           {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash")}

@@ -32,7 +32,7 @@ import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
 import { firstName } from "../copy.js";
 import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK, NOTICE_LABEL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK, NOTICE_LABEL, TILE_FIGURE } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
 
@@ -40,7 +40,7 @@ const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` })
 const EXTRA_PCT_OPTIONS = [0,1,2,3,5].map(p => ({ value:p, label:p ? `+${p}%` : "0%" }));
 
 // A breakdown's lines, inside one row.
-const rowStyle = { display:"flex", justifyContent:"space-between", gap:"12px", fontSize:"13px", color:TEXT, padding:"4px 0" };
+const rowStyle = { display:"flex", justifyContent:"space-between", gap:"12px", fontSize:"12px", color:TEXT, padding:"4px 0" };
 
 // Full mobile version of desktop's Pension deep dive (ModuleDeepDive,
 // moduleKey==="pension" — CandidApp.jsx), as MobileTiles (rows on the tile,
@@ -455,7 +455,7 @@ function GrowthChart({ traj, d, m, extraPct }) {
                 {uplift > 0 && (
                   <div style={{fontSize:"9px",fontWeight:700,color:SUCCESS,background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
                 )}
-                <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
+                <div style={{fontSize:"13px",fontWeight:700,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
               </div>
               <div style={{flex:1,width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
                 <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:EXTRA_COLOR,height:`${(added/maxBar)*100}%`,transition:"height 0.3s ease"}}/>
@@ -524,17 +524,17 @@ function EmployerMatchTile({ m, d, trPct, contributing, set, taxFreeCash, editIt
       <TileRow align>
         {contributing ? (
           <>
-            <div style={rowStyle}><span>Your contribution, {myPct}% of salary</span><span>{fmt(yourContribAmount)}/yr</span></div>
-            <div style={rowStyle}><span>Employer match cap, {empCapPct}% of salary</span><span>{fmt(employerCapAmount)}/yr</span></div>
-            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Uplift if you match the cap</span><span>+{fmt(m.missedMatch)}/yr</span></div>
+            <div style={rowStyle}><span>Your contribution, {myPct}% of salary</span><span style={TILE_FIGURE}>{fmt(yourContribAmount)}/yr</span></div>
+            <div style={rowStyle}><span>Employer match cap, {empCapPct}% of salary</span><span style={TILE_FIGURE}>{fmt(employerCapAmount)}/yr</span></div>
+            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Uplift if you match the cap</span><span style={TILE_FIGURE}>+{fmt(m.missedMatch)}/yr</span></div>
           </>
         ) : (
           <>
-            <div style={rowStyle}><span>Pay in {illustrativeRate}% of salary</span><span>{fmt(illustrativeAmount)}/yr</span></div>
-            <div style={rowStyle}><span>Tax relief at {trPct}%</span><span>−{fmt(illustrativeRelief)}/yr</span></div>
-            {empCapPct > 0 && <div style={{...rowStyle,color:SUCCESS}}><span>Employer matches {empCapPct}%</span><span>+{fmt(employerCapAmount)}/yr</span></div>}
-            <div style={{...rowStyle,fontWeight:700}}><span>Net cost to you</span><span>{fmt(illustrativeNetCost)}/yr</span></div>
-            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
+            <div style={rowStyle}><span>Pay in {illustrativeRate}% of salary</span><span style={TILE_FIGURE}>{fmt(illustrativeAmount)}/yr</span></div>
+            <div style={rowStyle}><span>Tax relief at {trPct}%</span><span style={TILE_FIGURE}>−{fmt(illustrativeRelief)}/yr</span></div>
+            {empCapPct > 0 && <div style={{...rowStyle,color:SUCCESS}}><span>Employer matches {empCapPct}%</span><span style={TILE_FIGURE}>+{fmt(employerCapAmount)}/yr</span></div>}
+            <div style={{...rowStyle,fontWeight:700}}><span>Net cost to you</span><span style={TILE_FIGURE}>{fmt(illustrativeNetCost)}/yr</span></div>
+            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span style={TILE_FIGURE}>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
           </>
         )}
         <div style={ROW.note}>Money in a pension usually can't be taken out until you're 55 (57 from 2028).</div>
@@ -568,15 +568,15 @@ function CarryForwardCalc({ cf, setCfYears, aa }) {
                   onChange={e => setYear(i, { contribution: e.target.value })}
                   style={{width:"96px",padding:"5px 8px",fontSize:"16px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
               </label>
-              <span style={{fontSize:"13px",color:SUCCESS,fontWeight:600}}>{fmt(y.unused)} unused</span>
+              <span style={{fontSize:"13px",color:SUCCESS,fontWeight:700}}>{fmt(y.unused)} unused</span>
             </div>
           )}
         </TileRow>
       ))}
       <TileRow align>
-        <div style={rowStyle}><span>This year's allowance{aa.inAATaper?" (tapered)":""}</span><span>{fmt(aa.approxAA)}</span></div>
-        <div style={rowStyle}><span>Unused from the last 3 years</span><span>+{fmt(cf.cfTotalUnused)}</span></div>
-        <div style={{...rowStyle,fontWeight:700}}><span>Theoretical maximum</span><span>{fmt(cf.cfTheoreticalMax)}</span></div>
+        <div style={rowStyle}><span>This year's allowance{aa.inAATaper?" (tapered)":""}</span><span style={TILE_FIGURE}>{fmt(aa.approxAA)}</span></div>
+        <div style={rowStyle}><span>Unused from the last 3 years</span><span style={TILE_FIGURE}>+{fmt(cf.cfTotalUnused)}</span></div>
+        <div style={{...rowStyle,fontWeight:700}}><span>Theoretical maximum</span><span style={TILE_FIGURE}>{fmt(cf.cfTheoreticalMax)}</span></div>
         {cf.cfEarningsCapped && (
           <div style={{...rowStyle,color:CRITICAL}}><span>Capped at 100% of earnings</span><span style={{fontWeight:700}}>{fmt(cf.cfMaxContributable)}</span></div>
         )}
@@ -644,7 +644,7 @@ function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSa
         <TileRow align>
           <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
             <AlertTriangle size={16} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
-            <p style={{...ROW.text,fontSize:"12.5px"}}>
+            <p style={{...ROW.text,fontSize:"12px"}}>
               {bs.crossesTaper && !bs.crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)." : "Your bonus spans the 40% → 60% taper → 45% rate bands."} Sacrificing the part in that zone saves the most.
             </p>
           </div>
@@ -715,9 +715,9 @@ function SacrificeCalc({ d, m, trPct, extraPct, setExtraPct, chartSlider }) {
             <PillSlider compact label="An extra share of salary" value={sacrificeExtraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS.filter(o => o.value > 0)}/>
           </div>
         )}
-        <div style={rowStyle}><span>Comes off your taxable income</span><span>−{fmt(Math.round(extraAmt))}</span></div>
-        <div style={rowStyle}><span>Tax{niSavingPct>0?" and NI":""} relief at {totalReliefPct}%</span><span>−{fmt(extraRelief)}</span></div>
-        <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(extraNetCost)}</span></div>
+        <div style={rowStyle}><span>Comes off your taxable income</span><span style={TILE_FIGURE}>−{fmt(Math.round(extraAmt))}</span></div>
+        <div style={rowStyle}><span>Tax{niSavingPct>0?" and NI":""} relief at {totalReliefPct}%</span><span style={TILE_FIGURE}>−{fmt(extraRelief)}</span></div>
+        <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span style={TILE_FIGURE}>{fmt(extraNetCost)}</span></div>
         <div style={ROW.note}>
           That leaves your taxable income at about {fmt(Math.round(newAdjustedIncome))}{newBandLabel !== m.taxBandLabel ? `, in the ${newBandLabel}-rate band.` : `, still in the ${m.taxBandLabel}-rate band.`}{chartSlider && ` "What if you paid in more?" in Growth to retirement changes the amount.`}
         </div>

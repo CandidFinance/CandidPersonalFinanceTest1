@@ -107,7 +107,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
         Assumptions
         <InfoButton open={assumptionsOpen} onClick={() => setAssumptionsOpen(o => !o)}/>
       </div>
-      <p style={{fontSize:"12.5px",color:TEXT,margin:"6px 0 0"}}>
+      <p style={{fontSize:"12px",color:TEXT,margin:"6px 0 0"}}>
         Rents {pct(input.rentGrowthPct)} a year · upkeep {leasehold ? `${fmt(input.leaseholdMaintenance)} a year` : `${pct(input.maintenancePct)} of the value a year`} · selling costs {pct(input.sellingCostsPct)} · {cash ? `cash ${pct(input.investmentReturnPct)}` : `invested ${pct(input.investmentReturnPct)}`}
       </p>
       <RentVsBuyAssumptions assumptionsOpen={assumptionsOpen} input={input} set={set} leasehold={leasehold} why={why} cash={cash} d={d}/>
@@ -117,7 +117,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Which leaves you better off</div>
+        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Which leaves you better off</div>
         {/* "Explain this" replays the answer step by step. */}
         <ExplainLink onClick={result && !holdResult ? onExplain : null}/>
       </div>
@@ -130,7 +130,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
         <StickySummaryBar watchRef={resultRef} label="Back to which leaves you better off">
           <SummaryLabel>After {years(result.horizonYears)}</SummaryLabel>
           <SummaryFigure color={TEXT}>{buyingAhead ? "Buying" : "Renting"}</SummaryFigure>
-          <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>~{fmtCompact(Math.abs(result.gapAtHorizon))} ahead</span>
+          <span style={{fontSize:"13px",fontWeight:700,color:MUT}}>~{fmtCompact(Math.abs(result.gapAtHorizon))} ahead</span>
         </StickySummaryBar>
       )}
 
@@ -161,7 +161,7 @@ function RentVsBuyAssumptions({ assumptionsOpen, input, set, leasehold, why, cas
             <PillCell><PillMoneyInput label="Selling costs" unit="%" value={input.sellingCostsPct || null} onChange={v => set("propertySellingCosts", v ?? "")}/></PillCell>
             <div style={{flex:1}}/>
           </div>
-          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
             Selling costs cover the estate agent (about 1.4% with VAT), legal fees and moving. Upkeep is repairs and maintenance{leasehold ? " inside the flat; the service charge covers the building" : ""}.
           </p>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
@@ -174,7 +174,7 @@ function RentVsBuyAssumptions({ assumptionsOpen, input, set, leasehold, why, cas
           </div>
           {why.panel("renterMoney")}
           {cash && (d.propertyCashReturn === "" || d.propertyCashReturn == null) && (
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
               {input.bestCashRatePct != null && input.bestCashRatePct > input.ownCashRatePct
                 ? `The best savings rate Candid tracks. Your own accounts average ${pct(input.ownCashRatePct)}.`
                 : "The average rate on your own cash savings, Premium Bonds and Cash ISAs."}
@@ -195,8 +195,8 @@ function RentVsBuyAssumptions({ assumptionsOpen, input, set, leasehold, why, cas
 // The answer: buying or renting ahead at the horizon, year by year, with
 // the rates choice and what's behind the figures.
 function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageYear, rateInfoOpen, setRateInfoOpen, input, rateScenario, setRateScenario, detailsOpen, setSelectedYear, framingOpen, setFramingOpen, costsInfoOpen, setCostsInfoOpen, earningsInfoOpen, setEarningsInfoOpen, cash, ownInfoOpen, setOwnInfoOpen, setDetailsOpen, selectedYear, d, m, leasehold }) {
-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+  const explainer = { fontSize:"12px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const figureLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
   const together = input.people.length > 1;
   const last = result?.years.at(-1);
   const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
@@ -223,7 +223,7 @@ function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageY
       <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
         style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
           {budgetWarning && (
-            <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"12.5px",fontWeight:600,color:TEXT,lineHeight:1.45,marginBottom:"12px"}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"12px",fontWeight:600,color:TEXT,lineHeight:1.45,marginBottom:"12px"}}>
               <CircleAlert size={15} color={budgetWarning.color} style={{flexShrink:0,marginTop:"1px"}}/>
               {budgetWarning.text}
             </div>
@@ -233,13 +233,13 @@ function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageY
           <div style={{textAlign:"center"}}>
             <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
             <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:"10px",flexWrap:"wrap",marginTop:"2px"}}>
-              <span style={{fontFamily:SANS,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
-              <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT}}>
+              <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
+              <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"12px",color:TEXT}}>
                 <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
                 ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
               </span>
             </div>
-            {leans && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{leans}</p>}
+            {leans && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{leans}</p>}
           </div>
 
           {outcomes && (
@@ -260,7 +260,7 @@ function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageY
           {/* Collapsed, a negative-equity warning still shows in one line,
               so it can't be missed; the full note is in the details. */}
           {!detailsOpen && result.negativeEquityYears.length > 0 && (
-            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",fontSize:"12px",fontWeight:700,color:SC.critical}}>
               <CircleAlert size={15} style={{flexShrink:0}}/>
               {negativeEquityText(result.negativeEquityYears)}
             </div>
@@ -283,7 +283,7 @@ function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageY
               Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home {input.housePriceGrowthPct < 0 ? "falls" : "rises"} in value. Renting costs rent, while your money grows elsewhere. Every figure is a total since the day you'd buy.
             </p>
           )}
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
           <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears}
             onShowRatesUp={outcomes ? () => setRateScenario("stress") : null} ratesUpShown={rateScenario === "stress"}/>
 

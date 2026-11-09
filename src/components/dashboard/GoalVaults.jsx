@@ -61,14 +61,14 @@ function LockedGoal({ d }) {
   return (
     <div style={{position:"relative",background:WHITE,borderRadius:"10px",padding:"12px",minHeight:"120px"}}>
       <div aria-hidden="true" inert="" style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:"13.5px",fontWeight:700,color:TEXT}}><span>A new kitchen</span><span>£4,200</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",fontWeight:600,color:TEXT}}><span>A new kitchen</span><span style={{fontSize:"13px",fontWeight:700}}>£4,200</span></div>
         <div style={{height:"8px",borderRadius:"100px",background:`${VAULT_COLOR}33`,marginTop:"10px"}}>
           <div style={{width:"45%",height:"100%",borderRadius:"100px",background:VAULT_COLOR}}/>
         </div>
         <div style={{fontSize:"12px",color:MUT,marginTop:"8px"}}>£4,200 saved of £9,000, by Jun 2027.</div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center",padding:"12px"}}>
-        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px",background:WHITE,borderRadius:"10px",padding:"6px 10px",boxShadow:"0 2px 8px rgba(22,47,36,0.08)"}}>Add your own goals and track them here, with a subscription</span>
+        <span style={{fontSize:"12px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px",background:WHITE,borderRadius:"10px",padding:"6px 10px",boxShadow:"0 2px 8px rgba(22,47,36,0.08)"}}>Add your own goals and track them here, with a subscription</span>
         <SubscribeButtons d={d} module={null} from="add_goal"/>
       </div>
     </div>

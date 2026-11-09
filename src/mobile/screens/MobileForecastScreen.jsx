@@ -146,7 +146,7 @@ export default function MobileForecastScreen({ d, m }) {
 
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
           <div>
-            <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
+            <div style={{fontSize:"12px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
             <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
           </div>
           <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
@@ -355,7 +355,7 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
                 {[`Cash grows at your own savings rate, and is assumed to never exceed your ${fmt(m.emergencyBuffer)} emergency fund target.`,
                   "Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.",
                   "Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.",
-                ].map(line => <p key={line} style={{fontSize:"13.5px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
+                ].map(line => <p key={line} style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
               </div>
             </TilePopover>
           )}
@@ -368,11 +368,11 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
           <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"11px 0",borderBottom:i===rows.length-1?"none":`1px solid ${t.rule}`,cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                <span style={{fontSize:"14px",color:t.figure}}>{row.label}</span>
+                <span style={{fontSize:"12px",color:t.figure}}>{row.label}</span>
                 {meta.locked && <Lock size={12} color={t.body}/>}
               </div>
               <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                <span style={{fontFamily:SANS,fontSize:"18px",fontWeight:700,color:row.negative ? CRITICAL : t.figure}}>{row.negative?"−":""}{fmt(row.value)}</span>
+                <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:row.negative ? CRITICAL : t.figure}}>{row.negative?"−":""}{fmt(row.value)}</span>
                 <ChevronRight size={13} color={t.body} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
               </div>
             </div>
@@ -383,12 +383,12 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
               <div style={note(t)} onClick={e => e.stopPropagation()}>
                 {row.label === "Pension" && age && (
                   <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                    <span style={{fontFamily:SANS,fontSize:"20px",fontWeight:700,color:t.figure}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
-                    <span style={{fontSize:"12.5px",color:t.body}}>years until available (from age {PENSION_ACCESS_AGE})</span>
+                    <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:t.figure}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+                    <span style={{fontSize:"12px",color:t.body}}>years until available (from age {PENSION_ACCESS_AGE})</span>
                   </div>
                 )}
-                <p style={{...noteText(t),fontSize:"13px"}}>{row.assumption}</p>
-                <p style={{...noteText(t),fontSize:"13px",fontWeight:600}}>{meta.liquidity}</p>
+                <p style={{...noteText(t),fontSize:"12px"}}>{row.assumption}</p>
+                <p style={{...noteText(t),fontSize:"12px",fontWeight:600}}>{meta.liquidity}</p>
               </div>
             )}
           </div>
@@ -512,7 +512,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
     <>
       <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px",marginTop:"6px"}}>
         <span style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em"}}>{fmt(putIn)}</span>
-        <span style={{fontSize:"14px",fontWeight:600,color:CREAM_SOFT}}>put in by {year0 + horizon}</span>
+        <span style={{fontSize:"12px",fontWeight:600,color:CREAM_SOFT}}>put in by {year0 + horizon}</span>
       </div>
       {!empty && (
         <p style={SR_ONLY}>
@@ -526,7 +526,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
         className="surplus-scrub" style={{margin:"8px -20px 0",position:"relative",touchAction:"pan-y",outline:"none",cursor:empty ? undefined : "crosshair"}}>
         <style>{`.surplus-scrub:focus-visible { box-shadow: inset 0 0 0 2px ${CREAM_SOFT}; border-radius: 12px; }`}</style>
         {empty && (
-          <p style={{position:"absolute",left:f.x0 + 12,right:BAND_INSET + 12,top:PT,bottom:f.H - axisY + 12,margin:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"13.5px",lineHeight:1.45,color:CREAM_SOFT}}>
+          <p style={{position:"absolute",left:f.x0 + 12,right:BAND_INSET + 12,top:PT,bottom:f.H - axisY + 12,margin:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"12px",lineHeight:1.45,color:CREAM_SOFT}}>
             {allHidden ? "Every line is hidden. Tap a name below to show it again."
               : lumpLocked ? "Add an amount each month to see where it could grow." : "Add an amount each month, or one-off, to see where it could grow."}
           </p>
@@ -594,8 +594,8 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
         {why && (
           <TilePopover key="each-month" title="Each month" onClose={() => setWhy(false)} style={POP_CENTRED}>
             <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>What you usually have left at the end of a month, once bills and spending are paid.</p>
-              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>The same amount goes into each line above, so you can compare where it could grow the most.</p>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>What you usually have left at the end of a month, once bills and spending are paid.</p>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>The same amount goes into each line above, so you can compare where it could grow the most.</p>
             </div>
           </TilePopover>
         )}
@@ -610,7 +610,7 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
 // hollow while it's off.
 function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip, hidden, onToggle, canHide }) {
   const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
-  const colHead = { fontSize:"9.5px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
+  const colHead = { fontSize:"11px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
   return (
     <>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
@@ -622,7 +622,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
         </div>
       </div>
       {/* Only once there are lines to hide. */}
-      {canHide && <p style={{fontSize:"11.5px",color:t.body,lineHeight:1.4,margin:"-4px 0 4px"}}>Tap a name to hide or show its line.</p>}
+      {canHide && <p style={{fontSize:"12px",color:t.body,lineHeight:1.4,margin:"-4px 0 4px"}}>Tap a name to hide or show its line.</p>}
       {forecast.options.map((o,i) => {
         const isOpen = openTip === o.label;
         const a = assumptions[o.label];
@@ -636,7 +636,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
                 <button type="button" onClick={() => onToggle(o.label)} aria-pressed={shown}
                   style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0,minHeight:"44px",margin:"-12px 0",padding:0,background:"none",border:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                   <span style={{width:"8px",height:"8px",boxSizing:"border-box",borderRadius:"50%",background:shown ? color : "transparent",border:`1.5px solid ${color}`,display:"inline-block",flexShrink:0,transition:"background 0.15s"}}/>
-                  <span style={{fontSize:"13px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  <span style={{fontSize:"12px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {FORECAST_SHORT_LABEL[o.label]||o.label}<span style={SR_ONLY}>, line on the graph</span>
                   </span>
                 </button>
@@ -644,7 +644,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
               </div>
               <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
                 <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.low)}</span>
-                <span style={{fontFamily:SANS,fontSize:"12.5px",color:t.figure,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
+                <span style={{fontFamily:SANS,fontSize:"13px",color:t.figure,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
                 <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.high)}</span>
               </div>
             </div>
@@ -653,7 +653,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
               {isOpen && a && (
                 <TilePopover key="why" title={o.label} onClose={() => setOpenTip(null)}>
                   <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                    {a.lines.map((line,i) => <p key={i} style={{fontSize:"13.5px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
+                    {a.lines.map((line,i) => <p key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
                     <div style={{display:"flex",gap:"14px",fontSize:"12px",color:MUT}}>
                       <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
                       <span>Central <b style={{color:TEXT}}>{a.rates.central}</b></span>

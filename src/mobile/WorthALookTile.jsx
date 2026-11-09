@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { G, MUT, CARD, SECTION_TITLE } from "../design-tokens.js";
+import { G, MUT, CARD, TILE_KICKER } from "../design-tokens.js";
 import ModuleStartRow from "./ModuleStartRow.jsx";
 
 // Home's "Worth a look": the modules they haven't started, as rows in this
@@ -31,8 +31,8 @@ export default function WorthALookTile({ items, d, onOpen, onSeeAll, onDismiss }
       style={{...CARD,marginTop:"16px",padding:"16px 18px 4px",touchAction:"pan-y"}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px"}}>
         <div style={{minWidth:0}}>
-          <h2 style={SECTION_TITLE}>Worth a look</h2>
-          <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Modules you haven't started yet</div>
+          <h2 style={TILE_KICKER}>Worth a look</h2>
+          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>Modules you haven't started yet</div>
         </div>
         <button type="button" aria-label="Dismiss" onClick={() => setLeaving(1)} className="tap44" style={{background:"none",border:"none",padding:"2px",margin:"-2px -2px 0 0",cursor:"pointer",color:MUT,display:"flex",flexShrink:0}}>
           <X size={18}/>

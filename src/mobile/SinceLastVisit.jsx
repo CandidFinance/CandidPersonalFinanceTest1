@@ -55,7 +55,7 @@ export default function SinceLastVisit({ d, m, rows, onOpenCash }) {
             </div>
             <ul style={{listStyle:"none",margin:"10px 0 0",padding:0,display:"flex",flexDirection:"column",gap:"8px"}}>
               {since.lines.map((l, i) => (
-                <li key={i} style={{fontSize:"13px",color:TEXT,lineHeight:1.5}}>
+                <li key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.5}}>
                   <b style={{fontWeight:700}}>{l.label}</b>: {l.text}
                 </li>
               ))}

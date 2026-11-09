@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import posthog from "posthog-js";
 import { CalendarPlus } from "lucide-react";
-import { G, WHITE, MUT, TEXT, FIELD_BORDER, PILL_HEIGHT, SERIF, CARD, NOTICE_LABEL, SECTION_TITLE, CRITICAL } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, FIELD_BORDER, SERIF, CARD, NOTICE_LABEL, SECTION_TITLE, CRITICAL } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { yearProjection, salaryDrift, driftDismissal, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
@@ -16,7 +16,7 @@ import { triggerCalendarReminder } from "./reminders.js";
 const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
 // "YYYY-MM-DD" as "28 Sep", read as a local date.
 export const shortDate = s => { const [y, mo, day] = String(s).split("-").map(Number); return new Date(y, mo - 1, day).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
-const pill = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"11px 14px", minHeight:PILL_HEIGHT, fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
+const pill = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"0 14px", minHeight:"37px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
 
 // A repeating calendar event on their payday, from the next one.
 export function addPaydayReminder(d) {

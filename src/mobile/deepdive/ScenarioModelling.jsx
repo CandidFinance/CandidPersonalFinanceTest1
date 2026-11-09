@@ -83,7 +83,7 @@ function affordability(m, it, before = 0) {
 }
 const FLAG = { over: CRITICAL, close: GOLD_TEXT, unknown: MUT };
 const Flag = ({ check }) => check && (
-  <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:check.level === "unknown" ? MUT : TEXT,marginTop:"4px"}}>
+  <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"12px",lineHeight:1.45,color:check.level === "unknown" ? MUT : TEXT,marginTop:"4px"}}>
     <CircleAlert size={13} color={FLAG[check.level]} style={{flexShrink:0,marginTop:"1px"}}/>{check.text}
   </div>
 );
@@ -139,7 +139,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
   };
   const draftCheck = draft.amount > 0 ? affordability(m, { kind: adding, amount: draft.amount }) : null;
 
-  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
+  const label = { fontSize:"11px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
   const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD_TEXT}`, borderRadius:"100px", padding:"7px 12px", color:GOLD_TEXT, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
   const solid = on => ({ flex:1, background:on ? G : "rgba(22,47,36,0.2)", color:WHITE, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:on ? "pointer" : "not-allowed" });
   const outline = { flex:1, background:WHITE, color:G, border:"1.3px solid rgba(22,47,36,0.2)", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
@@ -147,8 +147,8 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
   const tile = { background:"rgba(22,47,36,0.04)", borderRadius:"12px", padding:"10px", minWidth:0 };
   const stat = (name, value) => (
     <div style={tile}>
-      <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{name}</div>
-      <div style={{fontFamily:SANS,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
+      <div style={{fontSize:"11px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{name}</div>
+      <div style={{fontFamily:SANS,fontSize:"13px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
     </div>
   );
   const saved = run ? run.base.totalPaid - run.totalPaid : 0;
@@ -183,16 +183,16 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
             </form>
           ) : (
             <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
-              <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{plan.name}</span>
+              <span style={{fontSize:"12px",fontWeight:700,color:TEXT}}>{plan.name}</span>
               <button type="button" aria-label={`Rename ${plan.name}`} onClick={() => setNaming(true)} className="tap44" style={iconBtn}><Pencil size={13}/></button>
             </div>
           )}
 
-          {plan.items.length === 0 && !adding && <p style={{fontSize:"12.5px",color:MUT,margin:"0 0 8px"}}>Add a payment to see {plan.name} on the chart.</p>}
+          {plan.items.length === 0 && !adding && <p style={{fontSize:"12px",color:MUT,margin:"0 0 8px"}}>Add a payment to see {plan.name} on the chart.</p>}
           {plan.items.map(it => (
             <div key={it.id} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:editing === it.id ? 0.45 : 1}}>
               <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
-                <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{describe(it)}</span>
+                <span style={{flex:1,fontSize:"12px",color:TEXT,fontWeight:600}}>{describe(it)}</span>
                 <button type="button" aria-label={`Change ${describe(it)}`} onClick={() => openForm(it.kind, it)} className="tap44" style={iconBtn}><Pencil size={14}/></button>
                 <button type="button" aria-label={`Remove ${describe(it)}`} onClick={() => { savePlan({ ...plan, items: plan.items.filter(x => x.id !== it.id) }); if (editing === it.id) close(); }} className="tap44" style={iconBtn}><X size={15}/></button>
               </div>
@@ -226,7 +226,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
                   </div>
                 </div>
               )}
-              {adding === "once" && !whenOk && <p style={{fontSize:"11.5px",color:CRITICAL,margin:0}}>Pick a month from now until the loan would be {sl.willClear ? "cleared" : "written off"}.</p>}
+              {adding === "once" && !whenOk && <p style={{fontSize:"12px",color:CRITICAL,margin:0}}>Pick a month from now until the loan would be {sl.willClear ? "cleared" : "written off"}.</p>}
               <Flag check={draftCheck}/>
               <div style={{display:"flex",gap:"8px"}}>
                 <button type="button" onClick={close} style={outline}>Cancel</button>
@@ -247,7 +247,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
                 {stat(saved >= 0 ? "Saves" : "Costs more", fmt(Math.abs(saved)))}
                 {stat("Paid", fmt(run.totalPaid))}
               </div>
-              <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
                 {fmt(run.paidIn)} paid in by {plan.name}, against {run.base.clearYr ? `clearing in ${run.base.clearYr} yrs` : `${fmt(run.base.writeOffBal)} written off`} and {fmt(run.base.totalPaid)} paid in all, as it is.
                 {" "}Valued today, counting what the money would earn in savings at {sl.cashRate}%, it costs {fmt(Math.abs(run.paidToday - run.base.paidToday))} {run.paidToday <= run.base.paidToday ? "less" : "more"}.
               </p>
@@ -257,7 +257,7 @@ function PlanBuilder({ d, m, sl, set, run, onSaved }) {
           <button type="button" onClick={remove} style={{background:"none",border:"none",padding:"12px 0 0",color:MUT,fontSize:"12px",fontWeight:600,textDecoration:"underline",fontFamily:"inherit",cursor:"pointer"}}>Delete {plan.name}</button>
         </div>
       )}
-      {plans.length === 0 && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Make a plan of one-off and monthly payments, and see it on the chart beside the lump sum. Up to {MAX_PLANS} plans, saved.</p>}
+      {plans.length === 0 && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Make a plan of one-off and monthly payments, and see it on the chart beside the lump sum. Up to {MAX_PLANS} plans, saved.</p>}
     </div>
   );
 }
@@ -284,14 +284,14 @@ function PayByYear({ d, m, sl, set }) {
     <div style={{marginTop:"12px",paddingBottom:"12px",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
       <div style={label}>Your pay, year by year</div>
       {rows.length === 0 && !form && (
-        <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"0 0 8px"}}>Know what you'll earn in some years? Add them and every projection in Candid uses them, rising steadily between, then with prices.</p>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 8px"}}>Know what you'll earn in some years? Add them and every projection in Candid uses them, rising steadily between, then with prices.</p>
       )}
       {rows.length > 0 && (
-        <div style={{fontSize:"12.5px",color:MUT,margin:"0 0 4px"}}>{fmt(+d.salary || 0)} today</div>
+        <div style={{fontSize:"12px",color:MUT,margin:"0 0 4px"}}>{fmt(+d.salary || 0)} today</div>
       )}
       {rows.map(r => (
         <div key={r.id} style={{display:"flex",alignItems:"center",gap:"4px",padding:"7px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:form?.id === r.id ? 0.45 : 1}}>
-          <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{fmt(+r.salary)} from April {r.year}</span>
+          <span style={{flex:1,fontSize:"12px",color:TEXT,fontWeight:600}}>{fmt(+r.salary)} from April {r.year}</span>
           <button type="button" aria-label={`Change pay from April ${r.year}`} onClick={() => setForm({ id: r.id, year: r.year, salary: +r.salary })} className="tap44" style={iconBtn}><Pencil size={14}/></button>
           <button type="button" aria-label={`Remove pay from April ${r.year}`} onClick={() => set("payByYear", rows.filter(x => x.id !== r.id))} className="tap44" style={iconBtn}><X size={15}/></button>
         </div>
@@ -317,7 +317,7 @@ function PayByYear({ d, m, sl, set }) {
         <button type="button" onClick={() => setForm({ year: String(taxYear + Math.min(5, Math.max(1, rows.length ? +rows[rows.length - 1].year - taxYear + 2 : 3))), salary: null })} style={{...ghost,marginTop:"8px"}}><Plus size={13}/>A year's pay</button>
       )}
       {path && !form && (
-        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
           Used across Candid in place of your salary growth: {fmt(Math.round(+d.salary * path.factor(10) / 100) * 100)} in ten years.
         </p>
       )}
@@ -331,13 +331,13 @@ function Locked({ d }) {
   return (
     <div style={{position:"relative",paddingTop:"10px"}}>
       <div aria-hidden="true" inert="" style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
-        {example.map(t => <div key={t} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",fontSize:"13.5px",fontWeight:600,color:TEXT}}>{t}</div>)}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G}}>
+        {example.map(t => <div key={t} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",fontSize:"12px",fontWeight:600,color:TEXT}}>{t}</div>)}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px",fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>
           <span>3 yrs</span><span>£4,210</span><span>£16,900</span>
         </div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center"}}>
-        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Set your pay year by year, and plan payments to compare with a lump sum, with a subscription</span>
+        <span style={{fontSize:"12px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Set your pay year by year, and plan payments to compare with a lump sum, with a subscription</span>
         <SubscribeButtons d={d} module="studentLoan" from="scenario_modelling"/>
       </div>
     </div>

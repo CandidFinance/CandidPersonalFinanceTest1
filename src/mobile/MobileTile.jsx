@@ -1,7 +1,7 @@
 import { useState, useRef, useId, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MoreHorizontal, ChevronRight } from "lucide-react";
-import { G, TEXT, MUT, WHITE, SANS, CARD, HAIRLINE, GOLD_TEXT, CRITICAL } from "../design-tokens.js";
+import { G, TEXT, MUT, WHITE, SANS, CARD, HAIRLINE, GOLD_TEXT, CRITICAL, TILE_KICKER, TILE_FIGURE, TILE_LABEL_SIZE, TILE_NOTE } from "../design-tokens.js";
 import useDialogFocus from "./useDialogFocus.js";
 
 // A module answer tile, after Monzo's: a short bold title top left, a gold
@@ -20,7 +20,7 @@ export default function MobileTile({ title, subtitle, menu = [], level = 2, badg
   return (
     <section {...rest} style={{...CARD,position:"relative",paddingLeft:"16px",marginBottom:"12px",scrollMarginTop:"80px",...rest.style}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",padding:subtitle ? "16px 6px 0 0" : "16px 6px 8px 0",minHeight:"24px"}}>
-        <Heading style={{margin:0,fontFamily:SANS,fontSize:"17px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</Heading>
+        <Heading style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3}}>{title}</Heading>
         {items.length > 0 && (
           <button type="button" aria-label={`${title}: more`} aria-haspopup="menu" aria-expanded={menuOpen} aria-controls={menuOpen ? menuId : undefined}
             onClick={() => setMenuOpen(o => !o)}
@@ -70,11 +70,11 @@ export function TileRow({ first = false, onClick, align = false, expanded, id, c
 // `text`: a sentence on its own row; `action`: a row that leads somewhere.
 export const ROW = {
   line: { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px" },
-  label: { fontSize:"14px", color:TEXT, lineHeight:1.4 },
-  note: { fontSize:"12px", color:MUT, lineHeight:1.45, marginTop:"2px" },
-  figure: { fontFamily:SANS, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" },
-  text: { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:0 },
-  action: { display:"flex", alignItems:"center", gap:"10px", fontSize:"14px", fontWeight:600, color:G },
+  label: { fontSize:TILE_LABEL_SIZE, color:TEXT, lineHeight:1.4 },
+  note: { ...TILE_NOTE, marginTop:"2px" },
+  figure: { ...TILE_FIGURE, color:G, whiteSpace:"nowrap" },
+  text: { ...TILE_NOTE, margin:0 },
+  action: { display:"flex", alignItems:"center", gap:"10px", fontSize:TILE_LABEL_SIZE, fontWeight:600, color:G },
 };
 
 // A row's text: its label, semi-bold, its note under it, and its figure at

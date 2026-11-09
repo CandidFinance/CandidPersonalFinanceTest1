@@ -56,7 +56,7 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false, 
   // all of them gold (fieldState.js).
   const chip = (on, state) => {
     const empty = state === "empty" && !on;
-    return { display:"block", width:"100%", minHeight:PILL_HEIGHT, boxSizing:"border-box", textAlign:"left", borderRadius:CHOICE_RADIUS, padding:"11px 18px", ...CHOICE_TEXT, fontFamily:"inherit", cursor:"pointer",
+    return { display:"block", width:"100%", minHeight:PILL_HEIGHT, boxSizing:"border-box", textAlign:"left", borderRadius:CHOICE_RADIUS, padding:"9px 18px", ...CHOICE_TEXT, fontFamily:"inherit", cursor:"pointer",
       background:empty ? EMPTY_FILL : on ? FILLED : OFF_FILL,
       border:empty ? "1px solid transparent" : on ? (state === "estimate" ? ESTIMATE_EDGE : HAIRLINE) : OFF_EDGE,
       color:empty ? EMPTY_TEXT : on ? TEXT : OFF_TEXT };
@@ -106,7 +106,7 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false, 
         if (owner) return link(owner, q);
         // A result line (the plan worked out, the balance estimated).
         if (q.kind === "info") return (
-          <div key={q.id} style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.5}}>
+          <div key={q.id} style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",fontSize:"12px",color:TEXT,lineHeight:1.5}}>
             {q.ask(ctx)}
           </div>
         );

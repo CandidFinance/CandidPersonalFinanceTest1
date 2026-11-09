@@ -112,7 +112,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           )}
           <button type="button" onClick={handleReviewed} style={{
             width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-            color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
+            color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"9px",fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
             transition:"border-color 0.6s ease, color 0.6s ease",
             animation: celebrating ? `btnGoldTint ${REVIEW_TINT_S}s ease-in-out` : "none",
@@ -120,7 +120,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
             {isComplete ? <span style={{display:"inline-flex",alignItems:"center",gap:"6px",animation:celebrating ? "reviewedIn 0.6s ease-out" : "none"}}><Check size={14}/> Reviewed</span> : "Mark as reviewed"}
           </button>
         </div>
-        <button onClick={onBack} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
+        <button onClick={onBack} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:"pointer"}}>
           {backLabel || "Back to Modules"}
         </button>
       </div>

@@ -28,7 +28,7 @@ export default function GoToProviderButton({ storageKey, defaultLabel }) {
 
   const pillStyle = {
     width:"100%", display:"block", background:G, color:WHITE, border:"none",
-    borderRadius:RADIUS_PILL, padding:"12px 18px", fontSize:FONT_SIZE.BODY,
+    borderRadius:RADIUS_PILL, padding:"10px 18px", fontSize:"13px",
     fontWeight:700, fontFamily:SANS, cursor:"pointer", textAlign:"center",
     appearance:"none", WebkitAppearance:"none",
   };

@@ -47,8 +47,8 @@ export function PlanPicker({ d, module, from }) {
         {card("monthly")}{card("yearly")}
       </div>
       <button type="button" disabled={!!busy} onClick={() => subscribe(plan)} style={{
-        marginTop:"14px", width:"100%", height:"54px", border:"none", borderRadius:"100px", background:CTA_BLUE, color:WHITE,
-        fontFamily:"inherit", fontSize:"16px", fontWeight:700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
+        marginTop:"14px", width:"100%", height:"37px", border:"none", borderRadius:"100px", background:CTA_BLUE, color:WHITE,
+        fontFamily:"inherit", fontSize:"13px", fontWeight:700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
       }}>{busy ? "Opening checkout…" : `Subscribe ${plan}`}</button>
       {error && <div style={{fontSize:"12px",color:CRITICAL,marginTop:"8px",textAlign:"center"}}>{error}</div>}
     </>

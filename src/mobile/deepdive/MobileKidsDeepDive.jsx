@@ -41,9 +41,9 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
     : partner ? `A pension payment of ${fmt(cc.partnerPayIn)} from your partner (including the tax relief added) would bring their income to ${fmt(CHILDCARE_INCOME_LIMIT)}${cc.payInNeeded > 0 ? `, and ${fmt(cc.payInNeeded)} from you would do the same for yours` : ""}.`
     : `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to ${fmt(CHILDCARE_INCOME_LIMIT)} and ${cc.planning ? "keep it open to you" : "restore it"}.`;
   const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
-  const rowLabel = { fontSize:"13.5px", color:TEXT, fontWeight:600 };
+  const rowLabel = { fontSize:"12px", color:TEXT, fontWeight:600 };
   const rowNote = { fontSize:"12px", color:MUT, marginTop:"2px", lineHeight:1.45 };
-  const rowFigure = { fontFamily:SANS, fontSize:"17px", color:G, fontWeight:700, whiteSpace:"nowrap" };
+  const rowFigure = { fontFamily:SANS, fontSize:"13px", color:G, fontWeight:700, whiteSpace:"nowrap" };
   const stateLine = !cc ? null
     : cc.state === "lost" ? `Your income is ${fmt(Math.round(cc.ani))}, over the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support stops for the whole year.`
     : cc.state === "partner" ? (cc.recoverable
@@ -59,7 +59,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
   // No children, and none planned: nothing here applies.
   if (kidsSituation(d) === "no") {
     return (
-      <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>
+      <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6}}>
         You told us you don't have children and aren't planning any in the next year or two, so nothing here applies. If that changes, updating your answers in Your finances (the sliders button at the top of Home) brings it in.
       </p>
     );
@@ -78,7 +78,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
 
       {cc && (
         <section style={{marginBottom:"18px"}}>
-          <h2 style={{margin:0,fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>{cc.planning ? "Childcare support once your child arrives" : "Your childcare support"}, {NATION_NAME[cc.nation]}</h2>
+          <h2 style={{margin:0,fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>{cc.planning ? "Childcare support once your child arrives" : "Your childcare support"}, {NATION_NAME[cc.nation]}</h2>
           <div style={row}>
             <div>
               <div style={rowLabel}>Tax-Free Childcare</div>
@@ -99,7 +99,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
               <div style={rowFigure}>{fmt(cc.hours)}</div>
             </div>
           )}
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>{stateLine}</p>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>{stateLine}</p>
           {cc.nation === "wales" && cc.preschool > 0 && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Wales's Childcare Offer for 3 and 4 year olds is tested on gross income, which a pension payment doesn't change, so it isn't counted here.</p>
           )}
@@ -111,7 +111,7 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
 
       {cb && cb.charge > 0 && (
         <section style={{marginBottom:"18px"}}>
-          <h2 style={{margin:0,fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Child Benefit</h2>
+          <h2 style={{margin:0,fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Child Benefit</h2>
           <div style={row}>
             <div>
               <div style={rowLabel}>Paid back in tax</div>
@@ -125,8 +125,8 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
       {ownLost && (
         <button type="button" onClick={() => navigate("/app/module/taxTrap")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
           <span>
-            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>The ways back under £100,000</span>
-            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>In the £100k tax trap, with what each costs in take-home pay</span>
+            <span style={{display:"block",fontSize:"12px",fontWeight:700,color:G}}>The ways back under £100,000</span>
+            <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>In the £100k tax trap, with what each costs in take-home pay</span>
           </span>
           <ChevronRight size={18} color={G}/>
         </button>
@@ -134,15 +134,15 @@ export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
       {cc?.recoverable && !ownLost && (
         <button type="button" onClick={() => navigate("/app/module/pension")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
           <span>
-            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>The tax a pension payment saves</span>
-            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Worked out in Pension, on the same figures</span>
+            <span style={{display:"block",fontSize:"12px",fontWeight:700,color:G}}>The tax a pension payment saves</span>
+            <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>Worked out in Pension, on the same figures</span>
           </span>
           <ChevronRight size={18} color={G}/>
         </button>
       )}
 
       {!cc && !(cb && cb.charge > 0) && (
-        <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>No childcare support or Child Benefit to check on what you've told us. Changing your answers in Your finances (the sliders button at the top of Home) brings it in.</p>
+        <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6}}>No childcare support or Child Benefit to check on what you've told us. Changing your answers in Your finances (the sliders button at the top of Home) brings it in.</p>
       )}
     </div>
   );

@@ -58,14 +58,14 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
         {rateCost ? "Get an email if that gets worse." : "Get an email if your answer changes."}
       </div>
       {!open ? (
-        <button type="button" onClick={() => setOpen(true)} style={{background:CTA_BLUE,color:WHITE,border:"none",borderRadius:"100px",padding:"10px 18px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>Add email</button>
+        <button type="button" onClick={() => setOpen(true)} style={{background:CTA_BLUE,color:WHITE,border:"none",borderRadius:"100px",padding:"10px 18px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>Add email</button>
       ) : <>
       <GoogleButton source={source} onCredential={withGoogle} divider/>
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
         aria-invalid={!!check.error} aria-describedby={check.error ? errorId : undefined} style={field}/>
       <input type="text" autoComplete="given-name" maxLength={40} value={name} onChange={e => setName(e.target.value)} placeholder="First name (optional)" aria-label="First name"
         style={{...field,marginTop:"8px"}}/>
-      <button type="submit" disabled={check.busy} style={{width:"100%",marginTop:"10px",background:CTA_BLUE,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "not-allowed" : "pointer"}}>
+      <button type="submit" disabled={check.busy} style={{width:"100%",marginTop:"10px",background:CTA_BLUE,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "not-allowed" : "pointer"}}>
         {check.busy ? "Checking…" : "Email me"}
       </button>
       {check.error && <div id={errorId} role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}

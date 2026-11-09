@@ -72,7 +72,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
     );
   };
   const key = (
-    <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:"11.5px",fontWeight:600,marginTop:"6px"}}>
+    <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:"12px",fontWeight:600,marginTop:"6px"}}>
       {[true, false].map(sure => { const { Icon, color, label } = SURE[sure]; return <span key={label} style={{display:"inline-flex",alignItems:"center",gap:"5px"}}><Icon size={13} color={color} aria-hidden="true"/>{label}</span>; })}
     </div>
   );
@@ -104,7 +104,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
           </div>
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",gap:"6px",textAlign:"center",padding:"4px 28px 0 12px"}}>
             <span style={{width:"32px",height:"32px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={16} color={G}/></span>
-            <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.4,maxWidth:"250px"}}>Every option side by side, your mortgage included, comes with a subscription</span>
+            <span style={{fontSize:"12px",fontWeight:600,color:G,lineHeight:1.4,maxWidth:"250px"}}>Every option side by side, your mortgage included, comes with a subscription</span>
             <SubscribeButtons d={d} module="studentLoan" from="loan_compare"/>
           </div>
         </div>
@@ -121,10 +121,10 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
         ) : (
           <TileRow>
             <div>
-              <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>Do you have a mortgage?</div>
+              <div style={{fontSize:"12px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>Do you have a mortgage?</div>
               <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
                 {[["yes", "Yes"], ["no", "No"]].map(([v, label]) => (
-                  <button key={v} type="button" aria-pressed={d.slCompareMortgage === v} onClick={() => { set("slCompareMortgage", v); if (v === "no") setAsking(false); }} style={{flex:1,background:d.slCompareMortgage === v ? G : WHITE,color:d.slCompareMortgage === v ? WHITE : TEXT,border:`1.5px solid ${d.slCompareMortgage === v ? G : "rgba(22,47,36,0.15)"}`,borderRadius:"100px",padding:"9px",fontSize:"13.5px",fontWeight:600,fontFamily:"inherit",cursor:"pointer"}}>{label}</button>
+                  <button key={v} type="button" aria-pressed={d.slCompareMortgage === v} onClick={() => { set("slCompareMortgage", v); if (v === "no") setAsking(false); }} style={{flex:1,background:d.slCompareMortgage === v ? G : WHITE,color:d.slCompareMortgage === v ? WHITE : TEXT,border:`1.5px solid ${d.slCompareMortgage === v ? G : "rgba(22,47,36,0.15)"}`,borderRadius:"100px",padding:"9px",fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:"pointer"}}>{label}</button>
                 ))}
               </div>
               {d.slCompareMortgage === "yes" && (

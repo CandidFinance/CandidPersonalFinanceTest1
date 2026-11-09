@@ -193,8 +193,8 @@ export const HEADER_WORDMARK_LIGHT = { fontFamily: SERIF, fontWeight: 700, color
 export const RADIUS_PILL  = "100px";
 // Every mobile input pill (PillMoneyInput, PillSelect, PillSlider) is this
 // tall, so a toggle, a dropdown and a £/% field sit level when they share a
-// row or stack.
-export const PILL_HEIGHT = "44px";
+// row or stack. Your finances sets --pill-height to 37px for its shorter pills.
+export const PILL_HEIGHT = "var(--pill-height, 44px)";
 // Visually hidden, still read by screen readers (Home's and Modules' h1).
 export const SR_ONLY = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
@@ -212,10 +212,16 @@ export const ROW_TILE = { ...CARD, padding: "16px 18px 4px" };
 // label above it.
 // The small line above a notice's title (what it is, when): sentence case,
 // 12.5px, MUT (5.3:1 on WHITE).
-export const NOTICE_LABEL = { fontSize: "12.5px", fontWeight: 600, color: MUT, lineHeight: 1.4, margin: 0 };
+export const NOTICE_LABEL = { fontSize: "12px", fontWeight: 600, color: MUT, lineHeight: 1.4, margin: 0 };
 // A tile's title on Home and Progress ("Your years with Candid", "Coming up"):
 // small tracked caps in MUT.
 export const TILE_KICKER = { fontSize: "11px", fontWeight: 600, color: MUT, letterSpacing: "0.09em", textTransform: "uppercase", margin: 0 };
+// The rest of a tile's text, matching "Your years with Candid". A figure is
+// 13px bold on its row; only a screen's headline £ is larger (Harvey, 9 Nov
+// 2026: Opportunity tiles at 44px, Home's hero, the £100k figures, Your years).
+export const TILE_FIGURE = { fontFamily: SANS, fontSize: "13px", fontWeight: 700 };
+export const TILE_LABEL_SIZE = "12px";
+export const TILE_NOTE = { fontSize: "12px", color: MUT, lineHeight: 1.5 };
 export const SECTION_TITLE = { fontFamily: SANS, fontSize: "18px", fontWeight: 700, color: G, lineHeight: 1.25, margin: 0 };
 
 // "Where to open an account" provider tiles (Cash/Investments/Pension) —

@@ -30,7 +30,7 @@ export const compact = n => {
   return `${sign}£${Math.round(a)}`;
 };
 const pct = r => `${Math.round(r * 100)}%`;
-const label = { fontSize:"9.5px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:"6px" };
+const label = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:"6px" };
 const strategyLine = (toAge, t) => `Drawdown to ${toAge}, ${t === "phased" ? "25% tax-free each withdrawal" : "lump sum in Year 1"}`;
 
 
@@ -38,10 +38,10 @@ export function Pill({ value, caption, info }) {
   return (
     <div style={{background:"rgba(22,47,36,0.05)",borderRadius:"12px",padding:"10px 12px"}}>
       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-        <div style={{fontFamily:SANS,fontSize:"20px",color:G,fontWeight:700,lineHeight:1.1}}>{value}</div>
+        <div style={{fontFamily:SANS,fontSize:"13px",color:G,fontWeight:700,lineHeight:1.1}}>{value}</div>
         {info}
       </div>
-      <div style={{fontSize:"11.5px",color:MUT,marginTop:"3px"}}>{caption}</div>
+      <div style={{fontSize:"12px",color:MUT,marginTop:"3px"}}>{caption}</div>
     </div>
   );
 }
@@ -74,7 +74,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
   return (
     <div style={bare ? {} : {background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
       <div style={label}>Drawdown strategy</div>
-      <div style={{fontSize:"15px",fontWeight:600,color:G,lineHeight:1.4}}>{strategyLine(plan.toAge, taxFree)}</div>
+      <div style={{fontSize:"12px",fontWeight:600,color:G,lineHeight:1.4}}>{strategyLine(plan.toAge, taxFree)}</div>
 
       {/* In a tile, lines with the figures on the right, not cards. */}
       {bare ? (
@@ -86,8 +86,8 @@ export default function MobileDrawdown({ d, m, bare = false }) {
             ["Effective tax rate", pct(plan.effectiveRate)],
           ].map(([k, v]) => (
             <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"4px 0"}}>
-              <span style={{fontSize:"13px",color:TEXT}}>{k}</span>
-              <span style={{fontFamily:SANS,fontSize:"17px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{v}</span>
+              <span style={{fontSize:"12px",color:TEXT}}>{k}</span>
+              <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{v}</span>
             </div>
           ))}
         </div>
@@ -130,13 +130,13 @@ export default function MobileDrawdown({ d, m, bare = false }) {
         ))}
       </div>
       {explainer && (
-        <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginTop:"4px",fontSize:"11.5px",color:TEXT,lineHeight:1.55}}>
+        <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginTop:"4px",fontSize:"12px",color:TEXT,lineHeight:1.55}}>
           {TAX_FREE_OPTIONS.map(o => <p key={o.value} style={{margin:0,marginTop:o.value === "phased" ? 0 : "8px"}}><strong>{o.label} ({o.term}).</strong> {o.explain}</p>)}
         </div>
       )}
 
       <div style={{...label,marginTop:"16px"}}>Year by year, by age</div>
-      <div style={{fontSize:"11.5px",color:TEXT}}>
+      <div style={{fontSize:"12px",color:TEXT}}>
         <div style={{display:"grid",gridTemplateColumns:cols,gap:"6px",paddingBottom:"5px",borderBottom:"1px solid rgba(22,47,36,0.12)"}}>
           <span/>
           {phases.map((p, i) => (
@@ -163,7 +163,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
         {showAssumptions ? "Hide assumptions" : "Assumptions"}
       </button>
       {showAssumptions && (
-        <ul style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px 12px 28px",margin:"8px 0 0",fontSize:"11.5px",color:TEXT,lineHeight:1.55}}>
+        <ul style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px 12px 28px",margin:"8px 0 0",fontSize:"12px",color:TEXT,lineHeight:1.55}}>
           <li>In today's money: your pension grows {GROWTH_REAL_PCT}% a year more than prices. Tax uses today's rates and bands.</li>
           <li>{compact(plan.yearly)} a year comes out before tax, more than {compact(plan.simpleYearly)} (the pot divided by {years}), because what's left keeps growing.</li>
           <li>The State Pension{plan.state.started ? "" : ` (${fmt(plan.state.amount)} a year from ${plan.state.fromAge})`} is assumed to keep pace with prices. That isn't guaranteed, and the age it starts may rise.</li>

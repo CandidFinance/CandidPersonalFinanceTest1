@@ -7,7 +7,7 @@ import { taxYearFor } from "../../lib/taxYear.js";
 import { AlertTriangle, PiggyBank, Users, CalendarClock } from "lucide-react";
 import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
 import { fmt, fmtBig } from "../../lib/format.js";
-import { G, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT, SANS } from "../../design-tokens.js";
+import { G, MUT, TEXT, SUCCESS, ERROR_TEXT, SANS } from "../../design-tokens.js";
 import MobileTile, { TileRow } from "../MobileTile.jsx";
 import { ADVISER_LINK } from "../GuidanceNote.jsx";
 
@@ -27,7 +27,7 @@ export function PayInMore({ traj, tr }) {
   const foregone = Math.round(traj.extraSalaryCost * (1 - tr));
   const figure = (label, value, color) => (
     <div style={{flex:1,minWidth:0}}>
-      <div style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color,lineHeight:1.1}}>{fmtBig(value)}</div>
+      <div style={{fontSize:"13px",fontWeight:700,color,lineHeight:1.1}}>{fmtBig(value)}</div>
       <div style={{fontSize:"12px",color:MUT,marginTop:"4px",lineHeight:1.35}}>{label}</div>
     </div>
   );
@@ -43,12 +43,12 @@ export function PayInMore({ traj, tr }) {
 }
 
 // A labelled £ figure over a bar, the bars in a group sharing one scale.
-function AmountBar({ label, value, color, scale, size = 17, pounds = fmt }) {
+function AmountBar({ label, value, color, scale, pounds = fmt }) {
   return (
     <div style={{marginTop:"10px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"10px"}}>
-        <span style={{fontSize:"12.5px",color:TEXT}}>{label}</span>
-        <span style={{fontFamily:SANS,fontSize:`${size}px`,fontWeight:700,color,whiteSpace:"nowrap"}}>{pounds(value)}</span>
+        <span style={{fontSize:"12px",color:TEXT}}>{label}</span>
+        <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color,whiteSpace:"nowrap"}}>{pounds(value)}</span>
       </div>
       <div style={{height:"8px",borderRadius:"100px",background:"rgba(22,47,36,0.07)",marginTop:"4px",overflow:"hidden"}}>
         <div style={{height:"100%",width:`${(value / scale) * 100}%`,background:color,borderRadius:"100px",transition:"width 0.3s ease"}}/>
@@ -76,29 +76,29 @@ export function CliffEdge({ cliff, onSeeMore }) {
       <TileRow onClick={() => setOpen(o => !o)} expanded={open}>
         <span style={{display:"flex",alignItems:"flex-start",gap:"8px"}}>
           <AlertTriangle size={18} color={ERROR_TEXT} aria-hidden="true" style={{flexShrink:0,marginTop:"1px"}}/>
-          <span style={{fontSize:"14px",fontWeight:600,color:TEXT,lineHeight:1.4}}>
+          <span style={{fontSize:"12px",fontWeight:600,color:TEXT,lineHeight:1.4}}>
             {cliff.already ? "Your pot is past the tax-free cash limit" : `Your pot could reach the tax-free cash limit around age ${cliff.age}`}
           </span>
         </span>
       </TileRow>
       {open && (
         <TileRow>
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:0}}>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:0}}>
             25% of a pension can be taken tax-free, but only up to {fmtBig(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmtBig(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
           </p>
-          <div style={{fontSize:"12.5px",fontWeight:700,color:TEXT,margin:"14px 0 0"}}>£100 of take-home pay, by the time you spend it</div>
-          {bars.map(b => <AmountBar key={b.label} label={b.label} value={b.value} color={b.color} scale={scale} size={16} pounds={v => `£${v}`}/>)}
-          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+          <div style={{fontSize:"12px",fontWeight:700,color:TEXT,margin:"14px 0 0"}}>£100 of take-home pay, by the time you spend it</div>
+          {bars.map(b => <AmountBar key={b.label} label={b.label} value={b.value} color={b.color} scale={scale} pounds={v => `£${v}`}/>)}
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
             £100 paid in becomes £{cliff.paidIn} with tax relief at {pct(cliff.nowRate)}, then taxed at {pct(cliff.laterRate)} in retirement. Growth is the same in each, so it's left out.
           </p>
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>
+          <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>
             This is a complex position, and people in it often get help from a regulated adviser. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
           </p>
         </TileRow>
       )}
       {open && (
         <TileRow onClick={onSeeMore}>
-          <span style={{fontSize:"14px",fontWeight:600,color:G}}>What it means, and the alternatives</span>
+          <span style={{fontSize:"12px",fontWeight:600,color:G}}>What it means, and the alternatives</span>
         </TileRow>
       )}
     </>
@@ -119,13 +119,13 @@ export function LookingAhead({ d, outlook, cliff, menu }) {
   const growth = Math.round(salaryGrowthOf(d) * 1000) / 10;
   const payGrowth = payPathOf(d, +d.salary || 0, taxYearFor(d)) ? "your pay as you've set it year by year, then rising 2% a year"
     : growth === 2 ? "your pay rising 2% a year" : `your pay rising ${growth}% a year for ${FAST_GROWTH_YEARS} years, then 2%`;
-  const section = { fontSize:"12.5px", fontWeight:600, color:MUT, lineHeight:1.4, margin:"0 0 6px" };
-  const title = { fontSize:"14px", fontWeight:700, color:TEXT, lineHeight:1.35 };
-  const body = { fontSize:"13px", color:MUT, lineHeight:1.55, margin:"4px 0 0" };
+  const section = { fontSize:"12px", fontWeight:600, color:MUT, lineHeight:1.4, margin:"0 0 6px" };
+  const title = { fontSize:"12px", fontWeight:700, color:TEXT, lineHeight:1.35 };
+  const body = { fontSize:"12px", color:MUT, lineHeight:1.55, margin:"4px 0 0" };
   const figure = (value, label) => (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",marginTop:"8px"}}>
-      <span style={{fontSize:"13px",color:TEXT}}>{label}</span>
-      <span style={{fontFamily:SANS,fontSize:"20px",fontWeight:700,color:AMBER,whiteSpace:"nowrap"}}>{fmtBig(value)}</span>
+      <span style={{fontSize:"12px",color:TEXT}}>{label}</span>
+      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:AMBER,whiteSpace:"nowrap"}}>{fmtBig(value)}</span>
     </div>
   );
 
@@ -161,7 +161,7 @@ export function LookingAhead({ d, outlook, cliff, menu }) {
 
   return (
     <MobileTile id="looking-ahead" title="Looking ahead" menu={menu}>
-      <TileRow first style={{paddingTop:0}}><div style={{fontSize:"14px",color:TEXT,lineHeight:1.4}}>{headline}</div></TileRow>
+      <TileRow first style={{paddingTop:0}}><div style={{fontSize:"12px",color:TEXT,lineHeight:1.4}}>{headline}</div></TileRow>
       {means.map((el, i) => (
         <TileRow key={i}>{i === 0 && <div style={section}>What it means</div>}{el}</TileRow>
       ))}
@@ -172,7 +172,7 @@ export function LookingAhead({ d, outlook, cliff, menu }) {
             <span style={{display:"block",flex:1,minWidth:0}}>
               <span style={{...title,display:"block"}}>{a.title}</span>
               <span style={{...body,display:"block"}}>{a.body}</span>
-              {a.action && <span style={{display:"block",fontSize:"13px",fontWeight:700,color:G,marginTop:"6px"}}>{a.action.label}</span>}
+              {a.action && <span style={{display:"block",fontSize:"12px",fontWeight:700,color:G,marginTop:"6px"}}>{a.action.label}</span>}
             </span>
           </span>
         );
@@ -184,7 +184,7 @@ export function LookingAhead({ d, outlook, cliff, menu }) {
         );
       })}
       <TileRow>
-        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:0}}>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:0}}>
           An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing {GROWTH_NOMINAL_PCT}% a year, and today's tax rules.
         </p>
       </TileRow>

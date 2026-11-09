@@ -11,7 +11,7 @@ import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK, SANS } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK, SANS, TILE_KICKER } from "../../design-tokens.js";
 import posthog from "posthog-js";
 import { undoSacrifice, recordTopUps, removeTopUp } from "../../lib/taxTrapRecord.js";
 import { CHOICE_IDS, choiceFor } from "../../lib/opportunityChoices.js";
@@ -50,7 +50,7 @@ const pct = r => `${Math.round(r * 1000) / 10}%`;
 const pence = r => `${Math.round(r * 1000) / 10}p`;
 const signed = n => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
 const tile = { background:WHITE, borderRadius:"16px", boxShadow:"0 2px 10px rgba(22,47,36,0.06)", padding:"16px 18px", marginBottom:"16px" };
-const tileTitle = { fontSize:"15px", fontWeight:700, color:TEXT, margin:0 };
+const tileTitle = TILE_KICKER;
 // A figure's cell: red for what it costs, green for what it brings.
 const TONE = {
   cost: { bg: "rgba(192,57,43,0.08)", fg: "#8e2a1f" },
@@ -58,12 +58,12 @@ const TONE = {
   plain: { bg: "rgba(22,47,36,0.04)", fg: G },
 };
 const toneOf = v => v < 0 ? "cost" : v > 0 ? "gain" : "plain";
-const cellLabel = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.05em", textTransform:"uppercase" };
+const cellLabel = { fontSize:"11px", fontWeight:700, color:MUT, letterSpacing:"0.05em", textTransform:"uppercase" };
 function Cell({ label, text, tone = "plain", wide = false }) {
   return (
     <div style={{background:TONE[tone].bg,borderRadius:"10px",padding:"8px 10px",gridColumn:wide ? "1 / -1" : undefined}}>
       <div style={cellLabel}>{label}</div>
-      <div style={{fontFamily:SANS,fontSize:"17px",fontWeight:700,color:TONE[tone].fg,marginTop:"2px"}}>{text}</div>
+      <div style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:TONE[tone].fg,marginTop:"2px"}}>{text}</div>
     </div>
   );
 }
@@ -95,7 +95,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
   };
   if (!t || !trapInView(d, m.adjustedNetIncome)) {
     return (
-      <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>
+      <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6}}>
         {t ? `Your income is ${fmt(t.ani)}, not near ${K}, so nothing here applies yet.` : "This works from your salary, which isn't in yet."} From {fmt(TRAP_GROSS)} of pay before pension, or heading over {K} in the next few years, this module works out what it would cost you.
       </p>
     );
@@ -132,7 +132,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
       {recorded && (
         <motion.div initial={reduceMotion ? false : { opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.25 }}
           style={{display:"flex",alignItems:"center",gap:"12px",margin:"0 4px 16px"}}>
-          <p style={{flex:1,fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:0}}>
+          <p style={{flex:1,fontSize:"12px",color:MUT,lineHeight:1.5,margin:0}}>
             {recorded.route === "sacrifice" ? "Salary sacrifice" : "Pension payments"} of {fmt(recorded.amount)} a year set up on {new Date(recorded.on).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}{recorded.perYear > 0 ? `: ${fmt(recorded.perYear)} a year kept` : ""}.
           </p>
           <Switch on label="I've set this up" onChange={undo}/>
@@ -167,7 +167,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
             style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:`0 8px ${optionsOpen ? 12 : 0}px`,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
             <span style={{flex:1}}>
               <span style={{display:"block",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:G}}>Your options</span>
-              <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Ways your income could come back to {K}.</span>
+              <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Ways your income could come back to {K}.</span>
             </span>
             <ChevronDown size={18} color={G} aria-label={optionsOpen ? "Minimise" : "Expand"} style={{flexShrink:0,transform:optionsOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
           </button>
@@ -228,12 +228,12 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
           style={{position:"absolute",top:"12px",right:"12px",display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
           <X size={15} aria-hidden="true"/>
         </button>
-        <h2 style={{margin:"0 32px 0 0",fontSize:"20px",lineHeight:1.25,fontWeight:700,color:G}}>Plan ahead for the {K} trap</h2>
+        <h2 style={{...TILE_KICKER,margin:"0 32px 0 0",lineHeight:1.25}}>Plan ahead for the {K} trap</h2>
         <div style={{marginTop:"14px",display:"flex",gap:"12px",alignItems:"flex-start",background:WHITE,border:"1.5px solid rgba(192,57,43,0.35)",borderRadius:"14px",padding:"14px"}}>
           <TriangleAlert size={22} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
           <div>
-            <div style={{fontFamily:/£/.test(String(stake.figure)) ? SERIF : SANS,fontWeight:700,fontSize:"24px",lineHeight:1.1,color:"#a8301f"}}>{stake.figure}</div>
-            <div style={{fontSize:"13px",lineHeight:1.45,marginTop:"4px",color:TEXT}}>{stake.body}</div>
+            <div style={{fontFamily:/£/.test(String(stake.figure)) ? SERIF : SANS,fontWeight:700,fontSize:"13px",lineHeight:1.1,color:"#a8301f"}}>{stake.figure}</div>
+            <div style={{fontSize:"12px",lineHeight:1.45,marginTop:"4px",color:TEXT}}>{stake.body}</div>
           </div>
         </div>
       </div>
@@ -250,7 +250,7 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
               </span>
               <span style={{paddingBottom: last ? 0 : "16px"}}>
                 <span style={{display:"block",fontSize:"11px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"#0058b0"}}>{mo.when}</span>
-                <span style={{display:"block",fontSize:"14px",fontWeight:700,marginTop:"2px",color:TEXT}}>{mo.what}</span>
+                <span style={{display:"block",fontSize:"12px",fontWeight:700,marginTop:"2px",color:TEXT}}>{mo.what}</span>
               </span>
             </li>
             );
@@ -367,11 +367,11 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       {walking ? (
         <Walkthrough step={step} setStep={setStep} onDone={finish} d={d} m={m} t={t} plan={plan} route={route} reduceMotion={reduceMotion}/>
       ) : <>
-      <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>
+      <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>
         {fmt(t.needed)} more this tax year brings your income back to {K}{plan.n > 0 ? `: ${fmt(plan.monthly)} a month over the ${plan.n} payday${plan.n === 1 ? "" : "s"} left` : ""}.
       </div>
       {canSacrifice && (
-        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px",fontSize:"12.5px",fontWeight:600}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px",fontSize:"12px",fontWeight:600}}>
           <span style={{color:sacrifice ? MUT : TEXT}}>Relief at source</span>
           <button type="button" role="switch" aria-checked={sacrifice} aria-label="Salary sacrifice" onClick={switchRoute}
             style={{position:"relative",width:"38px",height:"22px",borderRadius:"11px",border:"none",padding:0,cursor:"pointer",background:G,flexShrink:0}}>
@@ -388,19 +388,19 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       )}
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginTop:"14px"}}>
         <span style={{fontSize:"12px",color:MUT}}>{bonus ? "One-off, from your bonus" : single ? "One payment before 5 April" : `A month, for ${n} payday${n === 1 ? "" : "s"}`}</span>
-        <span style={{fontFamily:SANS,fontSize:"24px",fontWeight:700,color:G}}>{fmt(each)}</span>
+        <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>{fmt(each)}</span>
       </div>
       <input type="range" min={0} max={max} step={single ? SLIDER_STEP_BONUS : SLIDER_STEP} value={each} aria-label={single ? "Paid into your pension" : "Paid into your pension a month"}
         onChange={e => setChosen(+e.target.value)} style={{width:"100%",accentColor:G,margin:"4px 0 0"}}/>
       {sacrifice && !single && (
-        <div style={{fontSize:"12.5px",color:TEXT,marginTop:"4px"}}>
+        <div style={{fontSize:"12px",color:TEXT,marginTop:"4px"}}>
           Your pension: <b>{plan.pctNow}% to {pctTo}%</b> of salary from your {monthName(first)} pay to March
         </div>
       )}
-      {!sacrifice && !single && <div style={{fontSize:"12.5px",color:TEXT,marginTop:"4px"}}>{fmt(total)} by 5 April, a month at a time or in one payment</div>}
+      {!sacrifice && !single && <div style={{fontSize:"12px",color:TEXT,marginTop:"4px"}}>{fmt(total)} by 5 April, a month at a time or in one payment</div>}
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"8px",marginTop:"12px",padding:"10px 12px",borderRadius:"10px",background:CDARK}}>
         <span style={{fontSize:"12px",color:MUT}}>Adjusted net income this tax year</span>
-        <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}>{fmt(t.ani)} to <b style={{fontFamily:SANS,fontSize:"17px",color:p.ani <= TRAP_START ? G : CRITICAL}}>{fmt(p.ani)}</b></span>
+        <span style={{fontSize:"12px",color:MUT,whiteSpace:"nowrap"}}>{fmt(t.ani)} to <b style={{fontFamily:SANS,fontSize:"13px",color:p.ani <= TRAP_START ? G : CRITICAL}}>{fmt(p.ani)}</b></span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}}>
         <Cell label="Into your pension" text={signed(p.pension)} tone={p.pension > 0 ? "gain" : "plain"}/>
@@ -419,7 +419,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       {loanUnknown && (
         <button type="button" onClick={() => navigate("/app/module/studentLoan")}
           style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",marginTop:"12px",background:"rgba(217,130,43,0.08)",border:"1px solid rgba(217,130,43,0.3)",borderRadius:"10px",padding:"10px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-          <span style={{flex:1,fontSize:"12.5px",color:TEXT,lineHeight:1.45}}>
+          <span style={{flex:1,fontSize:"12px",color:TEXT,lineHeight:1.45}}>
             <b>Have a student loan?</b> Salary sacrifice lowers its repayments too, so adding your loan could show a bigger saving.
           </span>
           <ChevronRight size={16} color={MUT} style={{flexShrink:0}}/>
@@ -441,7 +441,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
           : <MobileReminderAction id="taxtrap-relief" beside={beside} title={`Pension: ${fmt(each)} a month until April`}
               description={`${fmt(each)} a month into your pension over the ${n} paydays left, or ${fmt(total)} in one payment before 5 April, brings your income back towards ${K}. The higher-rate relief is claimed through Self Assessment.`}/>;
       })()}
-      {each > 0 && p.avoided > 0 && <p style={{...note,fontSize:"11.5px"}}>Switching on "I've set this up" counts {fmt(p.avoided)} a year as saved, at the amount set above.</p>}
+      {each > 0 && p.avoided > 0 && <p style={{...note,fontSize:"12px"}}>Switching on "I've set this up" counts {fmt(p.avoided)} a year as saved, at the amount set above.</p>}
       </>}
     </section>
   );
@@ -467,10 +467,10 @@ const WALK_TIMING = {
 // The block whose figure counts up as it appears: screen 1's income, screen
 // 4's split of the pay over £100k.
 const COUNT_AT = [1, -1, -1, 2];
-const walkText = { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:"8px 0 0" };
-const walkTitle = { fontSize:"14px", fontWeight:700, color:TEXT, marginTop:"12px" };
+const walkText = { fontSize:"12px", color:TEXT, lineHeight:1.55, margin:"8px 0 0" };
+const walkTitle = { fontSize:"12px", fontWeight:700, color:TEXT, marginTop:"12px" };
 const smallTile = tone => ({ borderRadius:"10px", padding:"8px 10px", background:tone === "cost" ? "rgba(192,57,43,0.08)" : tone === "gain" ? "rgba(47,148,97,0.12)" : "#f4f1ea" });
-const smallLabel = { fontSize:"10.5px", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:MUT };
+const smallLabel = { fontSize:"11px", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:MUT };
 function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion }) {
   const sacrifice = route === "sacrifice";
   const full = pensionPath(d, m, t.needed, route);
@@ -592,11 +592,11 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"18px"}}>
             <div style={smallTile("cost")}>
               <div style={{...smallLabel,color:"#8a2c22"}}>{plan.n} payday{plan.n === 1 ? "" : "s"} left</div>
-              <div style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:"#a3301f"}}>{plan.pctNow}% to {plan.pctTo}%</div>
+              <div style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:"#a3301f"}}>{plan.pctNow}% to {plan.pctTo}%</div>
             </div>
             <div style={smallTile()}>
               <div style={smallLabel}>Paydays from April</div>
-              <div style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{plan.pctNow}% to {pctYear}%</div>
+              <div style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>{plan.pctNow}% to {pctYear}%</div>
             </div>
           </div>
         )}
@@ -619,8 +619,8 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
     // 3. What it would mean for them.
     <>
       <div style={walkTitle}>Less take-home now, more pension later</div>
-      <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>What this would mean for you</div>
-      <ul style={{margin:"12px 0 0",paddingLeft:"18px",fontSize:"13px",lineHeight:1.5,color:TEXT}}>
+      <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>What this would mean for you</div>
+      <ul style={{margin:"12px 0 0",paddingLeft:"18px",fontSize:"12px",lineHeight:1.5,color:TEXT}}>
         {bullets.map((text, i) => <li key={i} style={block(2, i, { marginTop:"6px" })}>{text}</li>)}
       </ul>
       <div style={block(2, bullets.length)}>
@@ -664,7 +664,7 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
       </>}
     </>,
   ];
-  const navBtn = primary => ({ flex:1, border:`1.5px solid ${primary ? "transparent" : "rgba(22,47,36,0.15)"}`, borderRadius:"100px", padding:"10px 14px", fontSize:"13.5px", fontWeight:700, fontFamily:"inherit", whiteSpace:"nowrap", cursor:"pointer", background:primary ? G : WHITE, color:primary ? WHITE : TEXT });
+  const navBtn = primary => ({ flex:1, border:`1.5px solid ${primary ? "transparent" : "rgba(22,47,36,0.15)"}`, borderRadius:"100px", padding:"8.5px 14px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", whiteSpace:"nowrap", cursor:"pointer", background:primary ? G : WHITE, color:primary ? WHITE : TEXT });
   return (
     <div>
       {/* Every screen in the same grid cell, the others hidden: the tile
@@ -726,8 +726,8 @@ function TopUps({ d, m, ups, onRemove }) {
         const sum = g.reduce((s, x) => s + x.amount, 0);
         return (
           <div key={u.group || u.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
-            <span style={{flex:1,fontSize:"13px",color:TEXT,lineHeight:1.4}}>{label}</span>
-            <span style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{fmt(sum)}</span>
+            <span style={{flex:1,fontSize:"12px",color:TEXT,lineHeight:1.4}}>{label}</span>
+            <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>{fmt(sum)}</span>
             <button type="button" onClick={() => onRemove(u.group || u.id)} aria-label={`Remove the ${fmt(sum)} top-up`} className="tap44"
               style={{display:"inline-flex",background:"none",border:"none",padding:"4px",cursor:"pointer",color:MUT}}>
               <X size={16} aria-hidden="true"/>
@@ -779,8 +779,8 @@ function RateTile({ d, m, t }) {
     <section style={tile}>
       <h2 style={tileTitle}>Marginal tax rate by income</h2>
       <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"4px"}}>
-        <span style={{fontFamily:SANS,fontSize:"28px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
-        <span style={{fontSize:"12.5px",color:TEXT,lineHeight:1.4}}>
+        <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
+        <span style={{fontSize:"12px",color:TEXT,lineHeight:1.4}}>
           {t.over ? `yours: ${pence(t.rate.rate)} of every extra £1 you earn goes in ${lostTo(t.rate)}.` : `yours now. Past ${K} it's ${pct(t.trapRate)}.`}
         </span>
       </div>
@@ -788,7 +788,7 @@ function RateTile({ d, m, t }) {
         <RateChart points={points} you={you} at={at} onAt={setAt} width={chartWidth}/>
         <div style={{flex:1}}>{pills}</div>
       </div>
-      <div style={{fontSize:"11.5px",color:MUT,marginTop:"8px"}}>The trap, {K} to {fmt(TRAP_END)}, in red. Touch the chart to see the rate at any income.</div>
+      <div style={{fontSize:"12px",color:MUT,marginTop:"8px"}}>The trap, {K} to {fmt(TRAP_END)}, in red. Touch the chart to see the rate at any income.</div>
     </section>
   );
 }
@@ -825,7 +825,7 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
           style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:0,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
           <span style={{flex:1}}>
             <span style={{...tileTitle,display:"block"}}>{title}</span>
-            {!open && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ticked}</span>}
+            {!open && <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ticked}</span>}
           </span>
           <ChevronDown size={18} color={MUT} aria-label={open ? "Minimise" : "Expand"} style={{flexShrink:0,marginTop:"1px",transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
         </button></h2>
@@ -838,7 +838,7 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
       {nationNote && kids !== "off" && <p style={note}>{nationNote}</p>}
       {askPartner && (
         <div style={{marginTop:"12px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px"}}>
-          <div style={{fontSize:"13px",fontWeight:700,color:TEXT}}>Is your partner's income over £100,000?</div>
+          <div style={{fontSize:"12px",fontWeight:700,color:TEXT}}>Is your partner's income over £100,000?</div>
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Either parent over £100,000 stops this childcare support for both of you.</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
             {[["no", "No"], ["yes", "Yes"], ["single", "I don't have a partner"]].map(([v, label]) => (
@@ -849,11 +849,11 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
         </div>
       )}
       {!t.over && (
-        <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"12px 0 0"}}>A rise or bonus that would take you over can go into your pension by salary sacrifice instead.</p>
+        <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"12px 0 0"}}>A rise or bonus that would take you over can go into your pension by salary sacrifice instead.</p>
       )}
       {options && (
         <button type="button" onClick={options}
-          style={{width:"100%",marginTop:"14px",background:CTA_BLUE,color:WHITE,border:"none",borderRadius:"12px",padding:"13px",fontSize:"14.5px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 2px 8px rgba(0,113,227,0.28)"}}>
+          style={{width:"100%",marginTop:"14px",background:CTA_BLUE,color:WHITE,border:"none",borderRadius:"12px",padding:"10px",fontSize:"13px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 2px 8px rgba(0,113,227,0.28)"}}>
           See my options
         </button>
       )}
@@ -873,10 +873,10 @@ function CheckRow({ state, topic, line, value }) {
         : state === "warn" ? <TriangleAlert size={18} strokeWidth={2.2} color={WARNING_TEXT} role="img" aria-label="Would apply" style={{flexShrink:0}}/>
         : <span role="img" aria-label="Doesn't apply" style={{...box,border:"1.5px solid rgba(22,47,36,0.3)"}}/>}
       <span style={{flex:1,minWidth:0}}>
-        <span style={{display:"block",fontSize:"14px",fontWeight:700,color:state === "off" ? MUT : TEXT}}>{topic}</span>
-        <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>{line}</span>
+        <span style={{display:"block",fontSize:"12px",fontWeight:700,color:state === "off" ? MUT : TEXT}}>{topic}</span>
+        <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>{line}</span>
       </span>
-      <span style={{fontFamily:SANS,fontSize:"18px",fontWeight:700,color:state === "on" ? G : MUT,whiteSpace:"nowrap"}}>{value}</span>
+      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:state === "on" ? G : MUT,whiteSpace:"nowrap"}}>{value}</span>
     </div>
   );
 }
@@ -892,7 +892,7 @@ function Options({ t, plan }) {
     key: w.key, label: w.option, amount: w.top,
     body: () => (
       <>
-        <div style={{fontSize:"13px",color:TEXT,lineHeight:1.45,marginTop:"8px"}}>{w.needed}</div>
+        <div style={{fontSize:"12px",color:TEXT,lineHeight:1.45,marginTop:"8px"}}>{w.needed}</div>
         {/* Two to a row; an odd last one across both. */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"10px"}}>
           {w.outcome.map((c, i) => (
@@ -909,7 +909,7 @@ function Options({ t, plan }) {
         style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:0,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
         <span style={{flex:1}}>
           <span style={{...tileTitle,display:"block"}}>Other options</span>
-          <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Common ways to bring your income back to {K}, and what each would mean for you a year.</span>
+          <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Common ways to bring your income back to {K}, and what each would mean for you a year.</span>
         </span>
         <ChevronDown size={18} color={MUT} aria-label={open ? "Minimise" : "Expand"} style={{flexShrink:0,marginTop:"1px",transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
       </button></h2>

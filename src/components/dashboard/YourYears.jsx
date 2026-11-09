@@ -4,7 +4,7 @@ import { MODULE_META } from "../../lib/moduleStatus.js";
 import { monthsThisYear, yearsWithCandid } from "../../lib/yearRecord.js";
 import { fmt } from "../../lib/format.js";
 import { taxYearShort } from "../../lib/taxYear.js";
-import { G, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR, TILE_FIGURE } from "../../design-tokens.js";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import { DARK } from "../../mobile/CardStack.jsx";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
@@ -64,9 +64,9 @@ export default function YourYears({ d }) {
               <div key={y.year} style={{borderTop:"1px solid rgba(22,47,36,0.08)"}}>
                 <button type="button" onClick={() => setOpen(o => (o === y.year ? null : y.year))} aria-expanded={open === y.year}
                   style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:"12px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-                  <span style={{fontSize:"13px",fontWeight:700,color:G,minWidth:"64px"}}>{taxYearShort(y.year)}{y.closed ? "" : " so far"}</span>
+                  <span style={{fontSize:"12px",fontWeight:700,color:G,minWidth:"64px"}}>{taxYearShort(y.year)}{y.closed ? "" : " so far"}</span>
                   <span style={{flex:1,display:"flex",flexDirection:"column",gap:"2px",minWidth:0}}>
-                    <span style={{fontSize:"12.5px",color:TEXT}}>Saved <b style={{fontFamily:SANS}}>{fmt(y.saved)}</b></span>
+                    <span style={{fontSize:"12px",color:TEXT}}>Saved <b style={TILE_FIGURE}>{fmt(y.saved)}</b></span>
                     <span style={{fontSize:"12px",color:MUT}}>Still open{y.closed ? " at year end" : ""} {fmt(y.stillOpen)} a year{asAtNote(y)}</span>
                   </span>
                   <ChevronRight size={16} color={MUT} style={{transform:open === y.year ? "rotate(90deg)" : "none",transition:"transform .2s",flexShrink:0}}/>
@@ -155,7 +155,7 @@ function ModuleRows({ saved, open, perYear = false, savedLabel = "Saved" }) {
       </div>
       {keys.map(k => (
         <div key={k} style={{display:"flex",alignItems:"center",gap:"10px"}}>
-          <span style={{flex:1,display:"flex",alignItems:"center",gap:"8px",fontSize:"12.5px",color:TEXT,minWidth:0}}>
+          <span style={{flex:1,display:"flex",alignItems:"center",gap:"8px",fontSize:"12px",color:TEXT,minWidth:0}}>
             <span aria-hidden="true" style={{width:"8px",height:"8px",borderRadius:"50%",background:MODULE_CHART_COLOR[k] || MUT,flexShrink:0}}/>
             {TITLE[k] || k}
           </span>

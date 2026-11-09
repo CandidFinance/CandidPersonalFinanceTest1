@@ -3,7 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import { ChevronRight, Lock, Star } from "lucide-react";
 import { FrontCard, StillCard } from "../CardStack.jsx";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, GAIN_ON_DARK, STRIPE_ON_DARK } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, GAIN_ON_DARK, STRIPE_ON_DARK, TILE_KICKER } from "../../design-tokens.js";
 import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -239,7 +239,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                 style={{display:"flex",flexDirection:"column",alignItems:"stretch",aspectRatio:"1 / 1",minWidth:0,padding:"12px",textAlign:"left",fontFamily:"inherit",cursor:Tag === "button" ? "pointer" : "default",boxSizing:"border-box",
                   borderRadius:"14px",background:look.bg,border:0,boxShadow:look.shadow,overflow:"hidden"}}>
                 <span style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:"6px",height:"20px"}}>
-                  <span style={{flex:1,minWidth:0,fontSize:"14px",fontWeight:600,lineHeight:1.25,color:look.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{mm.title}</span>
+                  <span style={{...TILE_KICKER,flex:1,minWidth:0,lineHeight:1.25,color:look.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{mm.title}</span>
                   {key === "cash" && state === "live" && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
                   {state === "dormant"
                     ? <Lock size={15} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>
@@ -278,7 +278,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           {soon && (
             <TilePopover key={soon} title={SOON_BY_KEY[soon].title} onClose={() => setSoon(null)} style={POP}>
               <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:MUT,margin:"-2px 0 8px"}}>Coming soon</div>
-              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>{SOON_BY_KEY[soon].description}</p>
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>{SOON_BY_KEY[soon].description}</p>
             </TilePopover>
           )}
         </AnimatePresence>

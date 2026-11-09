@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { G, WHITE, MUT, TEXT, FIELD_BORDER, PILL_HEIGHT, CARD, NOTICE_LABEL, SECTION_TITLE } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, FIELD_BORDER, CARD, TILE_KICKER } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 
 // A new tax year: is their pay still what Candid has? Shown on Home once
@@ -17,12 +17,12 @@ export default function PayCheckCard({ d, set }) {
     set("salary", value);
     done();
   };
-  const button = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"11px 14px", minHeight:PILL_HEIGHT, fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
+  const button = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"0 14px", minHeight:"37px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
   return (
     <div style={{...CARD,marginTop:"22px",padding:"16px 18px 18px"}}>
-      <div style={NOTICE_LABEL}>A new tax year</div>
-      <h2 style={{...SECTION_TITLE,marginTop:"6px"}}>Is your pay still {fmt(+d.salary)} a year?</h2>
-      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 12px"}}>Every module's figures are worked out from it.</p>
+      <div style={TILE_KICKER}>A new tax year</div>
+      <h2 style={{fontSize:"12px",fontWeight:700,color:G,lineHeight:1.4,margin:"6px 0 0"}}>Is your pay still {fmt(+d.salary)} a year?</h2>
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 12px"}}>Every module's figures are worked out from it.</p>
       {editing ? (
         <form onSubmit={save} style={{display:"flex",gap:"8px"}}>
           <input inputMode="numeric" autoFocus value={pay} onChange={e => setPay(e.target.value)} aria-label="Pay a year, before tax"

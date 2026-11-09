@@ -108,7 +108,7 @@ export const lockedBar = <span style={{display:"block",height:"14px",borderRadiu
 export function Figure({ current, target = 0 }) {
   return (
     <>
-      <span style={{fontFamily:SANS,fontSize:"14px",fontWeight:700,color:TEXT}}>{fmtCompact(current)}</span>
+      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:TEXT}}>{fmtCompact(current)}</span>
       {target > 0 && <span style={{fontSize:"11px",color:MUT}}>/{fmtCompact(target)}</span>}
     </>
   );
@@ -220,7 +220,7 @@ export function EditorCard({ title, children, onCancel, onSave, saveDisabled = f
   const solid = { flex:1, background:saveDisabled ? "rgba(22,47,36,0.25)" : G, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, color:WHITE, cursor:saveDisabled ? "not-allowed" : "pointer", fontFamily:"inherit" };
   return (
     <div style={{background:"#f7f7f4",borderRadius:"10px",padding:"12px",marginTop:"10px"}}>
-      <div style={{...kicker,fontSize:"10.5px",marginBottom:"10px"}}>{title}</div>
+      <div style={{...kicker,fontSize:"11px",marginBottom:"10px"}}>{title}</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>{children}</div>
       <div style={{display:"flex",gap:"8px",marginTop:"14px"}}>
         <button type="button" onClick={onCancel} style={ghost}>Cancel</button>

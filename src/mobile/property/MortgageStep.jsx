@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import { PillSlider } from "../PillSlider.jsx";
-import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE, CDARK, SANS } from "../../design-tokens.js";
+import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SC, WHITE, CDARK, SANS } from "../../design-tokens.js";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
@@ -52,7 +52,7 @@ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
   const axis = { position:"absolute", top:0, fontSize:"10.5px", color:MUT, whiteSpace:"nowrap" };
   return (
     <div ref={wrapRef} style={{marginTop:"14px"}}>
-      <div style={{fontSize:"11.5px",color:MUT,marginBottom:"4px"}}>If rates have moved when you remortgage</div>
+      <div style={{fontSize:"12px",color:MUT,marginBottom:"4px"}}>If rates have moved when you remortgage</div>
       <div style={{position:"relative",height:`${Math.max(H, labels.at(-1).top + 22)}px`}}>
         <svg width={plotW} height={H} viewBox={`0 0 ${plotW} ${H}`} style={{display:"block",overflow:"visible"}}>
           <line x1={fx} x2={fx} y1={4} y2={H - 4} stroke="rgba(22,47,36,0.2)" strokeWidth="1" strokeDasharray="3 3"/>
@@ -93,9 +93,9 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   const [budgetInfoOpen, setBudgetInfoOpen] = useState(false);
   const resultRef = useRef(null);
   const why = useWhyInfo({ d, m });
-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
-  const sectionHeading = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
+  const explainer = { fontSize:"12px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const figureLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+  const sectionHeading = { fontSize:"11px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
   const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };
   const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
 
@@ -137,15 +137,15 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
       <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
         style={{scrollMarginTop:"16px",borderRadius:"16px",...tile,padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
         {loan === 0 ? (
-          <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
+          <p style={{fontSize:"12px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
           <>
             <div style={figureLabel}>
               Monthly repayment
               <InfoButton open={infoOpen} onClick={() => setInfoOpen(o => !o)}/>
             </div>
-            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{fmt(s.monthlyPayment)}</div>
-            <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>
+            <div style={{fontSize:"13px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{fmt(s.monthlyPayment)}</div>
+            <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>
               {s.remortgageOutcomes ? `For the first ${input.fixedYears} years at ${pctText(input.ratePct)}` : `At ${pctText(input.ratePct)}, fixed for the whole term`}
             </div>
             {infoOpen && (
@@ -154,7 +154,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
               </p>
             )}
             {s.remortgageOutcomes && !detailsOpen && (
-              <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"10px"}}>
+              <div style={{fontSize:"12px",color:TEXT,lineHeight:1.5,marginTop:"10px"}}>
                 From year {s.firstRemortgageYear}: {fmt(Math.min(...outcomePayments))} to {fmt(Math.max(...outcomePayments))} a month, if rates move {STRESS_REMORTGAGE_UPLIFT} points either way.
               </div>
             )}
@@ -168,17 +168,17 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
               </div>
               {budget ? (<>
                 {/* In the tile's colour: this figure is what sets it. */}
-                <div style={{fontFamily:SANS,fontSize:"22px",fontWeight:700,color:status ? status.figure : TEXT,lineHeight:1.2}}>
+                <div style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:status ? status.figure : TEXT,lineHeight:1.2}}>
                   {budget.left < 0 ? `${fmt(-budget.left)} short` : fmt(budget.left)}
                 </div>
-                {budgetNote && <p style={{fontSize:"12.5px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}
+                {budgetNote && <p style={{fontSize:"12px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}
                 {budgetInfoOpen && (
                   <p style={{...explainer,marginTop:"8px"}}>
                     {budget.together ? "Your take-home pay and your partner's estimated take-home pay" : "Your take-home pay"} ({fmt(budget.takeHome)}), less {budget.shared ? "your shared spending other than rent" : budget.together ? "your spending other than rent, and your partner's estimated from yours" : "your spending other than rent"} ({fmt(budget.otherSpending)}), less the mortgage ({fmt(budget.mortgage)}) and the home's running costs ({fmt(budget.homeCosts)}: upkeep{d.propertyTenure === "leasehold" ? ", ground rent and service charge" : ""}). Buying replaces your rent, so it comes off your spending. Lenders run their own check, at a higher rate than you'd pay.
                   </p>
                 )}
               </>) : (
-                <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Add your rent and monthly spending below to see what you'd have left.</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Add your rent and monthly spending below to see what you'd have left.</p>
               )}
             </div>
 
@@ -198,7 +198,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
               ].map(c => (
                 <div key={c.label} style={{flex:1,minWidth:0}}>
                   <div style={figureLabel}>{c.label}{c.info}</div>
-                  <div style={{fontSize:"15px",fontWeight:700,color:TEXT,marginTop:"2px"}}>{fmt(c.value)}</div>
+                  <div style={{fontSize:"13px",fontWeight:700,color:TEXT,marginTop:"2px"}}>{fmt(c.value)}</div>
                 </div>
               ))}
             </div>
@@ -258,7 +258,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
       {onContinue && (
         <button type="button" onClick={onContinue} style={{
           width:"100%", marginTop:"24px", background:G, color:WHITE, border:"none", borderRadius:"100px",
-          padding:"13px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
+          padding:"10px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
           display:"flex", alignItems:"center", justifyContent:"center", gap:"4px",
         }}>
           Continue to rent vs buy<ChevronRight size={16}/>

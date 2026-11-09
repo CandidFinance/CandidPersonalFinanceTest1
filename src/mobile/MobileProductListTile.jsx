@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, ChevronRight } from "lucide-react";
 import ProviderLogo from "./ProviderLogo.jsx";
-import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE, SANS } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE, SANS, TILE_KICKER, TILE_FIGURE, TILE_LABEL_SIZE, TILE_NOTE } from "../design-tokens.js";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -26,10 +26,10 @@ export default function MobileProductListTile({ heading, subheading, products, d
     <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
       {!embedded && <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{background:"none",border:"none",padding:0,width:"100%",textAlign:"left",font:"inherit",color:"inherit",display:"block",cursor:"pointer"}}>
         <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
-          <span style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G}}>{heading}</span>
+          <span style={{...TILE_KICKER,fontFamily:SANS}}>{heading}</span>
           <ChevronRight size={14} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
         </span>
-        {subheading && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{subheading}</span>}
+        {subheading && <span style={{...TILE_NOTE,display:"block",marginTop:"3px"}}>{subheading}</span>}
       </button>}
 
       {/* Tabbing to a link hidden under the fade opens the list. */}
@@ -44,14 +44,14 @@ export default function MobileProductListTile({ heading, subheading, products, d
             {flush && <ProviderLogo url={p.productUrl} name={p.name}/>}
             <div style={{minWidth:0}}>
               <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
-                <span style={{fontSize:"14px",fontWeight:600,color:TEXT}}>{p.name}</span>
+                <span style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:TEXT}}>{p.name}</span>
                 {p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD_TEXT,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>}
               </div>
               <div style={{fontSize:"12px",color:MUT,marginTop:"1px"}}>{p.type}</div>
             </div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-              <span style={{fontFamily:SANS,fontSize:"15px",fontWeight:700,color:G}}>{p.rate}</span>
+              <span style={{...TILE_FIGURE,color:G}}>{p.rate}</span>
               <ExternalLink size={13} color={MUT}/>
             </div>
             {/* Under the whole row, lined up with the name past the logo. */}
@@ -59,7 +59,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
           </a>
         ))}
         {flush && products.length > FLUSH_ROWS && (
-          <button type="button" aria-expanded={open} onClick={e => { const btn = e.currentTarget; setOpen(o => !o); if (open) requestAnimationFrame(() => btn.scrollIntoView({ block: "nearest" })); }} style={{display:"block",width:"100%",borderTop:HAIRLINE,borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",padding:"12px 16px 12px 0",font:"inherit",textAlign:"left",cursor:"pointer",fontSize:"13.5px",fontWeight:600,color:G}}>
+          <button type="button" aria-expanded={open} onClick={e => { const btn = e.currentTarget; setOpen(o => !o); if (open) requestAnimationFrame(() => btn.scrollIntoView({ block: "nearest" })); }} style={{display:"block",width:"100%",borderTop:HAIRLINE,borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",padding:"12px 16px 12px 0",font:"inherit",textAlign:"left",cursor:"pointer",fontSize:TILE_LABEL_SIZE,fontWeight:600,color:G}}>
             {open ? "Show fewer" : `See all ${products.length} ${noun}`}
           </button>
         )}
@@ -74,7 +74,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
       </div>
 
       {open && disclaimer && (
-        <p style={{fontSize:flush ? "11.5px" : "10.5px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:flush ? "12px" : 0,paddingRight:flush ? "16px" : 0}}>{disclaimer}</p>
+        <p style={{...TILE_NOTE,marginTop:"12px",marginBottom:flush ? "12px" : 0,paddingRight:flush ? "16px" : 0}}>{disclaimer}</p>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import AlertBox from "../AlertBox.jsx";
 import { DARK } from "../CardStack.jsx";
-import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN, G, WHITE, SANS, RADIUS_PILL } from "../../design-tokens.js";
+import { TILE_KICKER, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN, G, WHITE, SANS, RADIUS_PILL } from "../../design-tokens.js";
 
 // Each module page's Opportunity tile: the page's key figure, large, on the
 // one dark surface on the page: the card stack's slick (STACK_SLICK_BG),
@@ -25,14 +25,11 @@ const CSS = `
   will-change: transform; animation: opp-sheen 2.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s both; }
 @keyframes opp-sheen { from { transform: translateX(-75%); } to { transform: translateX(25%); } }
 @media (prefers-reduced-motion: reduce) { .opp-tile::after { animation: none; transform: translateX(25%); } }
-/* Shrinks with the screen below 375px, so a six-figure sum never clips. */
-.opp-tile { --opp-figure: min(58px, 15.5vw); }
-.opp-tile.opp-multi { --opp-figure: min(44px, 11.5vw); }
-.opp-label { font-size: 15px; }
+/* 44px everywhere, easing off only on the narrowest phones so that two
+   figures side by side never clip. */
+.opp-tile { --opp-figure: min(44px, 11.5vw); }
 @media (min-width: 1000px) {
-  .opp-tile { padding: 28px 32px; --opp-figure: 84px; }
-  .opp-tile.opp-multi { --opp-figure: 64px; }
-  .opp-label { font-size: 17px; }
+  .opp-tile { padding: 28px 32px; --opp-figure: 44px; }
   .opp-split { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 32px; align-items: center; }
   .opp-split .opp-side { border-left: 1px solid rgba(216,208,187,0.3); padding-left: 30px; }
   .opp-split .opp-side > :first-child { margin-top: 0 !important; }
@@ -46,10 +43,10 @@ const CSS = `
 }
 `;
 
-const over = { fontSize:"11px", fontWeight:800, color:OPPORTUNITY_TILE_LABEL, letterSpacing:"0.1em", textTransform:"uppercase" };
+const over = { ...TILE_KICKER, color:OPPORTUNITY_TILE_LABEL };
 const figure = { fontFamily:SERIF, fontSize:"var(--opp-figure)", fontWeight:700, color:OPPORTUNITY_TILE_FIGURE, lineHeight:1, letterSpacing:"-0.01em", marginTop:"8px" };
-const label = { fontWeight:600, color:OPPORTUNITY_TILE_LABEL, lineHeight:1.35, marginTop:"10px" };
-const chip = { display:"inline-flex", fontSize:"12.5px", fontWeight:600, color:OPPORTUNITY_TILE_BODY, border:"1px solid rgba(180,189,178,0.45)", borderRadius:"999px", padding:"5px 11px", lineHeight:1.3 };
+const label = { fontSize:TILE_KICKER.fontSize, fontWeight:600, color:OPPORTUNITY_TILE_LABEL, lineHeight:1.35, marginTop:"10px" };
+const chip = { display:"inline-flex", fontSize:TILE_KICKER.fontSize, fontWeight:600, color:OPPORTUNITY_TILE_BODY, border:"1px solid rgba(180,189,178,0.45)", borderRadius:"999px", padding:"5px 11px", lineHeight:1.3 };
 
 const Figure = ({ f }) => (
   <div style={{...figure,fontFamily:/£/.test(String(f.value)) ? SERIF : SANS}}>{f.value}{f.suffix && <span style={{fontSize:"0.4em",fontWeight:600}}>{f.suffix}</span>}</div>
@@ -63,16 +60,16 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
       {shown.length > 0 && (
         <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"12px"}}>{shown.map((c, i) => <span key={i} style={chip}>{c}</span>)}</div>
       )}
-      {note && <div style={{fontSize:"13px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{note}</div>}
+      {note && <div style={{fontSize:TILE_KICKER.fontSize,color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{note}</div>}
       {action && (
-        <button type="button" onClick={action.onClick} style={{display:"inline-flex",alignItems:"center",gap:"4px",marginTop:"16px",minHeight:"44px",padding:"10px 14px 10px 18px",background:WHITE,color:G,border:"none",borderRadius:RADIUS_PILL,fontFamily:SANS,fontSize:"14px",fontWeight:700,cursor:"pointer"}}>
+        <button type="button" onClick={action.onClick} style={{display:"inline-flex",alignItems:"center",gap:"4px",marginTop:"16px",minHeight:"37px",padding:"0 14px 0 18px",background:WHITE,color:G,border:"none",borderRadius:RADIUS_PILL,fontFamily:SANS,fontSize:"13px",fontWeight:700,cursor:"pointer"}}>
           {action.label}<ChevronRight size={17} strokeWidth={2.5} aria-hidden="true"/>
         </button>
       )}
     </>
   );
   return (
-    <div data-tour={tour} className={`opp-tile${multi ? " opp-multi" : ""}${!multi && !alert && !stacked ? " opp-solo" : ""}`}
+    <div data-tour={tour} className={`opp-tile${!multi && !alert && !stacked ? " opp-solo" : ""}`}
       style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,marginBottom:"16px",...style}}>
       <style>{CSS}</style>
       {alert ? (
@@ -87,7 +84,7 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
             {figures.map((f, i) => (
               <div key={i} style={{minWidth:0}}>
                 <Figure f={f}/>
-                {f.label && <div className="opp-label" style={label}>{f.label}</div>}
+                {f.label && <div style={label}>{f.label}</div>}
               </div>
             ))}
           </div>
@@ -101,7 +98,7 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
           <div className={stacked ? undefined : "opp-split"}>
             <div className="opp-fig"><Figure f={figures[0]}/></div>
             <div className="opp-side" style={{minWidth:0}}>
-              {figures[0].label && <div className="opp-label" style={label}>{figures[0].label}</div>}
+              {figures[0].label && <div style={label}>{figures[0].label}</div>}
               {extras}
             </div>
           </div>

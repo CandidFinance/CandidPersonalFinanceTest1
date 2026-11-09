@@ -13,7 +13,7 @@ import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, CRITICAL, NOTICE_LABEL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
@@ -33,8 +33,8 @@ function AccountLines({ lines, rowStyle }) {
     const name = l.product && !l.provider.toLowerCase().includes(l.product.toLowerCase()) ? `${l.provider} · ${l.product}` : l.provider;
     return (
       <div key={i} style={{padding:"4px 0"}}>
-        <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(l.interest)}/yr</span></div>
-        <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.45}}>
+        <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{...TILE_FIGURE,color:SUCCESS}}>{fmt(l.interest)}/yr</span></div>
+        <div style={{fontSize:"12px",color:MUT,lineHeight:1.5}}>
           {name}{l.cap != null && ` · up to ${fmt(l.cap)}`}{l.fscsLimited && " · the most FSCS protects with one bank"}{l.extra != null && anchorRate != null && ` · ${fmt(l.extra)}/yr more than at ${anchorRate.toFixed(2)}%`}
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const news = useCashNews();
   useEffect(() => { if (news && !news.opened) markCashOpened(); }, [news]);
   useEffect(() => () => markCashSeen(), []);
-  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:TILE_LABEL_SIZE, color:TEXT, padding:"5px 0" };
   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
   const {
@@ -136,13 +136,13 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             funded && set && { icon: EyeOff, label: "Hide this tile", onClick: () => set("emergencyCardDismissed", true) },
           ]}>
           <TileRow first>
-            <div style={{fontSize:"12.5px",fontWeight:600,color:G}}>{runwayLabel}</div>
+            <div style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:G}}>{runwayLabel}</div>
             <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",flexWrap:"wrap",margin:"4px 0 10px"}}>
-              <div style={{fontFamily:SANS,fontWeight:700,color:TEXT,lineHeight:1.15}}>
-                <span style={{fontFamily:SERIF,fontSize:"26px"}}>{fmt(runwayCurrent)}</span>
-                {runwayTarget > 0 && <span style={{fontSize:"17px",color:MUT}}> of {fmt(runwayTarget)}</span>}
+              <div style={{...TILE_FIGURE,color:TEXT,lineHeight:1.15}}>
+                <span>{fmt(runwayCurrent)}</span>
+                {runwayTarget > 0 && <span style={{color:MUT}}> of {fmt(runwayTarget)}</span>}
               </div>
-              <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} of {m.bufferMonths} months</span>
+              <span style={{fontSize:TILE_LABEL_SIZE,color:MUT}}>{m.runwayMonths.toFixed(1)} of {m.bufferMonths} months</span>
             </div>
             <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,${CRITICAL} 0%,${GOLD} 33%,${SUCCESS} 60%,#1e4d35 100%)`}}>
               <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
@@ -213,16 +213,16 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         ) : totalPot > 0 ? (
           <>
             <TileRow first>
-              <div style={rowStyle}><span>Interest you earn now, before tax</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>
+              <div style={rowStyle}><span>Interest you earn now, before tax</span><span style={TILE_FIGURE}>{fmt(currentGrossTotal)}/yr</span></div>
               {m.cash > 0 && currentTaxCost > 0 && (
-                <div style={{...rowStyle,color:CRITICAL}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
+                <div style={{...rowStyle,color:CRITICAL}}><span>Tax due at {trPct}%</span><span style={TILE_FIGURE}>{fmt(currentTaxCost)}</span></div>
               )}
             </TileRow>
             {step1Isa > 0 && (
               <TileRow>
                 <div style={{...NOTICE_LABEL,marginBottom:"2px"}}>In a Cash ISA, where interest is never taxed</div>
                 {isaLines.length > 0 ? <AccountLines lines={isaLines} rowStyle={rowStyle}/> : (
-                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(step1IsaInterest)}/yr</span></div>
+                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{...TILE_FIGURE,color:SUCCESS}}>{fmt(step1IsaInterest)}/yr</span></div>
                 )}
                 {notes.savings && (
                   <p style={{...ROW.note,marginTop:"6px"}}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
@@ -234,11 +234,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             {step2Savings > 0 && (
               <TileRow>
                 <div style={{...NOTICE_LABEL,marginBottom:"2px"}}>Then savings, up to your tax-free interest allowance</div>
-                <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
+                <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span style={TILE_FIGURE}>{fmt(step2CurrentInterest)}/yr</span></div>
                 {savingsLines.length > 0 ? <AccountLines lines={savingsLines} rowStyle={rowStyle}/> : (
-                  <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (highest rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                  <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (highest rate)</span><span style={TILE_FIGURE}>{fmt(step2SavingsInterest)}/yr</span></div>
                 )}
-                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?SUCCESS:TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
+                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?SUCCESS:TEXT}}><span>Extra from switching</span><span style={TILE_FIGURE}>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {notes.savings && (
                   <p style={{...ROW.note,marginTop:"6px"}}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's highest non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
                 )}
@@ -247,17 +247,17 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             {step3Pb > 0 && (
               <TileRow>
                 <div style={{...NOTICE_LABEL,marginBottom:"2px"}}>Then Premium Bonds (tax-free average)</div>
-                <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(step3PbInterest)}/yr</span></div>
+                <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{...TILE_FIGURE,color:SUCCESS}}>{fmt(step3PbInterest)}/yr</span></div>
               </TileRow>
             )}
             <TileRow>
               <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>Where your savings could sit ({fmt(keptAmount)} kept as cash)</div>
-              <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — your average rate today</span><span>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
-              <p style={{fontSize:"11.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
-              <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span>{fmt(optimisedTotal)}/yr</span></div>
-              <p style={{fontSize:"11.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
+              <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — your average rate today</span><span style={TILE_FIGURE}>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
+              <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span style={TILE_FIGURE}>{fmt(optimisedTotal)}/yr</span></div>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
               <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?SUCCESS:TEXT}}>
-                <span>{optimisationGain>0?"You can earn":"Difference"}</span><span>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
+                <span>{optimisationGain>0?"You can earn":"Difference"}</span><span style={TILE_FIGURE}>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
               </div>
             </TileRow>
           </>

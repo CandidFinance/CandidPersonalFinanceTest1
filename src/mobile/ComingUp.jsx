@@ -38,8 +38,8 @@ export default function ComingUp({ items, min, onMinimise }) {
               {items.map((c, i) => (
                 <span key={c.key} style={{display:"flex",justifyContent:"center"}}>
                   <span style={{display:"inline-flex",alignItems:"baseline",gap:"5px",background:"#fff",padding:"0 10px"}}>
-                    <motion.span layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G,lineHeight:1.2}}>{c.mon}</motion.span>
-                    <motion.span layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"13px",fontWeight:600,color:MUT}}>{c.day}</motion.span>
+                    <motion.span layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,lineHeight:1.2}}>{c.mon}</motion.span>
+                    <motion.span layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"12px",fontWeight:600,color:MUT}}>{c.day}</motion.span>
                   </span>
                 </span>
               ))}
@@ -60,8 +60,8 @@ export default function ComingUp({ items, min, onMinimise }) {
                 return (
                   <div key={c.key} style={{display:"flex",gap:"12px",alignItems:"stretch"}}>
                     <div style={{width:"38px",flexShrink:0,paddingTop:"1px",textAlign:"center"}}>
-                      <motion.div layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"16px",fontWeight:700,color:G,lineHeight:1.1}}>{c.mon}</motion.div>
-                      <motion.div layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"12.5px",fontWeight:600,color:MUT,marginTop:"2px"}}>{c.day}</motion.div>
+                      <motion.div layoutId={`cu-mon-${c.key}`} layout="position" style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,lineHeight:1.1}}>{c.mon}</motion.div>
+                      <motion.div layoutId={`cu-day-${c.key}`} layout="position" style={{fontSize:"12px",fontWeight:600,color:MUT,marginTop:"2px"}}>{c.day}</motion.div>
                     </div>
                     <div style={{width:`${DOT}px`,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"6px"}}>
                       <Dot i={i} k={c.key}/>
@@ -70,15 +70,15 @@ export default function ComingUp({ items, min, onMinimise }) {
                     <motion.div {...fade} style={{flex:1,minWidth:0,paddingBottom:last ? 0 : "20px"}}>
                      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"14.5px",fontWeight:600,color:TEXT,lineHeight:1.35}}>{c.title}</div>
-                        <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{c.sub}</div>
+                        <div style={{fontSize:"12px",fontWeight:600,color:TEXT,lineHeight:1.35}}>{c.title}</div>
+                        <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{c.sub}</div>
                       </div>
                       {/* Sized and placed as Areas to explore's £ (HomeHero.jsx): 18px,
                           centred on the row, its last digit in line with theirs.
                           Their "/yr" and chevron sit after the digits (18px padding
                           + 15px chevron + 10px gap, less this tile's 16px), so the
                           same "/yr", unseen, holds the space here. */}
-                      {c.amount && <div style={{marginRight:"27px",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G,whiteSpace:"nowrap",lineHeight:1.2}}>{c.amount}<span aria-hidden="true" style={{visibility:"hidden",fontSize:"12px",fontWeight:600}}>/yr</span></div>}
+                      {c.amount && <div style={{marginRight:"27px",fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,whiteSpace:"nowrap",lineHeight:1.2}}>{c.amount}<span aria-hidden="true" style={{visibility:"hidden",fontSize:"12px",fontWeight:700}}>/yr</span></div>}
                      </div>
                     </motion.div>
                   </div>

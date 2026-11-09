@@ -140,7 +140,7 @@ export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
     <section aria-label="Areas to explore" style={ROW_TILE}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
         <h2 style={TILE_KICKER}>Areas to explore</h2>
-        {plan.length > 0 && <span style={{fontSize:"12.5px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{stepsDone} of {plan.length} reviewed</span>}
+        {plan.length > 0 && <span style={{fontSize:"12px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{stepsDone} of {plan.length} reviewed</span>}
       </div>
       <div style={{marginTop:"6px"}}>
         {plan.length > 0 ? plan.map((p, i) => (
@@ -150,15 +150,15 @@ export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
             <span style={{width:"18px",height:"18px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? G : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
               {p.done && <Check size={11} strokeWidth={3}/>}
             </span>
-            <span style={{flex:1,minWidth:0,fontSize:"14px",fontWeight:600,color:TEXT}}>{p.title}</span>
-            <span style={{whiteSpace:"nowrap",fontFamily:SANS,fontSize:"18px",fontWeight:700,color:G}}>
+            <span style={{flex:1,minWidth:0,fontSize:"12px",fontWeight:600,color:TEXT}}>{p.title}</span>
+            <span style={{whiteSpace:"nowrap",fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>
               {fmt(p.amount)}<span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>{p.amountIsLumpSum ? " by 18" : "/yr"}</span>
             </span>
             <ChevronRight size={15} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>
           </button>
-        )) : <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{headline}</p>}
+        )) : <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{headline}</p>}
         {onTrack.length > 0 && (
-          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
             <span style={{fontWeight:700,color:G}}>On track:</span> {onTrack.map(mm => mm.amount > 0 && !mm.amountIsLumpSum ? `${mm.title} (${fmt(mm.amount)}/yr)` : mm.title).join(", ")}.
           </p>
         )}

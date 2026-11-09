@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { G, GOLD, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, GOLD_TEXT } from "../design-tokens.js";
+import { GOLD, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, GOLD_TEXT, TILE_KICKER, TILE_LABEL_SIZE } from "../design-tokens.js";
 import MobileReminderAction, { ActionButton } from "./MobileReminderAction.jsx";
 import NewBadge from "./NewBadge.jsx";
 
@@ -36,12 +36,12 @@ export default function MobileWinTile({ title, headline, tagLabel, tagColor = GO
       <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",width:"100%",padding:"16px 16px 13px",background:"none",border:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
         <span style={{display:"block",flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
-            <span style={{fontSize:"15px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</span>
+            <span style={{...TILE_KICKER,lineHeight:1.3}}>{title}</span>
             {tagLabel && (
               <span style={{fontSize:"9.5px",fontWeight:700,color:tagColor === GOLD ? GOLD_TEXT : tagColor,background:`${tagColor}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap",flexShrink:0}}>{tagLabel}</span>
             )}
           </span>
-          {headline && <span style={{display:"block",fontSize:"13.5px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>{headline}</span>}
+          {headline && <span style={{display:"block",fontSize:TILE_LABEL_SIZE,color:TEXT,marginTop:"4px",lineHeight:1.4}}>{headline}</span>}
         </span>
         <span style={{display:"flex",alignItems:"center",flexShrink:0,marginTop:"2px"}}>
           <ChevronRight size={14} color={MUT} aria-hidden="true" style={{transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>

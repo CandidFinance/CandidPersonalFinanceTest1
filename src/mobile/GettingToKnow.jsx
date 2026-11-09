@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronRight, X } from "lucide-react";
-import { G, MUT, TEXT, SANS, WHITE, SUCCESS, CARD } from "../design-tokens.js";
+import { MUT, TEXT, SANS, WHITE, SUCCESS, CARD, TILE_KICKER } from "../design-tokens.js";
 import { validEmailShape } from "../lib/emailCheck.js";
 import { estimateItems } from "../lib/quickStart.js";
 import { ProgressLine } from "./onboarding/OnboardingShell.jsx";
@@ -67,7 +67,7 @@ export default function GettingToKnow({ d, set, answered }) {
     <div style={{ ...CARD, position: "relative", padding: "16px 18px 8px", marginBottom: "16px" }}>
       {celebrating && <Burst/>}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-        <h2 style={{ fontFamily: SANS, fontSize: "17px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.3 }}>{celebrating ? "All set" : "Getting to know Candid"}</h2>
+        <h2 style={{ ...TILE_KICKER, fontFamily: SANS, lineHeight: 1.3 }}>{celebrating ? "All set" : "Getting to know Candid"}</h2>
         <button type="button" aria-label="Hide" onClick={dismiss} className="tap44" style={{ background: "none", border: "none", padding: "4px", color: MUT, cursor: "pointer", display: "flex" }}><X size={18}/></button>
       </div>
       <ProgressLine position={count} total={items.length} style={{ margin: "12px 0 6px" }}/>
@@ -84,7 +84,7 @@ export default function GettingToKnow({ d, set, answered }) {
                   </motion.span>
                 )}
               </span>
-              <span style={{ flex: 1, fontSize: "14.5px", fontWeight: 600, color: TEXT }}>{item.label}</span>
+              <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: TEXT }}>{item.label}</span>
               {!item.on && <ChevronRight size={16} color={MUT} aria-hidden="true"/>}
             </>
           );

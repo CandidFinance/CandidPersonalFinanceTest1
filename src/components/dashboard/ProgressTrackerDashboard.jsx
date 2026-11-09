@@ -336,10 +336,10 @@ function PartTile({ label, value, color, note, onOpen }) {
     <>
       <span aria-hidden="true" style={{alignSelf:"stretch",width:"4px",borderRadius:"4px",background:color,flexShrink:0}}/>
       <span style={{flex:1,minWidth:0}}>
-        <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.25}}>{label}</span>
-        {note && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{note}</span>}
+        <span style={{display:"block",fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25}}>{label}</span>
+        {note && <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{note}</span>}
       </span>
-      <span style={{fontFamily:SANS,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",flexShrink:0}}>{value}</span>
+      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",flexShrink:0}}>{value}</span>
       {onOpen ? <ChevronRight size={16} color={MUT} aria-hidden="true" style={{flexShrink:0,marginRight:"-4px"}}/> : <span aria-hidden="true" style={{width:"16px",flexShrink:0,marginRight:"-4px"}}/>}
     </>
   );
@@ -602,7 +602,7 @@ function ShieldDetails({ income, t, onOpenTrap }) {
         <span style={{fontWeight:700,color:t.figure}}>{fmt(income.income)}</span> adjusted net income this tax year, the gold marker above, which the trap is measured on: taxable income less pension contributions and Gift Aid.{income.scottish ? " Scottish rates on pay." : ""}
       </p>
       {pension && (
-        <p style={{...cardText(t),fontSize:"12.5px"}}>
+        <p style={{...cardText(t),fontSize:"12px"}}>
           {pension}{!trap.fits && ` That's more than the ${fmt(trap.aaRoom)} of Annual Allowance left this year.`}
         </p>
       )}
