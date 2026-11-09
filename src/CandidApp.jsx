@@ -40,6 +40,8 @@ import InviteFriends from "./mobile/InviteFriends.jsx";
 import OnTrackReward from "./mobile/OnTrackReward.jsx";
 import GoalReached from "./mobile/GoalReached.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
+import { MODULE_EXPLAINERS } from "./lib/moduleExplainer.js";
+import ModuleExplainer, { ExplainerChoice } from "./mobile/explainer/ModuleExplainer.jsx";
 import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange, gainedSoFar } from "./lib/moduleStatus.js";
@@ -589,6 +591,9 @@ export default function AppShell() {
   // The module replayed ("Explain this"): its answer opens straight away,
   // without the working screen (workingChecks.js) shown on the way in.
   const [revealReplay, setRevealReplay] = useState(null);
+  // A module's walk-through: { module, stage: "offer" | "play", replay }.
+  // Offered once its questions are answered, and open again from its page.
+  const [explainer, setExplainer] = useState(null);
   // A module's "checked" card, after its first answer (CheckedCard.jsx); and
   // the Cash tour, kept on screen once it's marked done until it closes.
   const [checkedCard, setCheckedCard] = useState(null);
@@ -605,6 +610,10 @@ export default function AppShell() {
   // out, so their answer doesn't open on the working screen as well.
   const comparedNow = useRef(new Set());
   const answerOpen = useRef(null);
+  // Leaving a module by any route (back gesture included) ends its walk-through.
+  useEffect(() => {
+    setExplainer(e => (e && e.module !== params.moduleKey ? null : e));
+  }, [params.moduleKey]);
   useEffect(() => {
     if (revealModule) return;
     comparedNow.current.clear();
@@ -944,7 +953,12 @@ export default function AppShell() {
         if (how === "finished" && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
           setRevealModule(mobileActiveModule);
           setRevealReplay(null);
-          posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
+          // With a walk-through on offer, the answer counts as shown once
+          // that's been taken or skipped (explainerScreen).
+          if (MODULE_EXPLAINERS[mobileActiveModule]) {
+            setExplainer({ module: mobileActiveModule, stage: "offer" });
+            posthog.capture("explainer_offered", { module: mobileActiveModule });
+          } else posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
         }
         scrollToTop();
       };
@@ -973,11 +987,32 @@ export default function AppShell() {
       posthog.capture("email_captured", { source, module: mobileActiveModule, how });
       setUnlockSaveTick(t => t + 1);
     };
+    // The module's walk-through: the choice, then its pages. On the way to the
+    // answer it follows the guess comparison, so it doesn't give that away.
+    const explainerPages = explainer?.module === mobileActiveModule ? MODULE_EXPLAINERS[mobileActiveModule]?.(d, m) : null;
+    const leaveExplainer = route => {
+      if (!explainer.replay) posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough", explainer: route });
+      setExplainer(null);
+      scrollToTop();
+    };
+    const explainerProps = { module: mobileActiveModule, replay: !!explainer?.replay };
+    const explainerScreen = !explainerPages ? null : explainer.stage === "offer"
+      ? <ExplainerChoice
+          onWalk={() => { posthog.capture("explainer_chosen", { module: mobileActiveModule, route: "walkthrough" }); setExplainer({ ...explainer, stage: "play" }); }}
+          onSkip={() => { posthog.capture("explainer_chosen", { module: mobileActiveModule, route: "skip" }); leaveExplainer("declined"); }}/>
+      : <ModuleExplainer key={mobileActiveModule} pages={explainerPages}
+          onReplay={({ id }) => posthog.capture("explainer_replayed", { ...explainerProps, step: id })}
+          doneLabel={explainer.replay ? "Done" : "See my answer"} skipLabel={explainer.replay ? "Close" : "Skip to my answer"}
+          onStep={({ id, index, total }) => posthog.capture("explainer_step", { ...explainerProps, step: id, index, total })}
+          onSkip={({ id }) => { posthog.capture("explainer_skipped", { ...explainerProps, step: id }); leaveExplainer("left"); }}
+          onDone={() => { posthog.capture("explainer_finished", explainerProps); leaveExplainer("finished"); }}/>;
+    if (explainerScreen && explainer.replay) return explainerScreen;
     if (revealModule === mobileActiveModule && revealSteps) {
       // Their guess from the entry beside this figure, once, ahead of the answer.
       // Decided as the answer opens: rates arriving later don't interrupt it.
       const comparisons = NEW_ENTRY && revealReplay !== mobileActiveModule && answerOpen.current !== mobileActiveModule ? pendingComparisons(mobileActiveModule, d, m, { marketRates }) : [];
       if (!comparisons.length) answerOpen.current = mobileActiveModule;
+      if (!comparisons.length && explainerScreen) return explainerScreen;
       if (comparisons.length) {
         return (
           <Suspense fallback={null}>
@@ -1058,6 +1093,7 @@ export default function AppShell() {
           </p>
         )}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}
+          onShowExplainer={MODULE_EXPLAINERS[mobileActiveModule] ? () => { posthog.capture("explainer_chosen", { module: mobileActiveModule, route: "replay" }); setExplainer({ module: mobileActiveModule, stage: "play", replay: true }); } : undefined}
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); setRevealReplay(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}

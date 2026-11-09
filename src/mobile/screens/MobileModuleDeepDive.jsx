@@ -31,7 +31,7 @@ const CONTENT_BY_KEY = {
 
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
 // the module has one; its "Explain this" link sits beside the module's name.
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal, onOpenAssist, onEditInputs }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal, onShowExplainer, onOpenAssist, onEditInputs }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -97,6 +97,11 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}
 
+      {onShowExplainer && (
+        <div style={{textAlign:"center",marginTop:"20px"}}>
+          <button type="button" onClick={onShowExplainer} className="tap44" style={{background:"none",border:"none",padding:"8px",fontFamily:"inherit",fontSize:"13.5px",fontWeight:600,color:G,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:"3px"}}>How this area works</button>
+        </div>
+      )}
       <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"20px"}}>
         <div style={{position:"relative"}}>
           {celebrating && (
