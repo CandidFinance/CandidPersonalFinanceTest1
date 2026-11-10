@@ -206,8 +206,11 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
     });
   };
 
-  // What's in view, its edges interpolated so the scale moves smoothly.
-  const first = sl / perMonth, last = Math.min((sl + plotW) / perMonth, n - 1);
+  // What's in view, its edges interpolated so the scale moves smoothly. A
+  // bounce past either end (Safari's overscroll) reads as that end: before
+  // the first saved month there's nothing to draw (it crashed the screen).
+  const at = clamp(sl, 0, maxScroll);
+  const first = at / perMonth, last = Math.min((at + plotW) / perMonth, n - 1);
   const valueAt = f => {
     const i = clamp(Math.floor(f), 0, n - 2);
     return points[i].value + (points[i + 1].value - points[i].value) * (f - i);
@@ -218,7 +221,7 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
   lo = lo >= 0 ? Math.max(0, lo - pad) : lo - pad; // positive values never get a negative axis
   hi += pad;
 
-  const xAt = i => PL + i * perMonth - sl;
+  const xAt = i => PL + i * perMonth - at;
   const yAt = v => PT + (1 - (v - lo) / (hi - lo)) * (PB - PT);
   const a = Math.max(0, Math.floor(first) - 1), b = Math.min(n - 1, Math.ceil(last) + 1);
   const path = (from, to) => {
@@ -243,7 +246,7 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
 
   const readAt = e => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setReading(clamp(Math.round((e.clientX - rect.left - PL + sl) / perMonth), 0, n - 1));
+    setReading(clamp(Math.round((e.clientX - rect.left - PL + at) / perMonth), 0, n - 1));
   };
   const onPointerDown = e => { if (e.pointerType === "mouse") drag.current = { x: e.clientX, from: scroller.current.scrollLeft, moved: false }; };
   const onPointerMove = e => {
@@ -279,7 +282,7 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
         {/* data-scrub: a swipe here moves the chart, not the band's views
             or the sheet (ScreenBand.jsx). */}
         <div ref={scroller} onScroll={onScroll} tabIndex={0} role="group" aria-label={labels.chartAria} data-scrub=""
-          style={{ overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }}>
+          style={{ overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none", overscrollBehaviorX: "none", WebkitOverflowScrolling: "touch" }}>
           <div style={{ width: PL + (n - 1) * perMonth + GUTTER, height: H }}>
             <svg width={width} height={H} viewBox={`0 0 ${width} ${H}`}
               onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerLeave}
