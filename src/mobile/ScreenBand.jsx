@@ -66,7 +66,6 @@ const CSS = `
 .screen-band { --cover-tint: rgba(22,47,36,0.10); --top-solid: var(--band-a); }
 .screen-band.dark, .screen-band.green { --cover-tint: rgba(4,12,8,0.5); }
 .screen-band.dark { --top-solid: ${STATUS.dark}; }
-@keyframes band-cap-in { from { opacity: 0; visibility: hidden; } to { opacity: 1; visibility: visible; } }
 @media (max-width: 580px) {
   .screen-band { position: sticky; top: 0; z-index: 0; }
   .screen-band::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--cover-tint); opacity: var(--cover, 0); pointer-events: none; }
@@ -74,10 +73,7 @@ const CSS = `
   .screen-band.covered :is(${FADES}, [data-band-fade]) { pointer-events: none; }
   .screen-band.flush-top::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: ${TOP_BLEND}px; z-index: -1; background: linear-gradient(var(--top-solid), transparent); pointer-events: none; }
   .screen-sheet { box-shadow: 0 -12px 28px rgba(10,20,15,calc(var(--lift, 0) * 0.16)); }
-  .screen-band.band-cap { position: fixed; top: 0; margin: 0; z-index: 20; pointer-events: none; opacity: 0; visibility: hidden; }
-  @supports (animation-timeline: scroll()) {
-    .screen-band.band-cap { animation: band-cap-in linear both; animation-timeline: scroll(root block); animation-range: calc(var(--dock-at, 0px) - 1px) var(--dock-at, 0px); }
-  }
+  .screen-band.band-cap { position: fixed; top: 0; margin: 0; z-index: 20; pointer-events: none; }
 }
 `;
 
@@ -119,16 +115,20 @@ export function ScreenSheet({ children }) {
 // part that holds the title and moves with it (Modules' card). With no
 // title it runs to the top of the screen. Follows the scroll, so it's the
 // same with reduced motion.
-// Once it's locked, the sheet's edge is the cap: a copy of the band as it
-// locks (cloned, hidden from screen readers), cut to the line with the
-// sheet's rounded corners cut out of its foot, laid over the top. The
-// browser itself shows it the instant the sheet arrives (a scroll-driven
-// animation, in step with the scroll), so the edge and corners hold however
-// fast the page is flicked, and the sheet's content scrolls on beneath it.
-// (Cut from the scroll in code, a frame behind, the sheet overshot and
-// bounced back, and its corners squared on a quick flick.) Where that's not
-// supported, it's shown from the scroll as the rest. A back link on it
-// passes a tap to the real one.
+// The sheet's locked edge is the cap: a live copy of the band (cloned, hidden
+// from screen readers, every change on the band copied across as it
+// happens), fixed over the top of the screen, cut to the line with the
+// sheet's rounded corners cut out of its foot. Before the sheet arrives it
+// looks just as the band beneath it, so it can't be seen; once it has, the
+// sheet's content scrolls on beneath it. As it's always there, the edge
+// holds however fast the page is flicked: on an iPhone, Safari scrolls a
+// flick ahead of the page's code by several frames, and anything set from
+// the scroll (a cut-off, or the cap shown on arrival) fell behind it, the
+// sheet running on over the headline or to the top of the screen. Hidden at
+// the top of the page (nothing to hold there), so a swipe of the band's
+// views shows as it is. Taps go through it to the band until the sheet's
+// arrived; then it takes them (the sheet's content beneath is hidden), a
+// back link on it passing a tap to the real one.
 const BAND_PAD = 22; // the band's top padding, under the top inset
 const TITLE_LINE = 14; // a title's line (11px caps); a taller title, a back link's 44px tap area, centres on it
 const FIGURE_GAP = 2; // the title's foot to the figure, locked
@@ -136,6 +136,13 @@ const FIGURE_SCALE = 0.5; // the locked figure, against the band's figure size
 const DOCK_GAP = 10; // the figure's foot to the sheet's edge, locked
 const SHEET_RADIUS = 28; // the sheet's top corners (.screen-sheet)
 const TAPPABLE = "[data-band-keep]:is(button, a), [data-band-keep] :is(button, a)";
+// Every element and text under `root`, in order (a clone's match its original's).
+const walk = root => {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  const all = [root];
+  while (w.nextNode()) all.push(w.currentNode);
+  return all;
+};
 function useBandCover(ref) {
   useEffect(() => {
     const sheet = ref.current;
@@ -143,12 +150,13 @@ function useBandCover(ref) {
     const band = page?.querySelector(".screen-band");
     if (!band) return;
     const phone = window.matchMedia("(max-width: 580px)");
-    let frame = 0, dirty = true, stale = true, laid = null, cap = null;
-    // window.CSS: this module's own CSS (the stylesheet) shadows it.
-    const synced = window.CSS?.supports?.("animation-timeline: scroll()");
-    // The band's classes but those set here: a change of tone re-copies it.
+    let frame = 0, dirty = true, stale = true, laid = null, cap = null, shield = null, capStyle = null, twin = new Map(), tapCopies = new Set(), touching = false;
+    // Not until the page has come in (MobileLayout's PageEnter slides and
+    // fades it; the cap, out on the page, would stand still over it).
+    let ready = false;
+    // The band's classes but those set here: a change of tone measures again.
     const toneOf = () => [...band.classList].filter(c => c !== "covered" && c !== "flush-top").join(" ");
-    let tone = toneOf(), capAt = 0, later = 0;
+    let tone = toneOf();
     const moving = () => [...band.querySelectorAll('[data-band-keep="carry"], [data-band-keep="title"], [data-band-keep="figure"]')];
     // Where each part sits unmoved (the band's pinned, so that's fixed on
     // screen), and where it locks.
@@ -185,23 +193,32 @@ function useBandCover(ref) {
       dirty = false;
       stale = true;
     };
-    // The band as it locks, over everything but pop-outs, cut to the line.
+    // The band's copy, over everything but pop-outs, cut to the line. Each
+    // part of the band paired with its copy (`twin`), to copy changes across.
     const makeCap = () => {
       cap?.remove();
-      cap = null;
+      shield?.remove();
+      cap = shield = null;
+      twin = new Map();
+      tapCopies = new Set();
       stale = false;
       if (!laid.line) return;
       const r = band.getBoundingClientRect();
       cap = band.cloneNode(true);
+      const mine = walk(band), copy = walk(cap);
+      mine.forEach((n, i) => twin.set(n, copy[i]));
+      // A back link on it: a tap on the copy is a tap on the real one.
+      band.querySelectorAll(TAPPABLE).forEach(el => {
+        const c = twin.get(el);
+        if (!c) return;
+        tapCopies.add(c);
+        c.style.pointerEvents = "auto";
+        c.addEventListener("click", e => { e.preventDefault(); el.click(); });
+      });
       cap.classList.add("band-cap");
       cap.setAttribute("aria-hidden", "true");
       cap.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
       cap.querySelectorAll("button, a, input, [tabindex]").forEach(el => el.setAttribute("tabindex", "-1"));
-      // A back link on it: a tap on the copy is a tap on the real one.
-      cap.querySelectorAll(TAPPABLE).forEach((el, i) => {
-        el.style.pointerEvents = "auto";
-        el.addEventListener("click", e => { e.preventDefault(); band.querySelectorAll(TAPPABLE)[i]?.click(); });
-      });
       cap.querySelectorAll("[role=dialog], [role=listbox], [role=menu]").forEach(el => el.remove());
       // Down to the line, and the two corners beside the sheet's rounded top.
       const L = laid.line, R = SHEET_RADIUS;
@@ -210,17 +227,42 @@ function useBandCover(ref) {
         `radial-gradient(circle at 100% 100%, transparent ${R - 0.5}px, #000 ${R}px) 0 ${L}px / ${R}px ${R}px no-repeat`,
         `radial-gradient(circle at 0 100%, transparent ${R - 0.5}px, #000 ${R}px) 100% ${L}px / ${R}px ${R}px no-repeat`,
       ].join(", ");
-      Object.assign(cap.style, { left: `${r.left}px`, width: `${r.width}px`, height: `${band.offsetHeight}px`, boxSizing: "border-box", mask, webkitMask: mask });
-      cap.style.setProperty("--cover", "1");
-      cap.classList.add("covered");
-      const copies = [...cap.querySelectorAll('[data-band-keep="carry"], [data-band-keep="title"], [data-band-keep="figure"]')];
-      laid.own.forEach(([, dy, k], i) => {
-        const el = copies[i];
-        if (!el) return;
-        el.style.transformOrigin = "0 0";
-        el.style.transform = dy || k !== 1 ? `translate3d(0, ${dy.toFixed(1)}px, 0) scale(${k.toFixed(4)})` : "";
-      });
-      page.appendChild(cap);
+      capStyle = { left: `${r.left}px`, width: `${r.width}px`, height: `${band.offsetHeight}px`, boxSizing: "border-box", mask, webkitMask: mask };
+      Object.assign(cap.style, capStyle);
+      // Over the line only, once the sheet's arrived: takes the taps there,
+      // meant for the sheet's content now hidden beneath (the cap itself is
+      // the band's full height, its cut only drawn, so it lets taps through).
+      shield = document.createElement("div");
+      Object.assign(shield.style, { position: "fixed", top: "0", left: capStyle.left, width: capStyle.width, height: `${L}px`, zIndex: "19", pointerEvents: "none" });
+      // Out on the page, clear of the screens' own moves (MobileLayout's
+      // PageEnter), which would carry a fixed part with them.
+      document.body.append(shield, cap);
+    };
+    // A change on the band, copied to its twin on the cap.
+    const mirror = list => {
+      if (!cap) return;
+      for (const m of list) {
+        const t = m.target;
+        if (t === band) {
+          if (m.attributeName === "class") cap.className = `${band.className} band-cap`;
+          else if (m.attributeName === "style") {
+            // The band's own inline style, keeping the cap's place and cut.
+            const { visibility } = cap.style;
+            cap.style.cssText = band.style.cssText;
+            Object.assign(cap.style, capStyle, { visibility });
+          }
+          continue;
+        }
+        const c = twin.get(t);
+        if (!c) continue;
+        if (m.type === "characterData") c.data = t.data;
+        // Not what's set on the copy alone: no ids, out of the tab order.
+        else if (m.type === "attributes" && !["id", "tabindex", "role"].includes(m.attributeName)) {
+          const v = t.getAttribute(m.attributeName);
+          if (v == null) c.removeAttribute(m.attributeName); else c.setAttribute(m.attributeName, v);
+          if (m.attributeName === "style" && tapCopies.has(c)) c.style.pointerEvents = "auto";
+        }
+      }
     };
     const reset = () => {
       band.style.removeProperty("--cover");
@@ -230,13 +272,15 @@ function useBandCover(ref) {
       sheet.style.minHeight = "";
       band.classList.remove("flush-top");
       cap?.remove();
-      cap = null;
+      shield?.remove();
+      cap = shield = null;
       dirty = true;
     };
     const update = () => {
       frame = 0;
       if (!phone.matches) return reset();
       if (dirty) measure();
+      if (stale) makeCap();
       const { own, line } = laid;
       const top = sheet.getBoundingClientRect().top;
       // Tall enough to come all the way up, however little is on it. Of the
@@ -252,43 +296,51 @@ function useBandCover(ref) {
         el.style.transformOrigin = "0 0";
         el.style.transform = p && (dy || k !== 1) ? `translate3d(0, ${(dy * p).toFixed(1)}px, 0) scale(${(1 - (1 - k) * p).toFixed(4)})` : "";
       }
-      // Copied again at most every 200ms (a figure counting up).
-      if (stale && (p > 0.5 || !cap)) {
-        const wait = capAt + 200 - performance.now();
-        if (wait <= 0) { makeCap(); capAt = performance.now(); }
-        else if (!later) later = setTimeout(() => { later = 0; soon(); }, wait);
-      }
       if (cap) {
-        cap.style.setProperty("--dock-at", `${Math.max(1, travel).toFixed(1)}px`);
-        if (!synced) { cap.style.opacity = p >= 1 ? "1" : "0"; cap.style.visibility = p >= 1 ? "visible" : "hidden"; }
+        // Not over an open list on the band (the range picker), which the
+        // copy leaves out.
+        const shown = ready && (window.scrollY > 0 || touching) && !band.querySelector('[aria-expanded="true"]');
+        cap.style.visibility = shown ? "visible" : "hidden";
+        shield.style.pointerEvents = shown && p >= 1 ? "auto" : "none";
       }
     };
     const soon = () => { if (!frame) frame = requestAnimationFrame(update); };
     const again = () => { dirty = true; soon(); };
     update();
-    // Once the page has settled in (MobileLayout's PageEnter moves it).
-    const settled = setTimeout(again, 450);
+    // Once the page has settled in (MobileLayout's PageEnter, 0.3s).
+    const settled = setTimeout(() => { ready = true; again(); }, 320);
     // And once the serif's loaded, which changes the figure's size.
     let live = true;
     document.fonts?.ready.then(() => { if (live) again(); });
     window.addEventListener("scroll", soon, { passive: true });
+    // A touch may be a flick from the top: the cap's there first.
+    const onTouch = e => { touching = e.type === "touchstart"; soon(); };
+    for (const el of [sheet, band]) {
+      el.addEventListener("touchstart", onTouch, { passive: true });
+      el.addEventListener("touchend", onTouch, { passive: true });
+      el.addEventListener("touchcancel", onTouch, { passive: true });
+    }
     window.addEventListener("resize", again);
     phone.addEventListener("change", again);
-    // The band's view switching or its tone changing: measure again. Text
-    // changing on it (a figure, a count): copy it to the cap again.
+    // Parts coming or going on the band (its view switching) or its tone
+    // changing: measure and copy it again. Anything else (a figure counting
+    // up, a part moving or fading): copied straight across.
     const watch = new MutationObserver(list => {
       if (list.some(m => m.type === "childList")) return again();
-      const toned = list.some(m => m.type === "attributes" && m.target === band);
-      if (toned && toneOf() !== tone) { tone = toneOf(); return again(); }
-      if (list.some(m => m.type === "characterData" || (m.type === "attributes" && m.target !== band))) { stale = true; soon(); }
+      if (list.some(m => m.target === band && m.attributeName === "class") && toneOf() !== tone) { tone = toneOf(); again(); }
+      mirror(list);
     });
-    watch.observe(band, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+    watch.observe(band, { childList: true, subtree: true, characterData: true, attributes: true });
     return () => {
       live = false;
       cancelAnimationFrame(frame);
       clearTimeout(settled);
-      clearTimeout(later);
       window.removeEventListener("scroll", soon);
+      for (const el of [sheet, band]) {
+        el.removeEventListener("touchstart", onTouch);
+        el.removeEventListener("touchend", onTouch);
+        el.removeEventListener("touchcancel", onTouch);
+      }
       window.removeEventListener("resize", again);
       phone.removeEventListener("change", again);
       watch.disconnect();

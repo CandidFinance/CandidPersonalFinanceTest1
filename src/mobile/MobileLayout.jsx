@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { CREAM, G, GOLD, MUT } from "../design-tokens.js";
 import MobileTabBar, { MOBILE_NAV_ITEMS, BAR_ORDER } from "./MobileTabBar.jsx";
@@ -18,6 +18,69 @@ import { SignInGate } from "./SignInSetup.jsx";
 
 // The tab last shown, across remounts (each tab screen may be its own tree).
 let shownTab = null;
+
+// How far down each page was last scrolled, while the app's open (gone on a
+// reload or once it's closed): a tab opens its page where it was left.
+// Tapping a tab while on its page takes it back to the top (Home, Modules,
+// Chat, Progress, Forecasts; Harvey, 10 Nov 2026). Only from the tabs:
+// a screen opened another way (a module from a tile) opens as it does.
+const scrolledTo = new Map();
+// The tab just tapped, and where its page goes: { path, y, at }.
+let restore = null, restoring = false;
+function useTabScroll() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const reduce = useReducedMotion();
+  // Kept as it's scrolled, only while this page's the one showing.
+  useEffect(() => {
+    const keep = () => { if (window.location.pathname === pathname && !restoring) scrolledTo.set(pathname, window.scrollY); };
+    window.addEventListener("scroll", keep, { passive: true });
+    return () => window.removeEventListener("scroll", keep);
+  }, [pathname]);
+  // Arrived from a tab: back to where this page was left, held there each
+  // frame for a quarter of a second (the page settling in can put it back
+  // to the top) and up to a second while the page is still too short (still
+  // filling out, a screen loading); let go as soon as they touch or scroll
+  // it themselves. Only the page that tab opens, and only straight after
+  // the tap: a page reached another way opens as it does.
+  useEffect(() => {
+    if (!restore || restore.path !== pathname || performance.now() - restore.at > 1000) return;
+    const { y } = restore;
+    restoring = true;
+    let raf = 0, tries = 0;
+    const done = () => {
+      cancelAnimationFrame(raf);
+      restore = null;
+      restoring = false;
+      window.removeEventListener("touchstart", done);
+      window.removeEventListener("wheel", done);
+    };
+    const go = () => {
+      window.scrollTo({ top: y, behavior: "instant" });
+      tries++;
+      if (tries < 15 || (Math.abs(window.scrollY - y) > 1 && tries < 60)) raf = requestAnimationFrame(go);
+      else done();
+    };
+    window.addEventListener("touchstart", done, { passive: true });
+    window.addEventListener("wheel", done, { passive: true });
+    go();
+    return () => {
+      cancelAnimationFrame(raf);
+      restoring = false;
+      window.removeEventListener("touchstart", done);
+      window.removeEventListener("wheel", done);
+    };
+  }, [pathname]);
+  return path => {
+    if (path === pathname) {
+      window.scrollTo({ top: 0, behavior: reduce ? "instant" : "smooth" });
+      return;
+    }
+    scrolledTo.set(pathname, window.scrollY);
+    restore = { path, y: scrolledTo.get(path) ?? 0, at: performance.now() };
+    navigate(path);
+  };
+}
 
 // Hidden on screen, still in the page for screen readers and analytics.
 const VISUALLY_HIDDEN = { position:"absolute", width:"1px", height:"1px", padding:0, margin:"-1px", overflow:"hidden", clip:"rect(0,0,0,0)", whiteSpace:"nowrap", border:0 };
@@ -39,6 +102,7 @@ function PageEnter({ tab, fadeIn, children }) {
 
 export default function MobileLayout({ pageLabel, activeTab, headerRight, assist = null, pageKey = null, fadeIn = false, children }) {
   const navigate = useNavigate();
+  const toTab = useTabScroll();
   return (
     <div style={{minHeight:"100vh",background:CREAM,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
       {/* Keyframes for the "reviewed" coins and Home score gain. Desktop gets
@@ -63,7 +127,7 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
       {pageLabel && <span style={VISUALLY_HIDDEN}>{pageLabel}</span>}
       <nav className="app-desktop-tabs" aria-label="App" style={{gap:"28px",maxWidth:"720px",width:"100%",margin:"0 auto",padding:"4px 20px 0",boxSizing:"border-box"}}>
         {MOBILE_NAV_ITEMS.map(item => (
-          <button key={item.key} type="button" data-tour={`tab-${item.key}`} onClick={() => navigate(item.path)} style={{
+          <button key={item.key} type="button" data-tour={`tab-${item.key}`} onClick={() => toTab(item.path)} style={{
             background:"none", border:"none", padding:"6px 0", cursor:"pointer", fontFamily:"inherit",
             fontSize:"14px", fontWeight:600, color:item.key === activeTab ? G : MUT,
             borderBottom:`2px solid ${item.key === activeTab ? GOLD : "transparent"}`,
@@ -78,7 +142,7 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
         )}
         <PageEnter key={pageKey ?? activeTab ?? "page"} tab={activeTab} fadeIn={fadeIn}>{children}</PageEnter>
       </div>
-      <MobileTabBar active={activeTab} onNavigate={navigate} />
+      <MobileTabBar active={activeTab} onNavigate={toTab} />
       {assist}
       {/* A subscriber without a passkey or password sets one up first. */}
       <SignInGate/>
