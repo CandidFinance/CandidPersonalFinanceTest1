@@ -55,9 +55,6 @@ import { selectRows, updateRow } from "./lib/supabase.js";
 import { propertyRowFields } from "./lib/reportRow.js";
 import { useReportRow } from "./useReportRow.js";
 import { reportStorageFailure } from "./lib/storage.js";
-import { worthAccounts } from "./lib/netWorthView.js";
-import { withThisMonth } from "./lib/netWorthHistory.js";
-import MobileWorthDetail from "./mobile/screens/MobileWorthDetail.jsx";
 
 // Module names for Candid Assist's labels and "Elsewhere" list.
 const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
@@ -441,13 +438,6 @@ export default function AppShell() {
   // (src/mobile/visitNews.js).
   useEffect(() => { recordVisit(d, m, savingsRates); }, [savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
-  // Net worth saved once a month, the first time the app's open that month,
-  // for the line behind Now on Progress (src/lib/netWorthHistory.js).
-  useEffect(() => {
-    if (!appUnlocked(d, insights)) return;
-    const next = withThisMonth(d.netWorthHistory, worthAccounts(d, m));
-    if (next) set("netWorthHistory", next);
-  }, [m]); // eslint-disable-line react-hooks/exhaustive-deps
   // The user's row in Supabase: its id, inserting it and PATCHing it.
   const { currentRowId, insertReportRow, saveRow, rowInputFields, rowReportFields } = useReportRow(d, m, statuses);
   // The £ a year of changes made, for the value measures (valueMetrics.js):
@@ -740,7 +730,7 @@ export default function AppShell() {
   // its entry (appUnlocked). Before that, a stale bookmark, shared link or
   // bare reload goes home rather than to a broken or empty page.
   const APP_PATHS = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
-  if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/") || pathname.startsWith("/app/progress/")) && !appUnlocked(d, insights)) {
+  if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/")) && !appUnlocked(d, insights)) {
     // A Property or module link is let in (the effect above); blank for that moment.
     if (linkedModule) return null;
     return <Navigate to="/" replace />;
@@ -814,8 +804,7 @@ export default function AppShell() {
         )}
         {tabScreen === "progress" && (
           <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set} celebrating={goalsReached.map(g => g.key)}
-            onOpenModule={key => navigate(`/app/module/${key}`)}
-            onOpenWorth={key => { navigate(`/app/progress/worth/${key}`); scrollToTop(); }}/>
+            onOpenModule={key => navigate(`/app/module/${key}`)}/>
         )}
         {tabScreen === "modules" && (
           <MobileModulesScreen d={d} m={m} set={set} statuses={statuses} insights={insights}
@@ -846,21 +835,6 @@ export default function AppShell() {
             navigate(PROPERTY_STEP_PATHS[next] || "/app/property");
             scrollToTop();
           }}/>
-      </MobileLayout>
-    );
-  }
-
-  // A row of Progress's net worth, and its More detail pages, as their own
-  // routes, so the phone's back gesture goes back a level.
-  // /app/progress/worth/<row>[/<detail>]
-  if (pathname.startsWith("/app/progress/worth/")) {
-    const [, , , , rowKey, more] = pathname.split("/");
-    return (
-      <MobileLayout assist={assistNode} activeTab="progress" pageLabel="Net worth" pageKey={pathname}>
-        <MobileWorthDetail d={d} m={m} rowKey={decodeURIComponent(rowKey || "")} more={more ? decodeURIComponent(more) : null}
-          onOpen={next => { navigate(`/app/progress/worth/${rowKey}/${next}`); scrollToTop(); }}
-          onBack={() => { if (window.history.state?.idx > 0) navigate(-1); else navigate(more ? `/app/progress/worth/${rowKey}` : "/app/progress"); }}
-          onOpenModule={key => { posthog.capture("progress_module_opened", { module: key }); navigate(`/app/module/${key}`); }}/>
       </MobileLayout>
     );
   }
