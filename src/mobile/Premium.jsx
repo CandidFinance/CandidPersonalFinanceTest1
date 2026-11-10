@@ -1,12 +1,10 @@
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useState } from "react";
 import posthog from "posthog-js";
 import { Crown, X, Sparkles, TrendingUp, Target, CalendarCheck, Percent } from "lucide-react";
 import { G, MUT, TEXT, WHITE, CTA_BLUE } from "../design-tokens.js";
 import { hasAccess } from "../lib/entitlement.js";
 import { PlanPicker, CTA_WASH } from "./deepdive/SubscribeButtons.jsx";
-import useDialogFocus, { useHidesAssist } from "./useDialogFocus.js";
+import { IconButton, Sheet } from "./ui/index.js";
 
 // Candid Premium, beside the wordmark on every app screen for anyone not
 // subscribed: a small CTA blue crown that opens what a subscription
@@ -48,27 +46,20 @@ export function SubscriberCrown() {
 // non-subscriber taps it (Forecast's monthly surplus). `from` names it in
 // analytics.
 export function PremiumSheetPortal({ open, d, onClose, from = "header" }) {
-  if (typeof document === "undefined") return null;
-  return createPortal(<AnimatePresence>{open && <PremiumSheet key="premium" d={d} from={from} onClose={onClose}/>}</AnimatePresence>, document.body);
+  return (
+    <Sheet open={open} onClose={onClose} labelledBy="premium-title" background={WHITE} padding="0">
+      <PremiumSheet d={d} from={from} onClose={onClose}/>
+    </Sheet>
+  );
 }
 
+// The sheet's content (src/mobile/ui/Sheet.jsx draws the sheet itself).
 function PremiumSheet({ d, from, onClose }) {
-  const ref = useRef(null);
-  const reduceMotion = useReducedMotion();
-  useDialogFocus(ref, { onEscape: onClose });
-  useHidesAssist();
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-      style={{position:"fixed",inset:0,zIndex:4600,background:"rgba(10,20,15,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <motion.div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="premium-title" onClick={e => e.stopPropagation()}
-        initial={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        style={{width:"100%",maxWidth:"480px",maxHeight:"92vh",overflowY:"auto",background:WHITE,borderRadius:"22px 22px 0 0",outline:"none",fontFamily:"'DM Sans',sans-serif",paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+    <>
         <div style={{position:"relative",background:CTA_WASH,padding:"22px 20px 18px"}}>
-          <button type="button" onClick={onClose} aria-label="Close"
-            style={{position:"absolute",top:"12px",right:"12px",display:"flex",alignItems:"center",justifyContent:"center",width:"30px",height:"30px",borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
-            <X size={16} aria-hidden="true"/>
-          </button>
+          <IconButton icon={X} label="Close" onClick={onClose} size={28} variant="tint" color={CTA_BLUE}
+            style={{position:"absolute",top:"14px",right:"14px"}}/>
           <span style={{width:"40px",height:"40px",borderRadius:"50%",background:CTA_BLUE,color:WHITE,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <Crown size={20} strokeWidth={2.2} aria-hidden="true"/>
           </span>
@@ -95,7 +86,6 @@ function PremiumSheet({ d, from, onClose }) {
           </div>
           <p style={{margin:"12px 0 0",fontSize:"12.5px",color:MUT,textAlign:"center"}}>Already subscribed? <a href="/app/signin" style={{color:G,fontWeight:700}}>Sign in</a></p>
         </div>
-      </motion.div>
-    </motion.div>
+    </>
   );
 }

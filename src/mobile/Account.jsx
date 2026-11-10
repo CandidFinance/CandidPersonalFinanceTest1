@@ -1,16 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
-import { Bell, BookOpen, ChevronLeft, ChevronRight, CircleUser, Lock, SlidersHorizontal, X } from "lucide-react";
-import { G, MUT, TEXT, WHITE, CREAM, ERROR_TEXT, FIELD_BORDER, LABEL_CAPS, PROGRESS_GREEN, TILE_KICKER } from "../design-tokens.js";
+import { Bell, BookOpen, ChevronRight, CircleUser, Lock, SlidersHorizontal } from "lucide-react";
+import { G, MUT, TEXT, WHITE, CREAM, ERROR_TEXT, LABEL_CAPS } from "../design-tokens.js";
 import { accessInfo, accountSignIns, deleteAccount, hasAccess, openBillingPortal, setEmailAlerts, signedIn, PLANS } from "../lib/entitlement.js";
 import { getConsent, setConsent } from "../lib/consent.js";
 import { PAID_PLANS } from "../lib/weekly.js";
 import { SignInMethods, switchAccount } from "./SignInSetup.jsx";
-import { primaryButtonStyle } from "./onboarding/OnboardingShell.jsx";
-import useDialogFocus, { useHidesAssist } from "./useDialogFocus.js";
+import { Button, Sheet, SheetHeader, SwitchRow, TextField } from "./ui/index.js";
 
 // The Account button, top left on every app screen (Harvey, 30 Oct 2026),
 // and the sheet it opens: a settings list, each row opening its own page
@@ -24,14 +21,19 @@ import useDialogFocus, { useHidesAssist } from "./useDialogFocus.js";
 // create an account (src/site/SignInPage.jsx), Privacy and Legal documents.
 export default function AccountButton() {
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(null); // null (the list) | account | privacy | notifications | legal | delete
+  const panel = useRef(null);
+  const close = () => setOpen(false);
   return (
     <>
-      <button type="button" className="tap44" aria-label="Account" onClick={() => { setOpen(true); posthog.capture("account_opened", { signedIn: signedIn() }); }}
+      <button type="button" className="tap44" aria-label="Account" onClick={() => { setPage(null); setOpen(true); posthog.capture("account_opened", { signedIn: signedIn() }); }}
         style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",background:"none",color:CREAM,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer",flexShrink:0}}>
         <CircleUser size={24} strokeWidth={1.8} aria-hidden="true"/>
       </button>
-      {typeof document !== "undefined" && createPortal(
-        <AnimatePresence>{open && <AccountSheet key="account" onClose={() => setOpen(false)}/>}</AnimatePresence>, document.body)}
+      {/* Escape goes back from a page, and closes the list. */}
+      <Sheet open={open} onClose={close} onEscape={() => (page ? setPage(null) : close())} labelledBy="account-title" panelRef={panel}>
+        <AccountSheet page={page} setPage={setPage} onClose={close} panel={panel}/>
+      </Sheet>
     </>
   );
 }
@@ -85,33 +87,20 @@ function Group({ children, style }) {
   );
 }
 
-// An on/off row: the label (and a muted line under it) at the left, the
-// switch at the right.
-function SwitchRow({ label, sub, on, busy, onChange }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={onChange} style={{...rowStyle,cursor:busy ? "default" : "pointer"}}>
-      <span style={{flex:1,minWidth:0}}>
-        <span style={{display:"block"}}>{label}</span>
-        {sub && <span style={{display:"block",fontSize:"12px",fontWeight:400,color:MUT,marginTop:"2px",lineHeight:1.45}}>{sub}</span>}
-      </span>
-      <span aria-hidden="true" style={{position:"relative",width:"44px",height:"26px",borderRadius:"13px",background:on ? PROGRESS_GREEN : "rgba(22,47,36,0.2)",transition:"background 0.25s",flexShrink:0,opacity:busy ? 0.6 : 1}}>
-        <span style={{position:"absolute",top:"3px",left:on ? "21px" : "3px",width:"20px",height:"20px",borderRadius:"50%",background:WHITE,boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.25s cubic-bezier(0.4,0,0.2,1)"}}/>
-      </span>
-    </button>
-  );
-}
-
-function AccountSheet({ onClose }) {
-  const ref = useRef(null);
-  const reduceMotion = useReducedMotion();
+// The sheet's content (src/mobile/ui/Sheet.jsx draws the sheet itself: focus,
+// Escape, drag to close, the dimmed page). Mounted while the sheet is open.
+function AccountSheet({ page, setPage, onClose, panel }) {
   const navigate = useNavigate();
-  const [page, setPage] = useState(null); // null (the list) | account | privacy | notifications | legal | delete
-  // Escape goes back from a page, and closes the list.
-  useDialogFocus(ref, { onEscape: () => (page ? setPage(null) : onClose()) });
-  useHidesAssist();
   // The row or Back that was pressed goes with the page, so focus moves to
   // the sheet (announced by its title) rather than falling out of it.
-  useEffect(() => { ref.current?.scrollTo?.({ top: 0 }); ref.current?.focus({ preventScroll: true }); }, [page]);
+  // Not on the first run: the sheet focuses itself on opening, after noting
+  // the Account button so focus goes back to it on close; focusing here first
+  // would make it note the panel instead.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!opened.current) { opened.current = true; return; }
+    panel.current?.scrollTo?.({ top: 0 }); panel.current?.focus({ preventScroll: true });
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
   const held = accessInfo();
   const isSignedIn = signedIn();
   // The account as the server has it, with what's set up for signing in
@@ -132,10 +121,9 @@ function AccountSheet({ onClose }) {
   const list = !isSignedIn ? (
     <>
       <p style={{margin:"8px 0 0",fontSize:"12px",lineHeight:1.55,color:TEXT}}>With an account, your answers are saved, so they come back on any device.</p>
-      <button type="button" onClick={() => { posthog.capture("account_sign_in_clicked"); onClose(); navigate("/app/signin"); }}
-        style={{...primaryButtonStyle({ size: "regular" }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",marginTop:"18px"}}>
+      <Button fullWidth onClick={() => { posthog.capture("account_sign_in_clicked"); onClose(); navigate("/app/signin"); }} style={{marginTop:"18px"}}>
         Sign in or create an account
-      </button>
+      </Button>
       <Group style={{marginTop:"22px"}}>
         <Row Icon={Lock} label="Privacy" onClick={() => open("privacy")}/>
         <Row Icon={BookOpen} label="Legal documents" onClick={() => open("legal")}/>
@@ -172,26 +160,8 @@ function AccountSheet({ onClose }) {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-      style={{position:"fixed",inset:0,zIndex:4600,background:"rgba(10,20,15,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <motion.div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="account-title" onClick={e => e.stopPropagation()}
-        initial={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        style={{position:"relative",width:"100%",maxWidth:"480px",maxHeight:"92vh",overflowY:"auto",background:CREAM,borderRadius:"22px 22px 0 0",outline:"none",fontFamily:"'DM Sans',sans-serif",padding:"18px 16px calc(24px + env(safe-area-inset-bottom, 0px))",boxSizing:"border-box"}}>
-        {/* The title in the middle; back (on a page) at the left, close at the right. */}
-        <div style={{display:"grid",gridTemplateColumns:"36px 1fr 36px",alignItems:"center",gap:"8px"}}>
-          {page ? (
-            <button type="button" onClick={() => setPage(null)} aria-label="Back"
-              style={{width:"34px",height:"34px",borderRadius:"50%",border:"none",background:WHITE,color:G,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer"}}>
-              <ChevronLeft size={19} aria-hidden="true"/>
-            </button>
-          ) : <span/>}
-          <h2 id="account-title" style={{...TILE_KICKER,lineHeight:1.25,textAlign:"center"}}>{page ? PAGE_TITLES[page] : "Account"}</h2>
-          <button type="button" onClick={onClose} aria-label="Close"
-            style={{width:"34px",height:"34px",borderRadius:"50%",border:"none",background:WHITE,color:G,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer"}}>
-            <X size={16} aria-hidden="true"/>
-          </button>
-        </div>
+    <>
+      <SheetHeader id="account-title" title={page ? PAGE_TITLES[page] : "Account"} onBack={page ? () => setPage(null) : undefined} onClose={onClose}/>
 
         {!page && list}
         {page === "account" && <AccountSettings held={held} account={account} reload={reload} loadError={loadError}/>}
@@ -201,13 +171,14 @@ function AccountSheet({ onClose }) {
           <Group style={{marginTop:"18px"}}>
             <Row label="Terms of use" href="/terms.html"/>
             <Row label="Privacy policy" href="/privacy.html"/>
+            {/* Required by Rare UI's licence for the components ported into src/mobile/ui. */}
+            <Row label="Some animations by Rare UI" sub="rareui.com" href="https://rareui.com"/>
           </Group>
         )}
         {page === "delete" && (account
           ? <DeleteAccount paidLive={!!account.paidLive} onCancel={() => setPage(null)}/>
           : loadError || <p style={{margin:"18px 4px 0",fontSize:"12px",color:MUT}}>Loading…</p>)}
-      </motion.div>
-    </motion.div>
+    </>
   );
 }
 
@@ -250,7 +221,7 @@ function Privacy() {
   return (
     <>
       <Group style={{marginTop:"18px"}}>
-        <SwitchRow label="Analytics cookies" sub="Lets Candid count visits and see which screens are used." on={choice === "granted"} onChange={flip}/>
+        <SwitchRow label="Analytics cookies" sub="Lets Candid count visits and see which screens are used." checked={choice === "granted"} onChange={flip}/>
       </Group>
       <Group>
         <Row label="Privacy policy" href="/privacy.html"/>
@@ -279,7 +250,7 @@ function Notifications({ account, setAccount, loadError }) {
     <>
       <Group style={{marginTop:"18px"}}>
         <SwitchRow label="Emails from Candid" sub={`The Sunday email, reminders and rate alerts, to ${account.email}.`}
-          on={!!account.alerts} busy={busy} onChange={flip}/>
+          checked={!!account.alerts} busy={busy} onChange={flip}/>
       </Group>
       {error && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 4px 0"}}>{error}</div>}
     </>
@@ -293,7 +264,7 @@ function DeleteAccount({ paidLive, onCancel }) {
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const inputId = useId(), errorId = useId();
+  const errorId = useId();
   const confirmed = typed.trim().toUpperCase() === "DELETE";
   const remove = async e => {
     e.preventDefault();
@@ -313,16 +284,12 @@ function DeleteAccount({ paidLive, onCancel }) {
   return (
     <form onSubmit={remove} style={{...group,marginTop:"18px",padding:"16px"}}>
       <p style={text}>This deletes your account, your saved answers, your sign-ins and any emails Candid holds for you. It can't be undone.</p>
-      <label htmlFor={inputId} style={{display:"block",margin:"14px 0 6px",fontSize:"12px",color:MUT}}>Type DELETE to confirm</label>
-      <input id={inputId} value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false}
-        aria-invalid={!!error} aria-describedby={error ? errorId : undefined}
-        style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+      {/* The error below is the server's, after Delete; it's tied to the field. */}
+      <TextField label="Type DELETE to confirm" value={typed} onChange={setTyped} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+        aria-invalid={!!error || undefined} aria-describedby={error ? errorId : undefined} style={{marginTop:"14px"}}/>
       <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-        <button type="button" onClick={onCancel} style={{...primaryButtonStyle({ size: "regular", outline: true }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",flex:1}}>Cancel</button>
-        <button type="submit" disabled={!confirmed || busy}
-          style={{...primaryButtonStyle({ size: "regular", disabled: !confirmed || busy }),height:"37px",minHeight:"37px",padding:"0 16px",fontSize:"13px",flex:1,background:ERROR_TEXT}}>
-          {busy ? "Deleting…" : "Delete everything"}
-        </button>
+        <Button variant="secondary" onClick={onCancel} style={{flex:1}}>Cancel</Button>
+        <Button type="submit" tone="danger" disabled={!confirmed} loading={busy} loadingLabel="Deleting…" style={{flex:1}}>Delete everything</Button>
       </div>
       {error && <div id={errorId} role="alert" style={{fontSize:"12px",color:ERROR_TEXT,marginTop:"6px"}}>{error}</div>}
     </form>

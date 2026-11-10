@@ -50,7 +50,7 @@ export function ExplainerChoice({ onWalk, onSkip }) {
       <div style={column}>
         <h2 style={{ fontFamily: SANS, fontSize: "26px", lineHeight: 1.25, fontWeight: 700, color: TEXT, margin: "0 0 10px" }}>Your answer is ready</h2>
         <p style={{ fontSize: "16px", lineHeight: 1.55, color: MUT, margin: "0 0 28px" }}>See how this area works first, or go straight to your figures.</p>
-        <PrimaryButton onClick={() => { tap(); onWalk(); }}>Walk me through it</PrimaryButton>
+        <PrimaryButton onClick={onWalk}>Walk me through it</PrimaryButton>
         <p style={{ fontSize: "13px", lineHeight: 1.5, color: MUT, textAlign: "center", margin: "10px 0 0" }}>About 2 minutes. Explains where your figures come from.</p>
         <SkipLink label="Skip to my answer" onClick={onSkip}/>
       </div>

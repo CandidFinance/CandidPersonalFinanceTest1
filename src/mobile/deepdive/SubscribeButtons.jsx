@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout } from "../../lib/entitlement.js";
 import { G, WHITE, MUT, CRITICAL, CTA_BLUE, SANS } from "../../design-tokens.js";
+import { Button } from "../ui/Button.jsx";
 
 // CTA blue's pale wash, for what's picked.
 export const CTA_WASH = "#EAF3FE";
@@ -46,10 +47,9 @@ export function PlanPicker({ d, module, from }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:"10px",paddingTop:"10px"}}>
         {card("monthly")}{card("yearly")}
       </div>
-      <button type="button" disabled={!!busy} onClick={() => subscribe(plan)} style={{
-        marginTop:"14px", width:"100%", height:"37px", border:"none", borderRadius:"100px", background:CTA_BLUE, color:WHITE,
-        fontFamily:"inherit", fontSize:"13px", fontWeight:700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
-      }}>{busy ? "Opening checkout…" : `Subscribe ${plan}`}</button>
+      <Button variant="blue" fullWidth loading={!!busy} loadingLabel="Opening checkout…" onClick={() => subscribe(plan)} style={{marginTop:"14px"}}>
+        Subscribe {plan}
+      </Button>
       {error && <div style={{fontSize:"12px",color:CRITICAL,marginTop:"8px",textAlign:"center"}}>{error}</div>}
     </>
   );
@@ -64,9 +64,9 @@ export default function SubscribeButtons({ d, module, from }) {
     <>
       <div style={{display:"flex",gap:"8px"}}>
         {["monthly", "yearly"].map(p => (
-          <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} className="tap44" style={{background:p === "yearly" ? CTA_BLUE : WHITE,color:p === "yearly" ? WHITE : CTA_BLUE,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
+          <Button key={p} variant={p === "yearly" ? "primary" : "secondary"} tone="blue" disabled={!!busy && busy !== p} loading={busy === p} onClick={() => subscribe(p)}>
             {PLANS[p].price} {PLANS[p].per}
-          </button>
+          </Button>
         ))}
       </div>
       {error && <span style={{fontSize:"12px",color:CRITICAL}}>{error}</span>}

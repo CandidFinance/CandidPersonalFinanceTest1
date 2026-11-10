@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SANS, WHITE, PROGRESS_GREEN, LABEL_CAPS } from "../../design-tokens.js";
+import { Button, buttonStyle } from "../ui/Button.jsx";
 
 // The pieces every question flow shares (QuickStart, GuidedFlow, the answer
 // reveal), so they all look alike: Back and the page dots across the top, the
@@ -133,23 +134,18 @@ export function AnswerTile({ label, sub, on, dim = false, onPick, layout = "grid
   );
 }
 
-// The main button's look, shared by every full-width button in the entry,
-// unlock and sign-in screens. `size`: "large" in the question flows,
-// "regular" elsewhere (Start home, the unlock, the paywall, the sign-in
-// gate). `outline`: the second choice beside a filled one, the same height.
-export function primaryButtonStyle({ size = "large", outline = false, disabled = false } = {}) {
-  const pad = size === "large" ? 17 : 15;
-  return {
-    width: "100%", background: outline ? WHITE : G, color: outline ? G : WHITE, border: outline ? `1.5px solid ${G}` : "none",
-    borderRadius: "100px", padding: `${outline ? pad - 1.5 : pad}px`, fontSize: size === "large" ? "17px" : "15.5px", fontWeight: 700, fontFamily: SANS,
-    cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.35 : 1,
-  };
+// The main button's look, for the full-width buttons in the entry, unlock
+// and sign-in screens: now the shared Button's (src/mobile/ui/Button.jsx),
+// full width. `outline`: the second choice beside a filled one. `size` is
+// still accepted but ignored: every button is 37px (Harvey, 10 Nov 2026).
+export function primaryButtonStyle({ outline = false, disabled = false } = {}) {
+  return buttonStyle({ variant: outline ? "secondary" : "primary", fullWidth: true, disabled });
 }
 
 // The one main button: full width, green, a pill.
-export function PrimaryButton({ children, disabled = false, type = "button", onClick, size, outline, style }) {
+export function PrimaryButton({ children, disabled = false, type = "button", onClick, outline, style }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ ...primaryButtonStyle({ size, outline, disabled }), ...style }}>{children}</button>
+    <Button type={type} onClick={onClick} disabled={disabled} variant={outline ? "secondary" : "primary"} fullWidth style={style}>{children}</Button>
   );
 }
 

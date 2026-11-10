@@ -376,3 +376,39 @@ export const CHART_ONE_OFFS = {
 // ── Iconography ──────────────────────────────────────────────────────────
 // lucide-react is the single icon library used app-wide (desktop + mobile),
 // post-emoji-removal. No other icon set or raw emoji should be introduced.
+
+// ── Component scales (the shared components in src/mobile/ui) ────────────
+// Harvey, 10 Nov 2026: one set of buttons, switches, chips, fields and sheets
+// across the app, built on these. New code takes values from here; older
+// screens move over a module at a time (docs/design-system.md).
+
+// Spacing. The app's rhythm is a 2px step; these are the stops. 6px (a tight
+// gap) and 10px (row padding) are allowed in between, they are common.
+export const SPACE = { xxs: "2px", xs: "4px", sm: "8px", md: "12px", lg: "16px", xl: "20px", xxl: "24px", xxxl: "32px" };
+// Corner radii by role. The older single tokens above stay as aliases.
+export const RADIUS = {
+  pill: RADIUS_PILL,        // buttons, chips, fields, segmented tracks
+  sheet: "22px",            // a bottom sheet's top corners
+  hero: OPPORTUNITY_TILE_RADIUS, // the one standout tile on a screen
+  tile: RADIUS_CARD,        // tiles and grouped lists
+  control: "12px",          // a square-ish control: quick-pick option, menu
+  small: "8px",             // an icon tile inside a row
+};
+// Two control heights: 44px, Apple's tap minimum (fields), and 37px compact
+// (every button, and a compact field). A 37px control keeps a 44px tap area.
+export const CONTROL_HEIGHT = { default: "44px", compact: "37px" };
+// Every button is the compact height (Harvey, 10 Nov 2026: 44px buttons felt
+// too tall). Fields keep PILL_HEIGHT.
+export const BUTTON_HEIGHT = CONTROL_HEIGHT.compact;
+// Shadows, all tinted with the brand green (never black).
+export const SHADOW = {
+  tile: "0 2px 10px rgba(22,47,36,0.06)",
+  raised: OPPORTUNITY_TILE_SHADOW,
+  popover: "0 8px 28px rgba(22,47,36,0.18), 0 1px 3px rgba(22,47,36,0.08)",
+  knob: "0 1px 3px rgba(22,47,36,0.3)",
+};
+// One disabled look and one press feedback for every control.
+export const DISABLED_OPACITY = 0.4;
+export const PRESS_SCALE = 0.97;
+// Stacking order of the app's layers, as already in use.
+export const Z = { tabBar: 4000, goal: 4100, assistButton: 4500, sheet: 4600, overlay: 4700, assist: 4900, signIn: 6000 };

@@ -16,6 +16,7 @@ import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
 const NetWorthMockPage = import.meta.env.DEV ? lazy(() => import("./mockups/NetWorthMockPage.jsx")) : null
+const UiKitDemo = import.meta.env.DEV ? lazy(() => import("./mobile/ui/UiKitDemo.jsx")) : null
 // The app (/app/*) is its own chunk, so the marketing site doesn't download
 // it; it loads the first time an /app page opens.
 const CandidApp = lazy(() => import("./CandidApp.jsx"))
@@ -297,6 +298,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RootRoute />} />
         {import.meta.env.DEV && <Route path="/dev/net-worth-mock" element={<Suspense fallback={null}><NetWorthMockPage /></Suspense>} />}
+        {import.meta.env.DEV && <Route path="/dev/ui-kit" element={<Suspense fallback={null}><UiKitDemo /></Suspense>} />}
         <Route path="/the-problem" element={<Suspense fallback={<Prerendered />}><TheProblemPage /></Suspense>} />
         <Route path="/how-it-works" element={<Suspense fallback={<Prerendered />}><HowItWorksPage /></Suspense>} />
         <Route path="/signin" element={<Suspense fallback={null}><SignInPage /></Suspense>} />
