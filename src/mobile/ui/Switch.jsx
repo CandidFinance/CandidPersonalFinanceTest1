@@ -11,12 +11,13 @@ import { G, MUT, TEXT, WHITE, PROGRESS_GREEN, SHADOW, DISABLED_OPACITY } from ".
 
 const TRACK_OFF = "rgba(22,47,36,0.2)";
 
-// The drawn switch, 44x26 with a 20px knob. aria-hidden: the button around
-// it carries the role.
+// The drawn switch, 38x22 with an 18px knob (Harvey, 10 Nov 2026: 44x26 was
+// too large; this is the app's original size). The button around it keeps a
+// 44px tap height. aria-hidden: the button around it carries the role.
 export function SwitchTrack({ checked, dim = false }) {
   return (
-    <span aria-hidden="true" style={{ position: "relative", display: "inline-block", width: "44px", height: "26px", borderRadius: "13px", flexShrink: 0, background: checked ? PROGRESS_GREEN : TRACK_OFF, transition: "background 0.25s", opacity: dim ? DISABLED_OPACITY : 1 }}>
-      <span style={{ position: "absolute", top: "3px", left: checked ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: WHITE, boxShadow: SHADOW.knob, transition: "left 0.25s cubic-bezier(0.4,0,0.2,1)" }} />
+    <span aria-hidden="true" style={{ position: "relative", display: "inline-block", width: "38px", height: "22px", borderRadius: "11px", flexShrink: 0, background: checked ? PROGRESS_GREEN : TRACK_OFF, transition: "background 0.25s", opacity: dim ? DISABLED_OPACITY : 1 }}>
+      <span style={{ position: "absolute", top: "2px", left: checked ? "18px" : "2px", width: "18px", height: "18px", borderRadius: "50%", background: WHITE, boxShadow: SHADOW.knob, transition: "left 0.25s cubic-bezier(0.4,0,0.2,1)" }} />
     </span>
   );
 }

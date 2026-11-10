@@ -4,6 +4,7 @@ import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS, CTA_BLUE } from "../design-tokens.js";
 import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
 import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
+import { Button } from "./ui";
 
 // The action at the bottom of an expanded Win tile that turns a passive
 // recommendation into something the user actually does. Replaces the old
@@ -129,16 +130,18 @@ export default function MobileReminderAction({ id, title, description, email, ac
 
   return (
     <div style={{marginTop:"16px"}} onClick={e => e.stopPropagation()}>
-      <div style={{display:"flex",gap:"10px"}}>
-      <button type="button" onClick={onPillClick} style={{
-        flex:1, minWidth:0, whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap: action || beside ? "6px" : "8px",
-        background: isSet ? "rgba(196,150,58,0.12)" : "transparent",
-        color: isSet ? "#8a6a24" : G,
-        border:`1.5px solid ${isSet ? GOLD : G}`, borderRadius:RADIUS_PILL, padding: action || beside ? "11px 10px" : "11px 18px",
-        fontSize: beside ? "12.5px" : "13px", fontWeight:700, fontFamily:SANS, cursor: (!email && isSet) ? "default" : "pointer",
-      }}>
-        {!beside && <Icon size={15}/>}{pillLabel}
-      </button>
+      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+      {/* The kit's button: 37px, and a long label wraps instead of spilling
+          out when a switch sits beside it. Gold once the reminder is set. */}
+      <Button variant="secondary" onClick={onPillClick} icon={beside ? undefined : Icon}
+        style={{
+          flex:1, minWidth:0,
+          ...(action || beside ? { padding:"8px 10px" } : {}),
+          ...(isSet ? { background:"rgba(196,150,58,0.12)", color:"#8a6a24", border:`1.5px solid ${GOLD}` } : {}),
+          cursor: (!email && isSet) ? "default" : "pointer",
+        }}>
+        {pillLabel}
+      </Button>
       {action && <ActionButton action={action}/>}
       {beside}
       </div>

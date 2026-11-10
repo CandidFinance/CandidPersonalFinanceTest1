@@ -11,7 +11,7 @@ import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, MUT_ON_CDARK, SANS, TILE_KICKER } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, WARNING_TEXT, CTA_BLUE, SANS, TILE_KICKER } from "../../design-tokens.js";
 import posthog from "posthog-js";
 import { undoSacrifice, recordTopUps, removeTopUp } from "../../lib/taxTrapRecord.js";
 import { CHOICE_IDS, choiceFor } from "../../lib/opportunityChoices.js";
@@ -23,6 +23,7 @@ import OpportunityTile from "./OpportunityTile.jsx";
 import { PlanPicker, CTA_WASH } from "./SubscribeButtons.jsx";
 import CardStack from "../CardStack.jsx";
 import useDialogFocus from "../useDialogFocus.js";
+import { Button, IconButton, Switch, Segmented, Chip } from "../ui";
 
 // £100k tax trap (taxTrap.js), in the order the answer runs:
 //  1. What the trap costs them a year: the tax on the allowance lost and
@@ -135,7 +136,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
           <p style={{flex:1,fontSize:"12px",color:MUT,lineHeight:1.5,margin:0}}>
             {recorded.route === "sacrifice" ? "Salary sacrifice" : "Pension payments"} of {fmt(recorded.amount)} a year set up on {new Date(recorded.on).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}{recorded.perYear > 0 ? `: ${fmt(recorded.perYear)} a year kept` : ""}.
           </p>
-          <Switch on label="I've set this up" onChange={undo}/>
+          <Switch checked showLabel label="I've set this up" onChange={undo} style={{flexShrink:0,whiteSpace:"nowrap"}}/>
         </motion.div>
       )}
 
@@ -224,10 +225,8 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
   return (
     <section aria-label={`Plan ahead for the ${K} trap`} style={{position:"relative",background:WHITE,border:`2px solid ${CTA_BLUE}`,borderRadius:"20px",overflow:"hidden",boxShadow:"0 8px 24px rgba(0,113,227,0.14)"}}>
       <div style={{background:CTA_WASH,padding:"20px 20px 18px"}}>
-        <button type="button" onClick={onClose} aria-label="Close" className="tap44"
-          style={{position:"absolute",top:"12px",right:"12px",display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
-          <X size={15} aria-hidden="true"/>
-        </button>
+        <IconButton icon={X} label="Close" size={28} variant="tint" color={CTA_BLUE} onClick={onClose}
+          style={{position:"absolute",top:"12px",right:"12px"}}/>
         <h2 style={{...TILE_KICKER,margin:"0 32px 0 0",lineHeight:1.25}}>Plan ahead for the {K} trap</h2>
         <div style={{marginTop:"14px",display:"flex",gap:"12px",alignItems:"flex-start",background:WHITE,border:"1.5px solid rgba(192,57,43,0.35)",borderRadius:"14px",padding:"14px"}}>
           <TriangleAlert size={22} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
@@ -344,11 +343,9 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       : plan.months.map(x => ({ amount: each, route, month: x.month }));
     setTimeout(() => onRecord(payments, p.avoided), reduceMotion ? 0 : 450);
   };
-  const switchRoute = () => { setRoute(sacrifice ? "relief" : "sacrifice"); setFromBonus(false); setChosen(null); };
   const kids = t.childcareLost > 0;
   // No student loan answer at all (not "none"): it may be costing them more.
   const loanUnknown = employed && !d.studentLoan && !d.slPlanAnswer;
-  const pill = on => ({ border:"none",borderRadius:"100px",padding:"6px 12px",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:on ? G : CDARK,color:on ? WHITE : MUT_ON_CDARK });
   return (
     <section ref={tileRef} {...(walking ? { role: "dialog", "aria-modal": true, "aria-labelledby": "taxtrap-walk-title", tabIndex: -1 } : {})} style={{...tile,position:"relative",zIndex:walking ? WALK_Z + 1 : "auto",boxShadow:walking ? "0 12px 40px rgba(10,20,15,0.25)" : tile.boxShadow,transition:"box-shadow 0.25s"}}>
       {typeof document !== "undefined" && createPortal(
@@ -360,9 +357,10 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
         <h2 id="taxtrap-walk-title" style={tileTitle}>{sacrifice ? "Salary sacrifice" : "Pension contributions"}</h2>
         {step === WALK_STEPS
-          ? <button type="button" onClick={() => setStep(0)} aria-label={`How ${sacrifice ? "salary sacrifice" : "pension contributions"} work${sacrifice ? "s" : ""}`}
-              className="tap44" style={{display:"inline-flex",background:"none",border:"none",padding:"2px",cursor:"pointer",color:MUT}}><CircleHelp size={17} aria-hidden="true"/></button>
-          : <button type="button" onClick={finish} style={{marginLeft:"auto",background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Skip to the numbers</button>}
+          ? <IconButton icon={CircleHelp} size={28} variant="plain" color={MUT} onClick={() => setStep(0)}
+              label={`How ${sacrifice ? "salary sacrifice" : "pension contributions"} work${sacrifice ? "s" : ""}`}/>
+          // minHeight 0: the title row keeps its height; tap44 keeps the 44px tap area.
+          : <Button variant="text" onClick={finish} style={{marginLeft:"auto",minHeight:0}}>Skip to the numbers</Button>}
       </div>
       {walking ? (
         <Walkthrough step={step} setStep={setStep} onDone={finish} d={d} m={m} t={t} plan={plan} route={route} reduceMotion={reduceMotion}/>
@@ -371,20 +369,14 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
         {fmt(t.needed)} more this tax year brings your income back to {K}{plan.n > 0 ? `: ${fmt(plan.monthly)} a month over the ${plan.n} payday${plan.n === 1 ? "" : "s"} left` : ""}.
       </div>
       {canSacrifice && (
-        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px",fontSize:"12px",fontWeight:600}}>
-          <span style={{color:sacrifice ? MUT : TEXT}}>Relief at source</span>
-          <button type="button" role="switch" aria-checked={sacrifice} aria-label="Salary sacrifice" onClick={switchRoute}
-            style={{position:"relative",width:"38px",height:"22px",borderRadius:"11px",border:"none",padding:0,cursor:"pointer",background:G,flexShrink:0}}>
-            <span style={{position:"absolute",top:"2px",left:sacrifice ? "18px" : "2px",width:"18px",height:"18px",borderRadius:"50%",background:WHITE,boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.25s cubic-bezier(0.4,0,0.2,1)"}}/>
-          </button>
-          <span style={{color:sacrifice ? TEXT : MUT}}>Salary sacrifice</span>
-        </div>
+        <Segmented size="compact" ariaLabel="How it's paid in" style={{marginTop:"12px"}}
+          value={sacrifice ? "sacrifice" : "relief"} onChange={v => { setRoute(v); setFromBonus(false); setChosen(null); }}
+          options={[{ value: "relief", label: "Relief at source" }, { value: "sacrifice", label: "Salary sacrifice" }]}/>
       )}
       {sacrifice && bonusAhead && (
-        <div style={{display:"flex",gap:"6px",marginTop:"10px"}}>
-          <button type="button" onClick={() => { setFromBonus(false); setChosen(null); }} aria-pressed={!bonus} style={pill(!bonus)}>Each payday</button>
-          <button type="button" onClick={() => { setFromBonus(true); setChosen(null); }} aria-pressed={bonus} style={pill(bonus)}>From your {monthName(bonusAhead.month)} bonus</button>
-        </div>
+        <Segmented size="compact" ariaLabel="When it's paid in" style={{marginTop:"8px"}}
+          value={bonus ? "bonus" : "payday"} onChange={v => { setFromBonus(v === "bonus"); setChosen(null); }}
+          options={[{ value: "payday", label: "Each payday" }, { value: "bonus", label: `From your ${monthName(bonusAhead.month)} bonus` }]}/>
       )}
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginTop:"14px"}}>
         <span style={{fontSize:"12px",color:MUT}}>{bonus ? "One-off, from your bonus" : single ? "One payment before 5 April" : `A month, for ${n} payday${n === 1 ? "" : "s"}`}</span>
@@ -426,7 +418,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
         </button>
       )}
       {each > 0 && (() => {
-        const beside = <Switch on={switched} label="I've set this up" onChange={setUp}/>;
+        const beside = <Switch checked={switched} showLabel label="I've set this up" onChange={setUp} style={{flexShrink:0,whiteSpace:"nowrap"}}/>;
         if (bonus) return <MobileReminderAction id="taxtrap-bonus-sacrifice" who="payroll" beside={beside}
           title={`Salary sacrifice: ${fmt(each)} from your ${monthName(bonusAhead.month)} bonus`}
           description={`Check payroll have set up a one-off salary sacrifice of ${fmt(each)} into your pension from your ${monthName(bonusAhead.month)} pay and bonus.`}
@@ -664,7 +656,6 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
       </>}
     </>,
   ];
-  const navBtn = primary => ({ flex:1, border:`1.5px solid ${primary ? "transparent" : "rgba(22,47,36,0.15)"}`, borderRadius:"100px", padding:"8.5px 14px", fontSize:"13px", fontWeight:700, fontFamily:"inherit", whiteSpace:"nowrap", cursor:"pointer", background:primary ? G : WHITE, color:primary ? WHITE : TEXT });
   return (
     <div>
       {/* Every screen in the same grid cell, the others hidden: the tile
@@ -684,8 +675,8 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
         ))}
       </div>
       <div style={{display:"flex",gap:"8px"}}>
-        {step > 0 && <button type="button" onClick={() => setStep(step - 1)} style={navBtn(false)}>Back</button>}
-        <button type="button" onClick={() => step === WALK_STEPS - 1 ? onDone() : setStep(step + 1)} style={navBtn(true)}>{step === WALK_STEPS - 1 ? "See your numbers" : "Next"}</button>
+        {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)} style={{flex:1}}>Back</Button>}
+        <Button onClick={() => step === WALK_STEPS - 1 ? onDone() : setStep(step + 1)} style={{flex:1,whiteSpace:"nowrap"}}>{step === WALK_STEPS - 1 ? "See your numbers" : "Next"}</Button>
       </div>
     </div>
   );
@@ -728,28 +719,12 @@ function TopUps({ d, m, ups, onRemove }) {
           <div key={u.group || u.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
             <span style={{flex:1,fontSize:"12px",color:TEXT,lineHeight:1.4}}>{label}</span>
             <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>{fmt(sum)}</span>
-            <button type="button" onClick={() => onRemove(u.group || u.id)} aria-label={`Remove the ${fmt(sum)} top-up`} className="tap44"
-              style={{display:"inline-flex",background:"none",border:"none",padding:"4px",cursor:"pointer",color:MUT}}>
-              <X size={16} aria-hidden="true"/>
-            </button>
+            <IconButton icon={X} size={28} variant="plain" color={MUT} onClick={() => onRemove(u.group || u.id)} label={`Remove the ${fmt(sum)} top-up`}/>
           </div>
         );
       })}
       {past.over > 0 && <AllowanceNote past={past}/>}
     </section>
-  );
-}
-
-// An on/off switch with its label to the left: "I've set this up".
-function Switch({ on, label, onChange }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} onClick={onChange}
-      style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0,background:"none",border:"none",padding:"4px 0",fontSize:"12.5px",fontWeight:700,color:on ? G : TEXT,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
-      {label}
-      <span aria-hidden="true" style={{position:"relative",width:"38px",height:"22px",borderRadius:"11px",background:on ? "#2f9461" : "rgba(22,47,36,0.2)",transition:"background 0.25s",flexShrink:0}}>
-        <span style={{position:"absolute",top:"2px",left:on ? "18px" : "2px",width:"18px",height:"18px",borderRadius:"50%",background:WHITE,boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.25s cubic-bezier(0.4,0,0.2,1)"}}/>
-      </span>
-    </button>
   );
 }
 
@@ -842,8 +817,7 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Either parent over £100,000 stops this childcare support for both of you.</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
             {[["no", "No"], ["yes", "Yes"], ["single", "I don't have a partner"]].map(([v, label]) => (
-              <button key={v} type="button" onClick={() => answer(v)} className="tap44"
-                style={{border:"1px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"6px 12px",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:WHITE,color:TEXT}}>{label}</button>
+              <Chip key={v} onClick={() => answer(v)}>{label}</Chip>
             ))}
           </div>
         </div>
@@ -852,10 +826,8 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
         <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"12px 0 0"}}>A rise or bonus that would take you over can go into your pension by salary sacrifice instead.</p>
       )}
       {options && (
-        <button type="button" onClick={options}
-          style={{width:"100%",marginTop:"14px",background:CTA_BLUE,color:WHITE,border:"none",borderRadius:"12px",padding:"10px",fontSize:"13px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 2px 8px rgba(0,113,227,0.28)"}}>
-          See my options
-        </button>
+        // Blue: it opens the Plan ahead paywall.
+        <Button variant="blue" fullWidth onClick={options} style={{marginTop:"14px"}}>See my options</Button>
       )}
       </>}
     </section>
