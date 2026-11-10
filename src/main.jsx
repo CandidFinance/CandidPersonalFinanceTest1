@@ -15,6 +15,7 @@ import { captureReferral } from "./lib/referral.js"
 import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
+const NetWorthMockPage = import.meta.env.DEV ? lazy(() => import("./mockups/NetWorthMockPage.jsx")) : null
 // The app (/app/*) is its own chunk, so the marketing site doesn't download
 // it; it loads the first time an /app page opens.
 const CandidApp = lazy(() => import("./CandidApp.jsx"))
@@ -295,6 +296,7 @@ function AppRoutes() {
     <>
       <Routes>
         <Route path="/" element={<RootRoute />} />
+        {import.meta.env.DEV && <Route path="/dev/net-worth-mock" element={<Suspense fallback={null}><NetWorthMockPage /></Suspense>} />}
         <Route path="/the-problem" element={<Suspense fallback={<Prerendered />}><TheProblemPage /></Suspense>} />
         <Route path="/how-it-works" element={<Suspense fallback={<Prerendered />}><HowItWorksPage /></Suspense>} />
         <Route path="/signin" element={<Suspense fallback={null}><SignInPage /></Suspense>} />
@@ -324,6 +326,8 @@ function AppRoutes() {
         <Route element={<CandidAppLayout key={devReloadKey} />}>
           <Route path="/app/home" />
           <Route path="/app/progress" />
+          <Route path="/app/progress/worth/:rowKey" />
+          <Route path="/app/progress/worth/:rowKey/:more" />
           <Route path="/app/modules" />
           <Route path="/app/forecast" />
           <Route path="/app/inputs" />

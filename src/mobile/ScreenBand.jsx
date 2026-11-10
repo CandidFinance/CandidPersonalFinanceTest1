@@ -10,7 +10,8 @@ import { CREAM, SANS, SR_ONLY, BAND_STOPS, slickBg } from "../design-tokens.js";
 // overlaps the band's foot with rounded corners.
 // `tone`: "light", the soft green-to-gold of Modules; "dark", the card
 // stack's oil slick, with anything drawn past its edges cut off; "red" and
-// "amber", the light band warning (Progress near the £100k trap).
+// "amber", the light band warning (Progress near the £100k trap); "green",
+// the brand's dark green, flat (Progress's net worth and its row pages).
 // A figure printed on the band is as big as one on a stack's card.
 // On a phone the band runs on BLEED px under the sheet, for the sheet's
 // pull (useSheetPull) to show; the dark band's slick keeps its shape above
@@ -35,6 +36,7 @@ const CSS = `
 .screen-band.light { ${tone(BAND_STOPS.light)} }
 .screen-band.red { ${tone(BAND_STOPS.red)} }
 .screen-band.amber { ${tone(BAND_STOPS.amber)} }
+.screen-band.green { ${tone(BAND_STOPS.green)} }
 .screen-band:not(.dark) { background: linear-gradient(160deg, var(--band-a) 0%, var(--band-b) 50%, var(--band-c) 100%); transition: --band-a 0.45s ease, --band-b 0.45s ease, --band-c 0.45s ease; }
 .screen-band.dark { background: ${slickBg("calc(100% - var(--bleed))")}; overflow: hidden; }
 .band-reel { margin: 0 -20px; padding: 0 20px; overflow-x: clip; }

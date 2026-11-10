@@ -9,6 +9,8 @@
 // questions have been asked, which modules answered, unlocked or picked)
 // are combined. Pure, unit tested in mergeAnswers.test.js.
 
+import { mergeHistory } from "./netWorthHistory.js";
+
 const LISTS = ["askedFields", "answeredModules", "selectedModules", "unlockedModules", "interests", "financialGoals"];
 
 const empty = v => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
@@ -19,6 +21,8 @@ export function mergeAnswers(account, device) {
   const out = { ...account };
   for (const [k, v] of Object.entries(device)) {
     if (LISTS.includes(k) && Array.isArray(v)) out[k] = [...new Set([...(Array.isArray(account[k]) ? account[k] : []), ...v])];
+    // Net worth saved month by month: every month from both.
+    else if (k === "netWorthHistory") out[k] = mergeHistory(account[k], v);
     else if (empty(account[k]) && !empty(v)) out[k] = v;
   }
   return out;

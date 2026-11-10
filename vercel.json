@@ -23,6 +23,8 @@
     { "source": "/module/:moduleKey", "destination": "/app-shell.html" },
     { "source": "/app/home", "destination": "/app-shell.html" },
     { "source": "/app/progress", "destination": "/app-shell.html" },
+    { "source": "/app/progress/worth/:rowKey", "destination": "/app-shell.html" },
+    { "source": "/app/progress/worth/:rowKey/:more", "destination": "/app-shell.html" },
     { "source": "/app/modules", "destination": "/app-shell.html" },
     { "source": "/app/forecast", "destination": "/app-shell.html" },
     { "source": "/app/inputs", "destination": "/app-shell.html" },

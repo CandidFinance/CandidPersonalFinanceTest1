@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronRight } from "lucide-react";
-import { buildProgressSnapshot, worthNotes, worthByAccess, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
+import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
-import { fmt, fmtK1 } from "../../lib/format.js";
+import { fmt } from "../../lib/format.js";
+import { worthAccounts, worthGroups, worthTimeline, netSeries, changeOver12 } from "../../lib/netWorthView.js";
 import { taxYearOf, taxYearShort } from "../../lib/taxYear.js";
 import { hasAccess, withFeatureUsed } from "../../lib/entitlement.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
@@ -15,18 +16,20 @@ import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import { ScreenBand, ScreenSheet, useBandViews, BandViewCaption, BandReel, SheetGlass } from "../../mobile/ScreenBand.jsx";
 import {
-  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, SR_ONLY, PROGRESS_GREEN, MODULE_CHART_COLOR,
+  GOLD, WHITE, MUT, TEXT, SERIF, SANS, SR_ONLY, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
 import { kicker, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
+import { Dropdown, GroupedList, HeroSummary, TrendChart } from "../../mobile/networth/NetWorthParts.jsx";
+import { WORTH_THEME, WORTH_BAND_T, WORTH_LABELS, VIEWS, fmtWorth, fmtWorthAxis, toRow, chartProps, changeSaid, comingSoonRows } from "../../mobile/networth/worthUi.jsx";
 
-// The Progress tab (/app/progress): a light band (ScreenBand.jsx) with
-// three views, swiped between or picked by the dots, each a figure and a
-// picture drawn straight on it: net worth and what it's made of, how this
-// tax year's goals are going, and where income sits against the £100k trap
-// (on that view the band turns red in the trap, amber near it). On the
-// cream below, each view's details: under Net worth a tile for each asset
-// and debt, under Goals the goals themselves with any goal pots, under the
+// The Progress tab (/app/progress): a band (ScreenBand.jsx) with three
+// views, swiped between or picked by the dots, each a figure and a picture
+// drawn straight on it: net worth and its line over time (on dark green),
+// how this tax year's goals are going, and where income sits against the
+// £100k trap (on that view the band turns red in the trap, amber near it).
+// On the cream below, each view's details: under Net worth the assets and
+// debts (netWorthView.js), each opening its own page, under Goals the goals themselves with any goal pots, under the
 // Tax shield its details. The figures come
 // from src/lib/progressTracker.js, built from the same metrics as Home and
 // the modules; targets set here are saved inputs (`set`) like any other
@@ -56,13 +59,13 @@ const GOAL_COLOR = {
   dividends: PART_COLOR.investments,
 };
 
-export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrating = [], onOpenModule }) {
+export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrating = [], onOpenModule, onOpenWorth }) {
   // The goal tile showing its details ("add", "row:<id>" or "vault:<id>"),
   // and the one form open in it ("row:<id>" or "vault:<id>"; Add a goal's
   // form is its details).
   const [expanded, setExpanded] = useState(null);
   const [editing, setEditing] = useState(null);
-  const { rows, annual, netWorth, vaults, income } = buildProgressSnapshot(d, m, statuses);
+  const { rows, annual, vaults, income } = buildProgressSnapshot(d, m, statuses);
   // Goals the pop-up is celebrating (CandidApp, GoalReached.jsx;
   // "<tax year>:row:<id>" or "vault:<id>"): their bars fill as each scrolls
   // into view. Kept for the visit, as closing the pop-up clears them.
@@ -91,18 +94,28 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
 
   // The band's views, net worth first, each its figure and picture drawn
   // straight on the band, with the details on the cream below: Net worth's
-  // parts as tiles, the goals, or the Tax shield's details. The
-  // band is light, but red or amber on the Tax shield while income is in
+  // assets and debts, the goals, or the Tax shield's details. The band is
+  // dark green on Net worth, light on Goals, light on the Tax shield but red
+  // or amber while income is in
   // the £100k trap or near it; from the other views, the Tax shield's dot
   // says so. The goals stay put, only hidden, under the other views, so an
   // editor open in one keeps what's typed in it.
-  // Net worth's assets as it is, or by when it can be used (worthByAccess):
-  // the ring and the tiles both follow the switch on the cream.
+  // Net worth (netWorthView.js): the headline and its line over time on the
+  // band, in the brand's dark green; on the cream, the assets and debts,
+  // grouped by Category, Account or Access. A row opens its own page
+  // (/app/progress/worth/<row>, MobileWorthDetail.jsx).
   const [worthBy, setWorthBy] = useState("type");
   const pickWorthBy = by => { if (by === worthBy) return; setWorthBy(by); posthog.capture("progress_worth_view", { by }); };
-  const worthAssets = assetsBy(worthBy, d, m, netWorth);
+  const [worthRange, setWorthRange] = useState("1y");
+  const worth = useMemo(() => worthAccounts(d, m), [d, m]);
+  const timeline = useMemo(() => worthTimeline(d, m, worth, d.netWorthHistory), [d, m, worth]);
+  const net = useMemo(() => netSeries(timeline, worth), [timeline, worth]);
+  const openWorth = key => { posthog.capture("progress_worth_row_opened", { row: key }); onOpenWorth?.(key); };
   const views = [
-    { key: "netWorth", label: "Net worth", body: t => <NetWorth netWorth={netWorth.netWorth} assets={worthAssets.ring} t={t}/> },
+    { key: "netWorth", label: "Net worth", body: () => (
+      <WorthBand worth={worth} change={changeSaid(changeOver12(timeline, net))}
+        chart={chartProps(timeline, net, worthRange, setWorthRange)}/>
+    ) },
     { key: "goals", label: `Goals ${taxYearShort(taxYear)}`, body: t => <AnnualGoals annual={annual} t={t}/> },
     { key: "taxShield", label: "Tax shield", body: t => <ShieldBand income={income} t={t}/> },
   ];
@@ -111,7 +124,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
   const SHIELD = views.findIndex(v => v.key === "taxShield");
   const { view, showView, moved, bandProps, reel } = useBandViews(views.length);
   const warn = WARN_ZONE[income.zone];
-  const tone = view === SHIELD && warn ? warn : "light";
+  const tone = view === WORTH ? "green" : view === SHIELD && warn ? warn : "light";
   const t = BAND_T[tone];
 
   return (
@@ -130,7 +143,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
         <SheetGlass view={view}>{shown => (<>
           {shown === WORTH && (
             <div data-tour="progress-worth">
-              <WorthTiles picture={netWorth} assets={worthAssets.tiles} notes={worthAssets.notes} switchable={worthAssets.switchable} by={worthBy} onBy={pickWorthBy} onOpenModule={openModule}/>
+              <WorthLists groups={worthGroups(d, m, worth, worthBy)} worth={worth} by={worthBy} onBy={pickWorthBy} onOpen={openWorth}/>
             </div>
           )}
           {shown === SHIELD && (
@@ -187,6 +200,7 @@ const BAND_T = {
   light: { ...LIGHT, label: "#585858", body: "#585858", track: "rgba(22,47,36,0.12)", dot: "rgba(22,47,36,0.25)" },
   red: { ...WARN.red, body: "#7a4a43", track: "rgba(142,42,31,0.14)", dot: "rgba(142,42,31,0.28)" },
   amber: { ...WARN.amber, body: "#75583f", track: "rgba(134,74,15,0.14)", dot: "rgba(134,74,15,0.28)" },
+  green: WORTH_BAND_T,
 };
 // The cream sheet's, as Forecasts' details below its band.
 const SHEET_T = LIGHT;
@@ -196,159 +210,43 @@ const heroFig = t => ({ fontFamily:SERIF, fontSize:"var(--hero-fig)", fontWeight
 const unit = { fontFamily:SANS, fontSize:"0.32em", fontWeight:600, marginLeft:"5px", letterSpacing:0, whiteSpace:"nowrap" };
 const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
 
-// Net worth inside a ring of its assets, at the size of the Goals view's
-// ring (GOALS_CSS). The tiles below name each with its value, each in its
-// colour here, so colour never works alone.
-function NetWorth({ netWorth, assets, t }) {
-  const said = assets.map(p => `${p.label} ${fmtK1(p.value)}`).join(", ");
-  const sign = netWorth < 0 ? "−" : "";
+// Net worth on the band: the headline, assets and debts, the last 12
+// months' change once there's a year saved, and the line over time with the
+// time range beside the totals (NetWorthParts.jsx).
+function WorthBand({ worth, change, chart }) {
   return (
-    <div className="progress-goals">
-      <div role="img" aria-label={`Net worth ${sign}${fmtK1(netWorth)}${said ? `: ${said}` : ""}`}
-        style={{position:"relative",width:"var(--ring)",height:"var(--ring)",flexShrink:0}}>
-        <Donut parts={assets} track={t.track}/>
-        <div aria-hidden="true" style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <span style={{fontFamily:SERIF,fontSize:"calc(var(--ring) * 0.19)",fontWeight:700,color:t.figure,lineHeight:1,letterSpacing:"-0.01em"}}>
-            {sign}{fmtK1(netWorth)}
-          </span>
-        </div>
+    <div style={{marginTop:"14px"}}>
+      <HeroSummary theme={WORTH_THEME} format={fmtWorth} labels={{ ...WORTH_LABELS, netWorthAria: `Net worth ${fmtWorth(worth.netWorth)}` }}
+        netWorth={worth.netWorth} assetsTotal={worth.assetsTotal} debtsTotal={worth.debtsTotal} change={change}
+        action={<Dropdown onBand options={chart.windows} value={chart.range} onChange={chart.onRangeChange} theme={WORTH_THEME} ariaLabel={WORTH_LABELS.rangeAria}/>}/>
+      <div style={{marginTop:"8px"}}>
+        <TrendChart theme={WORTH_THEME} format={fmtWorth} formatAxis={fmtWorthAxis} labels={WORTH_LABELS} {...chart}/>
       </div>
     </div>
   );
 }
 
-// The ring of net worth's assets, drawn at 104px and scaled to --ring.
-function Donut({ parts, track, size = 104, stroke = 10 }) {
-  const r = (size - stroke) / 2, c = 2 * Math.PI * r, centre = size / 2;
-  const total = parts.reduce((s, p) => s + p.value, 0);
-  // A gap of background between neighbouring parts, rather than a drawn
-  // border; none for a single part, which is the whole ring.
-  const gap = parts.length > 1 ? 1.5 : 0;
-  let start = 0;
-  const arcs = parts.map(p => {
-    const len = (p.value / total) * c;
-    const arc = { ...p, dash: `${Math.max(0.5, len - gap)} ${c}`, offset: -start };
-    start += len;
-    return arc;
-  });
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" style={{transform:"rotate(-90deg)",display:"block"}} aria-hidden="true">
-      {total === 0 && <circle cx={centre} cy={centre} r={r} fill="none" stroke={track} strokeWidth={stroke}/>}
-      {arcs.map(a => (
-        <circle key={a.id} cx={centre} cy={centre} r={r} fill="none" stroke={a.color} strokeWidth={stroke}
-          strokeDasharray={a.dash} strokeDashoffset={a.offset}/>
-      ))}
-    </svg>
-  );
-}
-
-// ── Net worth's parts ──────────────────────────────────────────────────
-// The assets two ways, picked by the switch above the tiles: what they are
-// (netWorthPicture's parts) or when they can be used (worthByAccess). Each
-// in its colour, its line (worthNotes, or the access group's), and the
-// module a tap opens, where there's one to open. Both add up to the same
-// gross assets. The ring keeps the parts' order (Home and Pension apart);
-// the tiles go largest first.
-const PART_MODULE = { cash: "cash", investments: "investments", pension: "pension", lisa: "investments", studentLoan: "studentLoan" };
-const ACCESS_COLOR = { now: PART_COLOR.cash, pension: PART_COLOR.pension, lisa: PART_COLOR.investments, home: PART_COLOR.home };
-const DEBT_COLOR = {
-  mortgage: MODULE_CHART_COLOR.mortgage,
-  studentLoan: MODULE_CHART_COLOR.studentLoan,
-  personalLoan: MODULE_CHART_COLOR.personalLoan,
-};
-const WORTH_BY = [{ key: "type", label: "What it is" }, { key: "access", label: "When you can use it" }];
-function assetsBy(by, d, m, picture) {
-  const notes = worthNotes(d, m);
-  const ring = by === "access"
-    ? worthByAccess(d, m).map(g => ({ ...g, color: ACCESS_COLOR[g.id] }))
-    : picture.parts.filter(p => p.value > 0).map(p => ({ ...p, color: PART_COLOR[p.id], note: notes[p.id] }));
-  // The switch shows while either reading has more than one asset, so it's
-  // there to come back by from whichever is picked.
-  const switchable = picture.parts.filter(p => p.value > 0).length > 1 || worthByAccess(d, m).length > 1;
-  return { ring, tiles: [...ring].sort((a, b) => b.value - a.value), notes, switchable };
-}
-
-function WorthTiles({ picture, assets, notes, switchable, by, onBy, onOpenModule }) {
-  const debts = [...picture.debts].sort((a, b) => b.value - a.value)
-    .map(x => ({ ...x, color: DEBT_COLOR[x.id], note: notes[x.id] }));
-  if (!assets.length && !debts.length) {
+// On the cream: the assets, grouped by the dropdown beside their heading
+// (Category, Account or Access, which applies to the debts too), then the
+// debts, each row its icon, name and £, largest first. A count beside a
+// name says the row is several accounts.
+function WorthLists({ groups, worth, by, onBy, onOpen }) {
+  if (!groups.assets.length && !groups.debts.length) {
     return <p style={{...helpText,padding:"0 2px"}}>Savings, investments, pensions and debts show here once they're entered.</p>;
   }
-  const group = (title, total, items, sign, first) => items.length > 0 && (
-    <section aria-label={title} style={{marginTop: first ? 0 : "24px"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"0 2px"}}>
-        <h2 style={kicker}>{title}</h2>
-        <span style={{fontSize:"12px",fontWeight:700,color:TEXT,fontVariantNumeric:"tabular-nums"}}>{sign}{fmtK1(total)}</span>
-      </div>
-      <ul style={{listStyle:"none",margin:"12px 0 0",padding:0,display:"flex",flexDirection:"column",gap:"10px"}}>
-        {items.map(p => (
-          <li key={p.id}>
-            <PartTile label={p.label} value={`${sign}${fmtK1(p.value)}`} color={p.color} note={p.note}
-              onOpen={PART_MODULE[p.id] && (() => onOpenModule(PART_MODULE[p.id]))}/>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+  const soon = comingSoonRows(worth);
+  const list = { theme: WORTH_THEME, format: fmtWorth, onOpen };
+  const assets = [...groups.assets.map(toRow), ...soon.assets];
+  const debts = [...groups.debts.map(toRow), ...soon.debts];
   return (
     <>
-      {switchable && <WorthSwitch value={by} onChange={onBy}/>}
-      {group("Assets", picture.grossAssets, assets, "", true)}
-      {group("Debts", picture.totalDebt, debts, "−", !assets.length)}
+      <GroupedList {...list} first title={WORTH_LABELS.assetsTitle} total={worth.assetsTotal} items={assets} barAria={WORTH_LABELS.assetsBarAria}
+        titleAction={<Dropdown alignRight options={VIEWS} value={by} onChange={onBy} theme={WORTH_THEME} ariaLabel={WORTH_LABELS.viewAria}/>}/>
+      {debts.length > 0 && (
+        <GroupedList {...list} title={WORTH_LABELS.debtsTitle} total={worth.debtsTotal || null} totalNegative items={debts} barAria={WORTH_LABELS.debtsBarAria}/>
+      )}
     </>
   );
-}
-
-// The switch between the two ways of reading the assets: a pair of radios
-// in a pill, the picked one raised in white.
-function WorthSwitch({ value, onChange }) {
-  const onKeyDown = e => {
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
-    e.preventDefault();
-    const i = WORTH_BY.findIndex(o => o.key === value);
-    const next = WORTH_BY[(i + (e.key === "ArrowLeft" || e.key === "ArrowUp" ? WORTH_BY.length - 1 : 1)) % WORTH_BY.length];
-    onChange(next.key);
-    e.currentTarget.querySelector(`[data-key="${next.key}"]`)?.focus();
-  };
-  return (
-    <div role="radiogroup" aria-label="Show the assets by" onKeyDown={onKeyDown}
-      style={{display:"flex",gap:"4px",padding:"4px",marginBottom:"22px",borderRadius:"100px",background:"rgba(22,47,36,0.06)"}}>
-      {WORTH_BY.map(o => {
-        const on = o.key === value;
-        return (
-          <button key={o.key} data-key={o.key} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1} onClick={() => onChange(o.key)}
-            style={{flex:1,minHeight:"36px",border:"none",borderRadius:"100px",cursor:"pointer",fontFamily:"inherit",fontSize:"13px",fontWeight:700,
-              background:on ? WHITE : "transparent",color:on ? G : MUT,boxShadow:on ? "0 1px 4px rgba(22,47,36,0.12)" : "none",transition:"background 0.2s, color 0.2s"}}>
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// One part's tile: a bar of its colour down the left edge, its name and
-// its line, and its value; a chevron when it opens a module, or its room
-// kept, so the figures line up. No share-of-total % under the value: it read
-// as a change, and the share alone isn't worth the space (Harvey, 8 Nov 2026).
-function PartTile({ label, value, color, note, onOpen }) {
-  const inner = (
-    <>
-      <span aria-hidden="true" style={{alignSelf:"stretch",width:"4px",borderRadius:"4px",background:color,flexShrink:0}}/>
-      <span style={{flex:1,minWidth:0}}>
-        <span style={{display:"block",fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25}}>{label}</span>
-        {note && <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"3px"}}>{note}</span>}
-      </span>
-      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:TEXT,lineHeight:1,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",flexShrink:0}}>{value}</span>
-      {onOpen ? <ChevronRight size={16} color={MUT} aria-hidden="true" style={{flexShrink:0,marginRight:"-4px"}}/> : <span aria-hidden="true" style={{width:"16px",flexShrink:0,marginRight:"-4px"}}/>}
-    </>
-  );
-  const box = {display:"flex",alignItems:"center",gap:"12px",width:"100%",minHeight:"64px",padding:"12px 14px",background:WHITE,
-    border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)",fontFamily:"inherit",textAlign:"left"};
-  const said = `${label}, ${value}${note ? `. ${note}` : ""}`;
-  return onOpen
-    ? <button type="button" onClick={onOpen} aria-label={`${said} Open ${label}.`} style={{...box,cursor:"pointer"}}>{inner}</button>
-    : <div style={box}>{inner}</div>;
 }
 
 // Average progress across this tax year's goals below (the modules'; pots

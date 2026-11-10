@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { G, SANS } from "../design-tokens.js";
+import { LOGO_DOMAINS } from "../lib/providers.js";
 
 // A provider's own icon beside its name in a rate list, served from
 // public/logos (no request leaves Candid). Matched on the domain of the
 // product's link; a provider with no file yet, or one that fails to load,
 // shows its first letter instead. To add one: save its icon as a 96px PNG
-// named after its domain in public/logos, and add the domain here.
-const LOGO_DOMAINS = [
-  "bankofirelanduk.com", "cahoot.com", "chartersavingsbank.co.uk", "chase.co.uk", "closesavings.co.uk",
-  "cynergybank.co.uk", "getchip.uk", "habibbank.com", "hl.co.uk", "investec.com", "leekbs.co.uk", "moneyboxapp.com",
-  "nsandi.com", "oxbury.com", "pensionbee.com", "postoffice.co.uk", "saga.co.uk", "sidekickmoney.com", "tandem.co.uk",
-  "trading212.com", "vanguardinvestor.co.uk", "withplum.com",
-];
+// named after its domain in public/logos, and add it to PROVIDERS
+// (src/lib/providers.js).
 
 function logoFor(url) {
   try {

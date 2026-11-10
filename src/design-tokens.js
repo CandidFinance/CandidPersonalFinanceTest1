@@ -307,6 +307,8 @@ export const BAND_STOPS = {
   light: ["#D9EADF", "#E9EEDB", "#F5E6C8"],
   red:   ["#F4D3CC", "#F7DED6", "#F8E6DC"],
   amber: ["#FBE2C6", "#FAE8D3", "#F8EBDA"],
+  // Progress's net worth and its row pages: the brand's dark green, flat.
+  green: [G, G, G],
 };
 
 // The same tile treatment in red, amber and green, for a card whose whole
