@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronRight } from "lucide-react";
 import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
@@ -20,7 +20,7 @@ import {
 } from "../../design-tokens.js";
 import { kicker, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
-import { Dropdown, GroupedList, HeroSummary, TrendChart } from "../../mobile/networth/NetWorthParts.jsx";
+import { Dropdown, GroupedList, HeroSummary, TrendChart, ViewDots } from "../../mobile/networth/NetWorthParts.jsx";
 import { WORTH_THEME, WORTH_BAND_T, WORTH_LABELS, VIEWS, fmtWorth, fmtWorthAxis, toRow, chartProps, changeSaid, comingSoonRows } from "../../mobile/networth/worthUi.jsx";
 
 // The Progress tab (/app/progress): a band (ScreenBand.jsx) with three
@@ -104,8 +104,18 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
   // band, in the brand's dark green; on the cream, the assets and debts,
   // grouped by Category, Account or Access. A row opens its own page
   // (/app/progress/worth/<row>, MobileWorthDetail.jsx).
-  const [worthBy, setWorthBy] = useState("type");
-  const pickWorthBy = by => { if (by === worthBy) return; setWorthBy(by); posthog.capture("progress_worth_view", { by }); };
+  // The grouping is swiped between on the cream, or picked by its dots, as
+  // the band's views are (useBandViews).
+  const grouping = useBandViews(VIEWS.length);
+  const worthBy = VIEWS[grouping.view].key;
+  // Each switch, by swipe or dot.
+  const shownGrouping = useRef(grouping.view);
+  useEffect(() => {
+    if (shownGrouping.current === grouping.view) return;
+    shownGrouping.current = grouping.view;
+    posthog.capture("progress_worth_view", { by: worthBy });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs as the grouping changes
+  }, [grouping.view]);
   const [worthRange, setWorthRange] = useState("1y");
   const worth = useMemo(() => worthAccounts(d, m), [d, m]);
   const timeline = useMemo(() => worthTimeline(d, m, worth, d.netWorthHistory), [d, m, worth]);
@@ -143,7 +153,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
         <SheetGlass view={view}>{shown => (<>
           {shown === WORTH && (
             <div data-tour="progress-worth">
-              <WorthLists groups={worthGroups(d, m, worth, worthBy)} worth={worth} by={worthBy} onBy={pickWorthBy} onOpen={openWorth}/>
+              <WorthLists groups={worthGroups(d, m, worth, worthBy)} worth={worth} grouping={grouping} onOpen={openWorth}/>
             </div>
           )}
           {shown === SHIELD && (
@@ -226,26 +236,31 @@ function WorthBand({ worth, change, chart }) {
   );
 }
 
-// On the cream: the assets, grouped by the dropdown beside their heading
-// (Category, Account or Access, which applies to the debts too), then the
-// debts, each row its icon, name and £, largest first. A count beside a
-// name says the row is several accounts.
-function WorthLists({ groups, worth, by, onBy, onOpen }) {
+// On the cream: the assets, then the debts, each row its icon, name and £,
+// largest first. A count beside a name says the row is several accounts.
+// Grouped by Category, Account or Access (Access applies to the assets;
+// the debts stay by category), switched by a swipe across the lists or the
+// dots centred above them, the lists sliding as the band's views do. Each
+// tile's title says the grouping.
+function WorthLists({ groups, worth, grouping, onOpen }) {
   if (!groups.assets.length && !groups.debts.length) {
     return <p style={{...helpText,padding:"0 2px"}}>Savings, investments, pensions and debts show here once they're entered.</p>;
   }
+  const by = VIEWS[grouping.view];
   const soon = comingSoonRows(worth);
   const list = { theme: WORTH_THEME, format: fmtWorth, onOpen };
   const assets = [...groups.assets.map(toRow), ...soon.assets];
   const debts = [...groups.debts.map(toRow), ...soon.debts];
   return (
-    <>
-      <GroupedList {...list} first title={WORTH_LABELS.assetsTitle} total={worth.assetsTotal} items={assets} barAria={WORTH_LABELS.assetsBarAria}
-        titleAction={<Dropdown alignRight options={VIEWS} value={by} onChange={onBy} theme={WORTH_THEME} ariaLabel={WORTH_LABELS.viewAria}/>}/>
-      {debts.length > 0 && (
-        <GroupedList {...list} title={WORTH_LABELS.debtsTitle} total={worth.debtsTotal || null} totalNegative items={debts} barAria={WORTH_LABELS.debtsBarAria}/>
-      )}
-    </>
+    <div {...grouping.bandProps}>
+      <ViewDots theme={WORTH_THEME} views={VIEWS} view={grouping.view} moved={grouping.moved} onPick={grouping.showView} label={WORTH_LABELS.viewAria}/>
+      <BandReel reel={grouping.reel}>
+        <GroupedList {...list} first title={`${WORTH_LABELS.assetsTitle} by ${by.label.toLowerCase()}`} total={worth.assetsTotal} items={assets} barAria={WORTH_LABELS.assetsBarAria}/>
+        {debts.length > 0 && (
+          <GroupedList {...list} title={`${WORTH_LABELS.debtsTitle} by ${by.key === "account" ? "account" : "category"}`} total={worth.debtsTotal || null} totalNegative items={debts} barAria={WORTH_LABELS.debtsBarAria}/>
+        )}
+      </BandReel>
+    </div>
   );
 }
 

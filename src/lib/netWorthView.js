@@ -164,9 +164,67 @@ const daysToYearEnd = now => Math.max(0, Math.round((new Date(taxYearOf(now) + 1
 export const SOON = "Coming soon";
 const of = (v, limit) => `${fmt(v)} / ${fmt(limit)}`;
 
+// ── Gain this tax year ────────────────────────────────────────────────
+// { v, base } (the gain, and what it's on, for the %), or null where it
+// can't be known yet. Cash: interest so far, from the rate. Investments,
+// pensions and the home: the value now less the value saved at the start of
+// the tax year (March or April's month) and what's been paid in since; until
+// a start is saved (April 2027 for everyone now), null. Premium Bonds'
+// prizes, and money outside an ISA (paid in and sold aren't asked), wait for
+// Open Banking.
+const taxYearStart = now => {
+  const startT = taxYearOf(now) * 12 + 3;
+  return snapOf => {
+    for (const t of [startT, startT - 1]) {
+      const snap = snapOf[keyOfT(t)];
+      if (snap && typeof snap === "object") return snap;
+    }
+    return null;
+  };
+};
+function isaPaidIn(d, id) {
+  const f = { "isa-cash": "Cash", "isa-ss": "SS", "isa-lisa": "LISA", "isa-other": "Other" }[id];
+  return f ? n(d[`isaThisYear${f}`]) : null;
+}
+function gainOf(a, d, m, now) {
+  if (a.debt) return undefined;
+  if (a.cat === "cash" && a.id !== "premiumBonds") {
+    if (!a.ratePct) return null;
+    const v = Math.round(a.value * a.ratePct / 100 * taxMonthsDone(now) / 12);
+    return { v, base: a.value - v, est: true };
+  }
+  let paid = null;
+  if (a.cat === "investments") paid = isaPaidIn(d, a.id);
+  else if (a.id === "pension-current") {
+    const p = pensionPayments(d, m, now);
+    paid = Math.round((p.mine + p.employer) * taxMonthsDone(now) / 12) + p.lumps;
+  } else if (a.id === "pension-other" || a.cat === "home") paid = 0;
+  if (paid == null) return null;
+  const snap = taxYearStart(now)(d.netWorthHistory && typeof d.netWorthHistory === "object" ? d.netWorthHistory : {});
+  if (!snap || !snap.accts || typeof snap.accts !== "object") return null;
+  const start = isFinite(+snap.accts[a.id]) ? +snap.accts[a.id] : 0;
+  return { v: Math.round(a.value - start - paid), base: start };
+}
+// A category's: every account's, where all are known.
+function catGain(accounts, d, m, now) {
+  const gs = accounts.map(a => gainOf(a, d, m, now));
+  if (!gs.length || gs.some(g => g === undefined)) return undefined;
+  if (gs.some(g => g === null)) return null;
+  return { v: gs.reduce((s, g) => s + g.v, 0), base: gs.reduce((s, g) => s + g.base, 0), est: gs.some(g => g.est) };
+}
+// "+£x, y%" (green), or "(£x), -y%"; no % on a start of £0.
+function gainLine(g, now, est) {
+  const label = `Gain, ${ty(now)}${est ? " (est.)" : ""}`;
+  if (g === undefined) return [];
+  if (g === null) return [[label, SOON]];
+  const pct = g.base > 0 ? `, ${g.v < 0 ? "-" : "+"}${Math.abs(g.v / g.base * 100).toFixed(1)}%` : "";
+  return [[label, `${signed(g.v)}${pct}`, g.v > 0 ? "gain" : undefined]];
+}
+
 function catFacts(key, d, m, worth, now = new Date()) {
   const facts = [];
   const cat = [...worth.assets, ...worth.debts].find(c => c.key === key);
+  if (cat && !cat.debt && cat.accounts.length) facts.push(...gainLine(catGain(cat.accounts, d, m, now), now, key === "cash"));
   if (key === "cash") {
     const cash = n(m.cash), bonds = n(m.bonds);
     const earn = Math.round(cash * n(m.effectiveSavingsRate) / 100), gap = Math.round(n(m.annualYieldGap));
@@ -298,7 +356,7 @@ export const GROUPINGS = ["type", "account", "access"];
 // `ctx`: { rates (the savings rate rows, for Premium Bonds' prize rate and
 // the best easy access rate), now }.
 // A category's lines an account's own repeat, left out of its page.
-const OWN_LINES = ["Interest/yr", "Unrealised gains", "Taxable if sold today", "CGT allowance used", "Days left to use it"];
+const OWN_LINES = ["Interest/yr", "Unrealised gains", "Taxable if sold today", "CGT allowance used", "Days left to use it", "Gain"];
 export function worthGroups(d, m, worth, by, ctx = {}) {
   const now = ctx.now || new Date();
   const byDesc = list => [...list].filter(g => g.value !== 0).sort((a, b) => b.value - a.value);
@@ -307,12 +365,17 @@ export function worthGroups(d, m, worth, by, ctx = {}) {
   // category's overall ones, each account's on its own page.
   const oneAccount = (c, a) => {
     const own = accountFacts(a, d, m, worth, ctx.rates, now);
-    return [...own, ...catFacts(c.key, d, m, worth, now).filter(([k]) => !(own.length && OWN_LINES.includes(k.replace(/, \d\d\/\d\d$/, ""))))];
+    return [...own, ...catFacts(c.key, d, m, worth, now).filter(([k]) => !(own.length && OWN_LINES.includes(k.replace(/, \d\d\/\d\d( \(est\.\))?$/, ""))))];
   };
+  // Each row's `gain` this tax year, for the line under its £ on Progress:
+  // { v, base }, null where it can't be known yet, undefined for a debt.
+  const gainFor = accounts => (accounts.length ? catGain(accounts, d, m, now) : null);
   const fromCat = c => ({ key: c.key, label: c.label, kind: c.key, module: c.module, debt: c.debt, accounts: c.accounts, value: c.value,
+    gain: gainFor(c.accounts),
     facts: c.accounts.length === 1 ? oneAccount(c, c.accounts[0]) : catFacts(c.key, d, m, worth, now) });
   const perAccount = c => c.accounts.map(a => ({
     key: `acc-${a.id}`, label: a.label, kind: c.key, module: c.module, debt: c.debt, accounts: [a], value: a.value,
+    gain: gainFor([a]),
     facts: c.accounts.length === 1 ? oneAccount(c, a) : accountFacts(a, d, m, worth, ctx.rates, now),
   }));
   const debts = by === "account" ? byDesc(worth.debts.flatMap(perAccount)) : byDesc(worth.debts.map(fromCat));
@@ -328,7 +391,7 @@ export function worthGroups(d, m, worth, by, ctx = {}) {
     };
     assets = byDesc(ACCESS.map(g => ({
       key: g.key, label: g.label, kind: g.kind, module: g.id === "lisa" ? "investments" : g.id === "pension" ? "pension" : null, debt: false,
-      accounts: pick[g.id], value: sum(pick[g.id]),
+      accounts: pick[g.id], value: sum(pick[g.id]), gain: gainFor(pick[g.id]),
       facts: g.id === "home" ? catFacts("home", d, m, worth, now) : accessFacts(g.id, d, m, worth),
     })));
   } else assets = byDesc(worth.assets.map(fromCat));
@@ -348,17 +411,22 @@ function accountFacts(a, d, m, worth, rates, now = new Date()) {
   if (a.cat === "cash" && a.id !== "premiumBonds" && a.ratePct) {
     const year = Math.round(a.value * a.ratePct / 100);
     facts.push(["Rate", rate(a.ratePct)]);
-    facts.push(["Interest to date (est.)", fmt(Math.round(year * taxMonthsDone(now) / 12))]);
+    facts.push(...gainLine(gainOf(a, d, m, now), now, true));
     facts.push([`Interest forecast, ${ty(now)}`, fmt(year)]);
+  } else if (a.cat === "cash" && a.id !== "premiumBonds") facts.push(...gainLine(null, now, true));
+  if (a.id === "premiumBonds") facts.push(...premiumBondFacts(a.value, d, m, rates, now), ...gainLine(null, now));
+  // Every investment account: paid in, sold and its gain this tax year.
+  if (a.cat === "investments") {
+    const paid = isaPaidIn(d, a.id);
+    facts.push([`Paid in, ${ty(now)}`, paid == null ? SOON : fmt(paid)], [`Sold, ${ty(now)}`, SOON], ...gainLine(gainOf(a, d, m, now), now));
   }
-  if (a.id === "premiumBonds") facts.push(...premiumBondFacts(a.value, d, m, rates, now));
   if (a.id === "unwrapped") facts.push(...giaFacts(d, m, now));
-  if (a.id === "pension-current") facts.push(...currentPotFacts(d, m, now));
-  if (a.id === "pension-other") facts.push(["Provider", SOON], ["Paying in", "No"]);
+  if (a.id === "pension-current") facts.push(...currentPotFacts(d, m, now), ...gainLine(gainOf(a, d, m, now), now));
+  if (a.id === "pension-other") facts.push(["Provider", SOON], ["Paying in", "No"], ...gainLine(gainOf(a, d, m, now), now));
+  if (a.id === "home") facts.push(...gainLine(gainOf(a, d, m, now), now));
   const isaField = { "isa-cash": "Cash", "isa-ss": "SS", "isa-lisa": "LISA", "isa-other": "Other" }[a.id];
   if (isaField) {
     const paid = n(d[`isaThisYear${isaField}`]);
-    facts.push([`Paid in, ${ty(now)}`, fmt(paid)]);
     facts.push([`ISA allowance used, ${ty(now)}`, of(Math.round(n(m.isaUsedThisYear)), ISA_ALLOWANCE)]);
     if (a.id === "isa-lisa") facts.push(["LISA limit used", of(Math.min(LISA_LIMIT, paid), LISA_LIMIT)], ["Govt bonus, 25%", fmt(Math.round(Math.min(LISA_LIMIT, paid) * 0.25))]);
   }
@@ -379,9 +447,7 @@ export function premiumBondFacts(held, d, m, rates, now = new Date()) {
   const facts = [
     ["Prize fund rate", rate(prizePct)],
     ["Avg. prizes/yr", fmt(prizes)],
-    // From the bank account they're paid into, once Open Banking is in.
-    [`Prizes won, ${ty(now)}`, SOON],
-  ];
+    ];
   if (best && +best.rate_aer > 0) {
     const interest = held * +best.rate_aer / 100;
     facts.push(["vs. best easy access rate, after tax", signed(Math.round(prizes - (interest - taxOn(interest))))]);

@@ -39,6 +39,28 @@ Written 9 Nov 2026 for the Claude session picking this up. Replaces the net wort
   - **Pension split:** each pot's own details are on its page (`currentPotFacts`): Provider (Coming soon), you and employer as % and £/yr, Paid by, paid in this year, lump sums, employer match. Old pots show Provider and "Paying in: No". The Pension page keeps the overall ones: Annual allowance use, projected pot, access age, State Pension. With one pot, the Pension page shows both.
   - **Student loan:** the Student Loans Company logo (`public/logos/slc.co.uk.png`, from GOV.UK) beside the title on its page. Bank account pages show their provider's logo there too.
   - **Investments:** both allowances as "used": ISA (£x / £20,000) and CGT (£x / £3,000). "ISA allowance left" removed.
+- Step 1 went live 10 Nov (2faeff4).
+- Chart crash fix (ba14456, live): a Safari overscroll before the first month gave a negative scroll and read `points[-1]`. The scroll is now clamped and overscroll is off.
+- Round 5 (Harvey, 10 Nov), shipped with round 6:
+  - Section titles ("What makes it up", "Details", "More detail", "Assets", "Debts") use the tile kicker style: 11px, capitals, muted.
+  - Every investment account shows "Paid in" (ISAs from `isaThisYear*`; Coming soon outside an ISA), "Sold" (Coming soon) and "Gain".
+  - Every asset, and each asset category, has "Gain, 26/27" as "+£x, y%" in green (`gainOf` / `gainLine`):
+    - Cash: interest so far from the rate, marked (est.).
+    - Investments, pensions and home: value now, less the value saved at the start of the tax year (March or April's month), less paid in since. This shows "Coming soon" until such a month is saved, so April 2027 for everyone.
+    - Premium Bonds, and money outside an ISA: Coming soon, until Open Banking.
+    - A category is known only when all its accounts are, so Cash with Premium Bonds shows Coming soon.
+  - Premium Bonds "Prizes won" is now its "Gain" line.
+- Round 6 (Harvey, 10 Nov):
+  - Progress tiles hold their title, total (in the title's muted 11px type) and breakdown bar. Rows are top-aligned to the icon, the rules run from the icon's left edge, and the row's gain this tax year sits under its £ (`worthGroups` rows carry `gain`; cash marked "(est.)"). Whole £ (two decimals tried and dropped).
+  - Row icons use each module's colour from the Modules tiles (`MODULE_INK` in worthUi.jsx), not `MODULE_CHART_COLOR`.
+  - The Category / Account / Access dropdown is gone: three dots centred atop the cream (`ViewDots`), swiped or tapped (`useBandViews` + `BandReel`). Tile titles say the grouping ("Assets by account").
+  - Modules' hero is printed on the pale band in dark ink, no card.
+- **Open gain issues (review, 10 Nov), all from April 2027 when the first start-of-year save exists:**
+  - Investment and pension values only change when edited, so an untouched account shows a loss equal to what was paid in.
+  - An account missing from the start save counts from £0, so a home bought mid-year shows its whole value as gain.
+  - The current pension's paid-in counts April in full, though the April save may already include April's payment.
+  - A save from 1-5 April (or March) belongs to the old tax year.
+  - Cash gain is today's balance x rate x months, ignoring deposits during the year.
 - **Harvey's decisions:**
   - Provider, type, access and prizes come from Open Banking, so no new questions.
   - Investment provider waits for step 3 (ISAs by provider).

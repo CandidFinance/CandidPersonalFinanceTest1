@@ -99,7 +99,7 @@ test("a cash account's rate and interest, Premium Bonds against the best easy ac
   assert.equal(easy["Rate"], "4.25%");
   assert.equal(easy["Interest forecast, 26/27"], "£510");
   // April to September begun by 8 Oct: half the year.
-  assert.equal(easy["Interest to date (est.)"], "£255");
+  assert.equal(easy["Gain, 26/27 (est.)"], "+£255, +2.2%");
   const bonds = facts("acc-premiumBonds");
   assert.equal(bonds["Prize fund rate"], "4%");
   assert.equal(bonds["Avg. prizes/yr"], "£180");
@@ -247,6 +247,38 @@ test("an account's provider, from its name until Open Banking says, and its type
   assert.equal(facts("acc-cash-0")["Provider"], "Barclays");
   assert.equal(facts("acc-cash-1")["Provider"], "Coming soon");
   assert.equal(facts("acc-cash-0")["Account type"], "Coming soon");
-  assert.equal(facts("acc-premiumBonds")["Prizes won, 26/27"], "Coming soon");
+  assert.equal(facts("acc-premiumBonds")["Gain, 26/27"], "Coming soon");
   assert.equal(worth.assets.find(c => c.key === "cash").accounts.find(a => a.id === "cash-0").provider.domain, "barclays.co.uk");
+});
+
+test("each asset's gain this tax year: cash from its rate; investments and pensions from the start of the year saved, less paid in", () => {
+  const { d, m, worth } = setUp();
+  const facts = (dd, key) => worthGroupByKey(dd, m, worth, key).facts;
+  const get = (list, k) => list.find(f => f[0] === k);
+  // No start of the tax year saved yet: to come.
+  assert.equal(get(facts(d, "acc-isa-ss"), "Gain, 26/27")[1], "Coming soon");
+  assert.equal(get(facts(d, "acc-isa-ss"), "Paid in, 26/27")[1], "£2,100");
+  assert.equal(get(facts(d, "acc-isa-ss"), "Sold, 26/27")[1], "Coming soon");
+  assert.equal(get(facts(d, "acc-unwrapped"), "Paid in, 26/27")[1], "Coming soon");
+  // April saved: the ISA's now £17,100, started at £14,000, £2,100 paid in.
+  const ss = worth.accounts.find(a => a.id === "isa-ss").value;
+  const pot = worth.accounts.find(a => a.id === "pension-current").value;
+  const withStart = { ...d, netWorthHistory: { "2026-04": { total: 1, cats: {}, accts: { "isa-ss": 14000, "pension-current": 65000, "pension-other": 17000 } } } };
+  const g = get(facts(withStart, "acc-isa-ss"), "Gain, 26/27");
+  assert.equal(g[1], `+£${(ss - 14000 - 2100).toLocaleString("en-GB")}, +${((ss - 14000 - 2100) / 14000 * 100).toFixed(1)}%`);
+  assert.equal(g[2], "gain");
+  // The current pension less half a year's £6,200 paid in.
+  assert.match(get(facts(withStart, "acc-pension-current"), "Gain, 26/27")[1], new RegExp(`^\\+£${(pot - 65000 - 3100).toLocaleString("en-GB")}, `));
+  // The Pension page: both pots together.
+  const both = get(facts(withStart, "pension"), "Gain, 26/27")[1];
+  assert.match(both, /^(\+£[\d,]+|\(£[\d,]+\)), [+-]\d+\.\d%$/);
+  // Cash with Premium Bonds: the bonds' prizes aren't known, so neither is the whole.
+  assert.equal(get(facts(d, "cash"), "Gain, 26/27 (est.)")[1], "Coming soon");
+  // Debts have none.
+  assert.equal(get(facts(d, "studentLoan"), "Gain, 26/27"), undefined);
+  // Each row carries the same gain for the line under its £ on Progress.
+  const rows = worthGroups(withStart, m, worth, "account");
+  assert.equal(rows.assets.find(r => r.key === "acc-isa-ss").gain.v, ss - 14000 - 2100);
+  assert.equal(worthGroups(d, m, worth, "account").assets.find(r => r.key === "acc-isa-ss").gain, null);
+  assert.equal(worthGroups(d, m, worth, "type").debts.find(r => r.key === "studentLoan").gain, undefined);
 });

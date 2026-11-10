@@ -346,46 +346,78 @@ export function CompositionBar({ theme, parts, ariaLabel }) {
   );
 }
 
+// A dot for each way of grouping the rows, centred at the top of the sheet:
+// the one showing in ink, each a 44px-tall button (overlapping what's
+// around it, so the row takes little room), and a line for screen readers
+// as each switch happens. Swiping the lists switches too (useBandViews).
+export function ViewDots({ theme, views, view, moved, onPick, label }) {
+  return (
+    <div role="group" aria-label={label} style={{ display: "flex", justifyContent: "center", margin: "-16px 0 -8px" }}>
+      {views.map((v, i) => (
+        <button key={v.key} type="button" onClick={() => onPick(i)} aria-label={`Group by ${v.label.toLowerCase()}`} aria-pressed={i === view}
+          style={{ width: 24, height: 44, background: "none", border: 0, padding: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: i === view ? theme.text : theme.dot, transition: "background 0.2s" }}/>
+        </button>
+      ))}
+      <div aria-live="polite" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>{moved ? `Grouped by ${views[view].label.toLowerCase()}` : ""}</div>
+    </div>
+  );
+}
+
 // A section of rows in one container. Values share one right-hand edge with
 // the section's total. A count beside the name says the row is several
 // accounts. A row with a note is for the breakdown pages only.
+// A section's title, as a tile's (TILE_KICKER in design-tokens.js).
+const kicker = theme => ({ margin: 0, fontSize: 11, fontWeight: 600, color: theme.muted, letterSpacing: "0.09em", textTransform: "uppercase", lineHeight: 1.3 });
+
+// The section's title, total and bar sit inside its tile, above the rows.
+// Rows are top-aligned: the name and £ level with the icon's top, a note
+// under the name and a gain (`sub`) under the £. The rules between rows run
+// from the icon's left edge.
 export function GroupedList({ theme, format, title, titleAction, total, totalNegative, noBar, items, barAria, onOpen, first, addRow }) {
-  const inset = items.some(it => it.icon || it.logo) || addRow ? 56 : 14;
-  const hair = i => i > 0 && <span aria-hidden="true" style={{ position: "absolute", top: 0, left: inset, right: 0, height: 1, background: theme.hairline }}/>;
-  const row = { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", minHeight: 52, boxSizing: "border-box", width: "100%", fontFamily: "inherit", textAlign: "left", background: "transparent", border: "none", color: theme.text, margin: 0 };
+  const hair = <span aria-hidden="true" style={{ position: "absolute", top: 0, left: 14, right: 0, height: 1, background: theme.hairline }}/>;
+  const row = { display: "flex", alignItems: "flex-start", gap: 12, padding: "11px 14px", minHeight: 52, boxSizing: "border-box", width: "100%", fontFamily: "inherit", textAlign: "left", background: "transparent", border: "none", color: theme.text, margin: 0 };
   const tile = (bg, color) => ({ width: 30, height: 30, flexShrink: 0, borderRadius: 9, background: bg, color, display: "flex", alignItems: "center", justifyContent: "center" });
+  const bar = !noBar && items.filter(it => !it.dim).length >= 2;
+  // The name and £ on one line from the icon's top edge.
+  const line = { fontSize: 13, lineHeight: "17px" };
   return (
     <section aria-label={title} style={{ marginTop: first ? 0 : 24, fontFamily: theme.fontBody }}>
       {titleAction && <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>{titleAction}</div>}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "0 14px 0 2px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: theme.text, lineHeight: 1.3 }}>{title}</h2>
+      <div style={{ background: theme.surface, borderRadius: 14, boxShadow: theme.shadow, overflow: "hidden" }}>
+        <div style={{ padding: "14px 14px 4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+            <h2 style={kicker(theme)}>{title}</h2>
+            {/* The total in the title's own type, so it sits back with it. */}
+            {total != null && <div style={{ ...kicker(theme), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{totalNegative ? `(${format(total)})` : format(total)}</div>}
+          </div>
+          {bar && <div style={{ marginTop: 10 }}><CompositionBar theme={theme} parts={items} ariaLabel={barAria}/></div>}
         </div>
-        {total != null && <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{totalNegative ? `(${format(total)})` : format(total)}</div>}
-      </div>
-      {!noBar && items.filter(it => !it.dim).length >= 2 && <div style={{ marginTop: 10 }}><CompositionBar theme={theme} parts={items} ariaLabel={barAria}/></div>}
-      <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, background: theme.surface, borderRadius: 14, boxShadow: theme.shadow, overflow: "hidden" }}>
+        <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
         {items.map((it, i) => {
           const value = it.text ?? (it.negative ? `(${format(it.value)})` : format(it.value));
-          const said = [it.label, value, it.count > 1 ? it.countSaid : null, it.note].filter(Boolean).join(", ");
+          const said = [it.label, value, it.subSaid, it.count > 1 ? it.countSaid : null, it.note].filter(Boolean).join(", ");
           const inner = (
             <>
               {it.logo
                 ? <img src={it.logo} alt="" width="30" height="30" loading="lazy" style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 9, objectFit: "contain", background: "#fff", border: `1px solid ${theme.hairline}`, boxSizing: "border-box" }}/>
                 : it.icon && <span aria-hidden="true" style={it.dim ? tile(theme.track, theme.muted) : tile(it.color, theme.surface)}>{it.icon}</span>}
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: it.dim ? 600 : 700, color: it.dim ? theme.muted : theme.text, lineHeight: 1.25 }}>
+                <span style={{ ...line, display: "flex", alignItems: "center", gap: 6, fontWeight: it.dim ? 600 : 700, color: it.dim ? theme.muted : theme.text }}>
                   {it.label}
-                  {it.count > 1 && <span aria-hidden="true" style={{ fontSize: 11, fontWeight: 700, color: theme.muted, background: theme.track, borderRadius: 100, minWidth: 18, height: 18, padding: "0 5px", boxSizing: "border-box", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{it.count}</span>}
+                  {it.count > 1 && <span aria-hidden="true" style={{ fontSize: 11, fontWeight: 700, color: theme.muted, background: theme.track, borderRadius: 100, minWidth: 18, height: 17, padding: "0 5px", boxSizing: "border-box", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{it.count}</span>}
                 </span>
                 {it.note && <span style={{ display: "block", marginTop: 2, fontSize: 12, color: theme.muted, lineHeight: 1.4 }}>{it.note}</span>}
               </span>
-              <span style={{ fontSize: 13, fontWeight: it.dim ? 600 : 700, color: it.dim ? theme.muted : theme.text, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>{value}</span>
+              <span style={{ flexShrink: 0, textAlign: "right", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ ...line, display: "block", fontWeight: it.dim ? 600 : 700, color: it.dim ? theme.muted : theme.text }}>{value}</span>
+                {it.sub && <span style={{ display: "block", marginTop: 2, fontSize: 12, lineHeight: 1.4, fontWeight: 500, color: it.subTone === "gain" ? theme.gainText : theme.muted }}>{it.sub}</span>}
+              </span>
             </>
           );
           return (
             <li key={it.id} style={{ position: "relative" }}>
-              {hair(i)}
+              {i > 0 && hair}
               {onOpen && it.openable !== false
                 ? <button type="button" aria-label={said} onClick={() => onOpen(it.id)} style={{ ...row, cursor: "pointer" }}>{inner}</button>
                 : <div style={row}>{inner}</div>}
@@ -394,15 +426,16 @@ export function GroupedList({ theme, format, title, titleAction, total, totalNeg
         })}
         {addRow && (
           <li style={{ position: "relative" }}>
-            {hair(items.length)}
-            <button type="button" onClick={addRow.onAdd} style={{ ...row, cursor: "pointer" }}>
+            {items.length > 0 && hair}
+            <button type="button" onClick={addRow.onAdd} style={{ ...row, alignItems: "center", cursor: "pointer" }}>
               <span aria-hidden="true" style={tile(theme.track, theme.text)}><Plus size={16} strokeWidth={2}/></span>
               <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>{addRow.label}</span>
               {addRow.locked && <Crown size={15} strokeWidth={2} color={theme.premium} aria-label={addRow.lockedSaid}/>}
             </button>
           </li>
         )}
-      </ul>
+        </ul>
+      </div>
     </section>
   );
 }
@@ -463,14 +496,14 @@ export function DetailScreen({ theme, format, formatAxis, labels, title, value, 
         )}
         {facts.length > 0 && (
           <section aria-label={factsTitle} style={{ marginTop: hasBreakdown || hasMore ? 24 : 0 }}>
-            <h2 style={{ margin: "0 0 12px", padding: "0 2px", fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{factsTitle}</h2>
+            <h2 style={{ ...kicker(theme), margin: "0 0 12px", padding: "0 2px" }}>{factsTitle}</h2>
             <dl style={{ margin: 0, background: theme.surface, borderRadius: 14, boxShadow: theme.shadow, overflow: "hidden" }}>
-              {facts.map(([k, v], i) => {
+              {facts.map(([k, v, tone], i) => {
                 const soon = labels.soon && v === labels.soon;
                 return (
                   <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, minHeight: 46, padding: "10px 14px", boxSizing: "border-box", borderTop: i ? `1px solid ${theme.hairline}` : "none", opacity: soon ? 0.6 : 1 }}>
                     <dt style={{ fontSize: 13, color: theme.muted, lineHeight: 1.3 }}>{k}</dt>
-                    <dd style={{ margin: 0, fontSize: 13, fontWeight: soon ? 500 : 700, color: soon ? theme.muted : theme.text, textAlign: "right", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>{v}</dd>
+                    <dd style={{ margin: 0, fontSize: 13, fontWeight: soon ? 500 : 700, color: soon ? theme.muted : tone === "gain" ? theme.gainText : theme.text, textAlign: "right", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>{v}</dd>
                   </div>
                 );
               })}

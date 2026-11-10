@@ -1,5 +1,5 @@
 import { Banknote, GraduationCap, Home, Landmark, Lock, CreditCard, PiggyBank, TrendingUp, Unlock } from "lucide-react";
-import { G, CREAM, WHITE, TEXT, MUT, SANS, SERIF, GAIN_ON_DARK, GOLD_TEXT, ERROR_TEXT, MODULE_CHART_COLOR as C } from "../../design-tokens.js";
+import { G, CREAM, WHITE, TEXT, MUT, SANS, SERIF, GAIN_ON_DARK, GOLD_TEXT, ERROR_TEXT, SUCCESS, MODULE_CHART_COLOR as C } from "../../design-tokens.js";
 import { CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
 import { HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "../../lib/moduleStatus.js";
 
@@ -9,13 +9,13 @@ import { HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "../../lib/moduleStatus
 // icon, and the words.
 
 export const WORTH_THEME = {
-  page: CREAM, surface: WHITE, text: TEXT, muted: MUT, hairline: "rgba(22,47,36,0.09)", track: "rgba(22,47,36,0.06)",
+  page: CREAM, surface: WHITE, text: TEXT, muted: MUT, hairline: "rgba(22,47,36,0.09)", track: "rgba(22,47,36,0.06)", dot: "rgba(22,47,36,0.2)",
   fontBody: SANS, fontFigure: SERIF, shadow: "0 2px 10px rgba(22,47,36,0.07)",
   accent: GAIN_ON_DARK, band: G, bandText: CREAM, bandMuted: "rgba(250,247,240,0.68)", bandHairline: "rgba(250,247,240,0.16)", bandTrack: "rgba(250,247,240,0.12)",
   asset: GAIN_ON_DARK, debt: "#f0806f",
   // Cream, not red: red and green stacked fail the colour-blindness check.
   interest: "#e8e1cf",
-  premium: GOLD_TEXT, dangerText: ERROR_TEXT, scrim: "rgba(10,20,15,0.5)",
+  premium: GOLD_TEXT, dangerText: ERROR_TEXT, gainText: SUCCESS, scrim: "rgba(10,20,15,0.5)",
 };
 
 // The band's colours for Progress's caption (BAND_T in
@@ -29,19 +29,26 @@ export const fmtWorthAxis = v => {
   // A decimal under £100k, where a narrow range would repeat whole thousands.
   return brackets(v, a >= 999500 ? `£${(a / 1e6).toFixed(1)}m` : a >= 100000 ? `£${Math.round(a / 1000)}k` : `£${(a / 1000).toFixed(1)}k`);
 };
+// A gain under a row's £: "+£x", or a loss in brackets.
+export const fmtGain = v => (v > 0 ? `+${fmtWorth(v)}` : fmtWorth(v));
 // A debt's line and axis read as owed.
 export const OWED = { format: v => fmtWorth(-Math.abs(v)), formatAxis: v => fmtWorthAxis(-Math.abs(v)), lineColor: WORTH_THEME.debt };
 
 // Each row's colour and icon, by what it is (netWorthView.js `kind`).
+// The module's own colour on the Modules page: the deepest shade in its
+// tile's illustration (public/tile-illustrations), not the charts'
+// MODULE_CHART_COLOR (Harvey, 10 Nov 2026). Each clears 3:1 behind the
+// white icon.
+const MODULE_INK = { cash: "#48906a", investments: "#7760cf", pension: "#2860b8", studentLoan: "#ad7d31" };
 export const KIND = {
-  cash: { color: C.cash, Icon: Banknote },
+  cash: { color: MODULE_INK.cash, Icon: Banknote },
   home: { color: G, Icon: Home },
-  investments: { color: C.investments, Icon: TrendingUp },
-  pension: { color: C.pension, Icon: PiggyBank },
-  now: { color: C.cash, Icon: Unlock },
-  lisa: { color: C.investments, Icon: Lock },
+  investments: { color: MODULE_INK.investments, Icon: TrendingUp },
+  pension: { color: MODULE_INK.pension, Icon: PiggyBank },
+  now: { color: MODULE_INK.cash, Icon: Unlock },
+  lisa: { color: MODULE_INK.investments, Icon: Lock },
   mortgage: { color: C.mortgage, Icon: Landmark },
-  studentLoan: { color: C.studentLoan, Icon: GraduationCap },
+  studentLoan: { color: MODULE_INK.studentLoan, Icon: GraduationCap },
   personalLoan: { color: C.personalLoan, Icon: CreditCard },
 };
 export const icon = I => <I size={16} strokeWidth={2} aria-hidden="true"/>;
@@ -52,11 +59,13 @@ export const icon = I => <I size={16} strokeWidth={2} aria-hidden="true"/>;
 export const logoOf = a => (a?.provider?.domain ? `/logos/${a.provider.domain}.png` : null);
 
 // A grouping's row for GroupedList. A row that's one account shows its
-// provider's logo in place of the category's icon.
+// provider's logo in place of the category's icon. Under its £, its gain
+// this tax year where it's known (netWorthView.js `gain`).
 export const toRow = g => ({
   id: g.key, label: g.label, value: g.value, negative: !!g.debt, color: KIND[g.kind].color, icon: icon(KIND[g.kind].Icon),
   logo: g.key.startsWith("acc-") ? logoOf(g.accounts[0]) : null,
   count: g.accounts.length, countSaid: `${g.accounts.length} accounts`,
+  ...(g.gain && { sub: `${fmtGain(g.gain.v)}${g.gain.est ? " (est.)" : ""}`, subTone: g.gain.v > 0 ? "gain" : undefined, subSaid: `${fmtGain(g.gain.v)} this tax year${g.gain.est ? ", estimated" : ""}` }),
 });
 
 // While the mortgage module is hidden (moduleStatus.js), Home and Mortgage

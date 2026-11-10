@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronRight, Lock, Star } from "lucide-react";
-import { FrontCard, StillCard } from "../CardStack.jsx";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, GAIN_ON_DARK, STRIPE_ON_DARK, TILE_KICKER } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, TILE_KICKER } from "../../design-tokens.js";
 import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -16,9 +15,9 @@ import { useCashNews } from "../visitNews.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
-// Mobile Modules screen. A coloured band at the top with the page's title
-// and one card: what's left on the table a year across the live modules, and what's
-// been saved with a bar splitting the two, as on Home. Below, on the page's
+// Mobile Modules screen. A pale band at the top with, printed on it, what's
+// left on the table a year across the live modules, and what's been saved
+// with a bar splitting the two, as on Home. Below, on the page's
 // cream, how many are live, not started and need action in a small line,
 // then every module as a tile: its title, an arrow, its illustration on a
 // panel of its own colour, and its £ at stake (or where it stands) in a tab
@@ -97,6 +96,10 @@ const TILE_LOOK = {
   quiet: { bg:MODULE_QUIET_TILE.bg, shadow:"0 0 0 1px rgba(22,47,36,0.08), 0 2px 10px rgba(22,47,36,0.06)", title:MUT, art:"-not-live", panel:MODULE_QUIET_TILE.panel },
 };
 const SOON_BY_KEY = Object.fromEntries(COMING_SOON.map(s => [s.key, s]));
+// The hero's ink on the pale band: the brand green figure, its small text a
+// step darker than MUT to hold 4.5:1 on the band's deepest corner (as
+// Progress's BAND_T.light), a firmer track and a dark stripe.
+const ON_BAND = { figure:G, label:"#585858", track:"rgba(22,47,36,0.12)", stripe:"repeating-linear-gradient(135deg, rgba(22,47,36,0.24) 0 4px, rgba(22,47,36,0.08) 4px 8px)" };
 // Its pop-open card, centred on the screen rather than hung off a half-width
 // tile.
 const POP = { position:"fixed", inset:0, margin:"auto", height:"fit-content", width:"min(340px, calc(100vw - 40px))", transformOrigin:"center", padding:"18px 20px 20px" };
@@ -170,36 +173,35 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     return { note: statusLabel(mm) };
   };
 
-  // The hero: left on the table leads (Home's label for the same figure); a
-  // bar splits what's been found into saved and still left, as on Home.
+  // The hero, printed on the pale band in dark ink (no card: Harvey, 10 Nov
+  // 2026): left on the table leads (Home's label for the same figure); a bar
+  // splits what's been found into saved and still left, as on Home. The
+  // label and £ stay as the sheet comes up; the rest fades (ScreenBand.jsx).
   const found = totalBanked + totalOpp;
-  const hero = live > 0
-    ? <FrontCard data-band-keep="carry" label="Left on the table" body={t => (
-        <>
-          <Figure t={t} value={fmt(totalOpp)} unit="a year"/>
-          {totalBanked > 0 && (
-            // As Home's bar (HomeHero.jsx): saved fills in the gain green, the
-            // rest striped, "Saved +£x" at its end on the same line.
-            <div data-band-fade style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
-              <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:t.track}}>
-                <div style={{width:`${totalBanked / found * 100}%`,background:GAIN_ON_DARK}}/>
-                <div style={{flex:1,background:STRIPE_ON_DARK}}/>
-              </div>
-              <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
-                <span style={{fontSize:"12px",fontWeight:600,color:t.label}}>Saved</span>
-                <span style={{fontSize:"12px",fontWeight:800,color:GAIN_ON_DARK}}>+{fmt(totalBanked)}</span>
-              </span>
-            </div>
-          )}
-        </>
-      )}/>
-    // Before any module's answered: the card greyed, its figure blank.
-    : <StillCard data-band-keep="carry" label="Left on the table" body={t => (
-        <>
-          <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
-          <p data-band-fade style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's left on the table shows here once a module is answered.</p>
-        </>
-      )}/>;
+  const hero = (
+    <>
+      <div data-band-keep="title" style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:ON_BAND.label,minHeight:"18px"}}>Left on the table</div>
+      {live > 0
+        ? <Figure t={ON_BAND} value={fmt(totalOpp)} unit="a year"/>
+        // Before any module's answered: the figure blank.
+        : <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>}
+      {live > 0 && totalBanked > 0 && (
+        // As Home's bar (HomeHero.jsx), in the light band's colours: saved
+        // fills in green, the rest striped, "Saved +£x" at its end.
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
+          <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:ON_BAND.track}}>
+            <div style={{width:`${totalBanked / found * 100}%`,background:SUCCESS}}/>
+            <div style={{flex:1,background:ON_BAND.stripe}}/>
+          </div>
+          <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
+            <span style={{fontSize:"12px",fontWeight:600,color:ON_BAND.label}}>Saved</span>
+            <span style={{fontSize:"12px",fontWeight:800,color:SUCCESS}}>+{fmt(totalBanked)}</span>
+          </span>
+        </div>
+      )}
+      {live === 0 && <p style={{fontSize:"13px",color:ON_BAND.label,lineHeight:1.45,margin:"8px 0 0"}}>What's left on the table shows here once a module is answered.</p>}
+    </>
+  );
 
   return (
     <div>
