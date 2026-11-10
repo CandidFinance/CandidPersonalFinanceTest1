@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MODULE_EXPLAINERS } from "./moduleExplainer.js";
 import { calcMetrics } from "./metrics.js";
+import { calcCashOptimisation } from "./cash.js";
 import { fmt } from "./format.js";
 
 const base = { selectedModules: ["investments"], salary: "45000", age: "31", monthlyExpenses: "2000" };
@@ -97,4 +98,111 @@ test("Investments: the label riding each bar is short, and never £0k", () => {
   const d = { ...base, hasCashIsaThisYear: "yes", isaThisYearCash: "5000" };
   const [isa] = block(pages(d), "yours-scene").bars;
   assert.equal(isa.usedShort, "£5k");
+});
+
+const cashD = { selectedModules: ["cash"], salary: "45000", age: "31", monthlyExpenses: "2000", cashTiers: [{ amount: "10000", rate: "2" }], hasCashIsaThisYear: "yes", isaThisYearCash: "5000" };
+const cashHigher = { ...cashD, salary: "80000" };
+const cashTop = { ...cashD, salary: "150000" };
+const cashPages = (d, ctx) => MODULE_EXPLAINERS.cash(d, calcMetrics(d), ctx);
+
+test("Cash: six pages, ending on the user's own figures", () => {
+  assert.deepEqual(cashPages(cashD).map(p => p.id), ["rates", "tax", "isa", "bonds", "emergency", "yours"]);
+  for (const p of cashPages(cashD)) assert.equal(p.blocks[0].fill, true, p.id);
+});
+
+test("Cash: facts only, and says what a prize isn't", () => {
+  const all = words(cashPages(cashD));
+  assert.doesNotMatch(all, /\b(should|optimal|effective|best way|you must|advice)\b/i);
+  assert.match(all, /aren't guaranteed/);
+  assert.match(all, /rainy day/);
+});
+
+test("Cash: the example rates are 2.5% and 4%", () => {
+  const r = block(cashPages(cashD), "rates-scene");
+  assert.deepEqual([r.amount, r.lowInterest, r.highInterest, r.difference], [20000, 500, 800, 300]);
+});
+
+test("Cash: interest tax follows the user's band and adds back up", () => {
+  const expected = [[cashD, 1000, 40, 1160], [cashHigher, 500, 280, 920], [cashTop, 0, 540, 660]];
+  for (const [d, exempt, tax, received] of expected) {
+    const t = block(cashPages(d), "tax-scene");
+    assert.deepEqual([t.interest, t.exempt, t.tax, t.received], [1200, exempt, tax, received]);
+    assert.equal(t.exempt + t.taxable, t.interest);
+    assert.equal(t.tax + t.kept, t.taxable);
+    assert.equal(t.received, t.exempt + t.kept);
+  }
+});
+
+test("Cash: no allowance is said plainly at the additional rate", () => {
+  const t = block(cashPages(cashTop), "tax-scene");
+  assert.match(t.intro, /no allowance/);
+  assert.equal(t.labels.captionExempt, "None of it is tax-free.");
+  assert.doesNotMatch(t.labels.receiveWorking, /\+/);
+});
+
+test("Cash: the ISA example uses the engine's limit and the user's rate", () => {
+  const c = block(cashPages(cashHigher), "isa-scene");
+  assert.deepEqual([c.amount, c.interest, c.tax, c.received, c.saved], [20000, 800, 320, 480, 320]);
+  assert.equal(c.received + c.tax, c.interest);
+});
+
+test("Cash: Premium Bonds use the live rate, else the fallback", () => {
+  const live = { marketRates: { rows: [{ account_type: "Premium Bonds", rate_aer: "3.60" }] } };
+  assert.equal(block(cashPages(cashD, live), "bonds-scene").rateText, "3.60%");
+  assert.equal(block(cashPages(cashD), "bonds-scene").rateText, "4.35%");
+  assert.equal(block(cashPages(cashD), "bonds-scene").draws.length, 12);
+});
+
+test("Cash: a year's prizes add up, and match the prize fund rate to the nearest £25", () => {
+  const prizes = rows => block(cashPages(cashD, rows ? { marketRates: { rows } } : undefined), "bonds-scene");
+  for (const [rows, total] of [[null, 875], [[{ account_type: "Premium Bonds", rate_aer: "3.60" }], 725]]) {
+    const b = prizes(rows);
+    assert.equal(b.total, total);
+    assert.equal(b.draws.reduce((sum, d) => sum + d.prize, 0), total);
+    assert.equal(b.amount, 20000);
+    assert.ok(b.draws.every(d => d.prize % 25 === 0));
+    assert.ok(b.labels.sumLine.includes(fmt(total)));
+  }
+});
+
+test("Cash: the emergency fund markers are months times the example costs", () => {
+  const { markers, monthly } = block(cashPages(cashD), "emergency-scene");
+  assert.deepEqual(markers.map(k => k.amount), [3, 6, 9].map(n => n * monthly));
+  for (const k of markers) assert.ok(k.hint.length > 10, k.label);
+});
+
+test("Cash: allowances on the last page are the engine's and add up", () => {
+  const m = calcMetrics(cashD);
+  const [isa, psa] = block(MODULE_EXPLAINERS.cash(cashD, m), "yours-scene").bars;
+  assert.equal(isa.label, "ISA allowance");
+  assert.equal(isa.unused, m.isaHeadroom);
+  assert.equal(isa.used + isa.unused, isa.limit);
+  assert.equal(psa.limit, 1000);
+  assert.equal(psa.used, 200);
+  assert.equal(psa.used + psa.unused, psa.limit);
+});
+
+test("Cash: the bar counts every ISA payment, so it's labelled the ISA allowance", () => {
+  const d = { ...cashD, isaThisYearCash: "2000", hasOtherIsaThisYear: "yes", isaThisYearOther: "3000" };
+  const m = calcMetrics(d);
+  const [isa] = block(MODULE_EXPLAINERS.cash(d, m), "yours-scene").bars;
+  assert.equal(isa.used, 20000 - m.isaHeadroom);
+  assert.equal(isa.used + isa.unused, 20000);
+});
+
+test("Cash: tax-free interest matches the Cash answer on a low income", () => {
+  const low = { ...cashD, salary: "15000" };
+  const m = calcMetrics(low);
+  const list = MODULE_EXPLAINERS.cash(low, m);
+  const t = block(list, "tax-scene");
+  const expected = calcCashOptimisation(m, null, null).psaLimit;
+  assert.ok(expected > 1000);
+  assert.equal(t.exempt, Math.min(expected, t.interest));
+  assert.deepEqual([t.taxable, t.tax, t.received], [0, 0, 1200]);
+  assert.equal(t.labels.captionSplit, "Nothing goes to HMRC.");
+  assert.equal(t.labels.receiveWorking, "");
+  assert.match(t.intro, new RegExp(fmt(expected).replace("£", "£")));
+  const [, allowance] = block(list, "yours-scene").bars;
+  assert.equal(allowance.limit, expected);
+  assert.equal(allowance.used + allowance.unused, allowance.limit);
 });

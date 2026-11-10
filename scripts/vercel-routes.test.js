@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { rewrites, rewriteFor } from "./vercel-routes.js";
 
-// Every <Route path> in main.jsx, minus "/" (index.html) and "*" (the 404).
-const routes = [...readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8").matchAll(/<Route path="([^"]+)"/g)]
+// Every <Route path> in main.jsx, minus "/" (index.html), "*" (the 404) and
+// routes behind import.meta.env.DEV, which never reach production.
+const routes = [...readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8").matchAll(/(?<!import\.meta\.env\.DEV && )<Route path="([^"]+)"/g)]
   .map(m => m[1])
   .filter(p => p !== "/" && p !== "*");
 

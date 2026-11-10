@@ -4,8 +4,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { CREAM, G, MUT, TEXT, SANS } from "../design-tokens.js";
 
 // Candid is guidance, not advice, said where people read their figures:
-// briefly as a module page opens (GuidanceIntro), then once more at the foot
-// of the page (GuidanceFooter), out of the way of the figures themselves.
+// briefly as the first module page of a session opens (GuidanceIntro), and at
+// the foot of every module page (GuidanceFooter), out of the way of the figures.
 // The fuller version is the "What Candid is and isn't" page.
 
 export const GUIDANCE_PAGE = "/what-candid-is";
@@ -27,12 +27,15 @@ const SIGNPOSTS = {
 export const ADVISER_LINK = ADVISER_HELP;
 
 // Over the page as it opens: the page fades in from behind it. About 1.5
-// seconds in all, and skipped for anyone who has asked for less motion.
+// seconds in all, once per session (a reload counts as a new one), and skipped
+// for anyone who has asked for less motion.
 const INTRO_MS = 1530;
+let introSeen = false;
 export function GuidanceIntro() {
   const reduce = useReducedMotion();
-  const [shown, setShown] = useState(!reduce);
+  const [shown, setShown] = useState(() => !reduce && !introSeen);
   useEffect(() => {
+    introSeen = true;
     if (!shown) return;
     const t = setTimeout(() => setShown(false), INTRO_MS);
     return () => clearTimeout(t);

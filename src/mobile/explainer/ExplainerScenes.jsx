@@ -647,7 +647,7 @@ export function GainTaxedStack({
   const stage = useStage(reduceMotion);
   const { W, H, A } = stage;
   const lead = introLead(intro);
-  const offsets = [0, 500, 1600, 3600, 4400, 6400, 7200, 8600, 10400, 11200, 12300, 12800, 14800, 15400];
+  const offsets = [0, 500, 1600, 3600, 4400, 6400, 7200, 8600, 10400, 11200, 12300, 12800, 14800];
   const beat = useBeats(active, reduceMotion, offsets.map(t => lead + t * 0.7), onSettled);
   const b = i => beat > i;
 
@@ -948,24 +948,6 @@ export function GainTaxedStack({
         <line x1={colX(1) + cw} y1={colTop + taxH} x2={colX(2)} y2={colTop + taxH} stroke={theme.muted} strokeWidth={1} strokeDasharray="4 4" opacity={keepOn ? 1 : 0} />
       </svg>
 
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: H - 24,
-          width: W,
-          height: 20,
-          textAlign: "center",
-          color: theme.muted,
-          fontFamily: theme.fontBody,
-          fontSize: 12,
-          lineHeight: "20px",
-          opacity: b(13) ? 1 : 0,
-          transition: reduceMotion ? "none" : "opacity 300ms ease"
-        }}
-      >
-        {labels.footnote}
-      </div>
     </StageFrame>
   );
 }
@@ -1660,24 +1642,6 @@ export function WrapperCompare({
         </div>
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: H - 24,
-          width: W,
-          height: 20,
-          textAlign: "center",
-          color: theme.muted,
-          fontFamily: theme.fontBody,
-          fontSize: 12,
-          lineHeight: "20px",
-          opacity: groupUOn ? 1 : 0,
-          transition: reduceMotion ? "none" : "opacity 300ms ease"
-        }}
-      >
-        {labels.footnote}
-      </div>
     </StageFrame>
   );
 }
@@ -3039,7 +3003,7 @@ export function AllowanceBars({
           height: barH,
           borderRadius: "12px 12px 0 0",
           background: theme.stripe,
-          opacity: trackOn ? 1 : 0,
+          opacity: trackOn && bars[1].limit > 0 ? 1 : 0,
           transition: reduceMotion ? "none" : "opacity 300ms ease"
         }}
       >

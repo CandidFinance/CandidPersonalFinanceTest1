@@ -53,8 +53,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
       setTimeout(() => setCelebrating(false), REVIEW_CELEBRATE_MS);
     } else onMarkReviewed();
   };
-  // Cash's first open is its tour (CashTour.jsx) instead; every open after
-  // that starts on the intro like the other modules. Read as the page opens
+  // Cash's first open is its tour (CashTour.jsx) instead of the intro, which
+  // otherwise plays once a session (GuidanceIntro). Read as the page opens
   // (it's keyed by module), since the tour sets cashTourDone as it starts.
   const [introShown] = useState(() => moduleKey !== "cash" || !!d.cashTourDone);
 

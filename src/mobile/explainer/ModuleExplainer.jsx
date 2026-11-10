@@ -5,6 +5,7 @@ import { PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
 import { tap } from "../haptics.js";
 import { StepPlayer } from "./StepPlayer.jsx";
 import { ShareJourney, GainTaxedStack, WrapperCompare, GainWaterfall, TaxYearCalendar, AllowanceBars } from "./ExplainerScenes.jsx";
+import { CashRates, InterestSteps, CashCompare, PrizeDraws, MonthsStack } from "./CashScenes.jsx";
 
 // A module's walk-through (lib/moduleExplainer.js) and the choice before it.
 // Full screen, without the tab bar, like the guess comparison before the answer.
@@ -21,7 +22,7 @@ const theme = {
 const screen = { position: "fixed", inset: 0, zIndex: 4000, background: CREAM, paddingTop: "env(safe-area-inset-top)", display: "flex", flexDirection: "column", alignItems: "center" };
 const column = { width: "100%", maxWidth: "580px", boxSizing: "border-box" };
 
-const KINDS = { journey: ShareJourney, taxed: GainTaxedStack, compare: WrapperCompare, waterfall: GainWaterfall, calendar: TaxYearCalendar, bars: AllowanceBars };
+const KINDS = { journey: ShareJourney, taxed: GainTaxedStack, compare: WrapperCompare, waterfall: GainWaterfall, calendar: TaxYearCalendar, bars: AllowanceBars, cashRates: CashRates, interestSteps: InterestSteps, cashCompare: CashCompare, prizeDraws: PrizeDraws, monthsStack: MonthsStack };
 
 // Whole pounds, except where a scene lands on pence (tax on a single share).
 const format = v => { const n = Math.round(v * 100) / 100; return Number.isInteger(n) ? fmt(n) : `£${n.toFixed(2)}`; };
