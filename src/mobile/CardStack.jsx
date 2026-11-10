@@ -248,7 +248,7 @@ export function StillCard({ label, body, fill = false, ...rest }) {
     <div className="card-stack" {...rest} style={{...rest.style,...(fill && {height:"100%"})}}>
       <style>{CSS}</style>
       <div style={{background:LIGHT.bg,border:LIGHT.border,boxShadow:LIGHT.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",...(fill && {height:"100%",boxSizing:"border-box",display:"flex",flexDirection:"column"})}}>
-        <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:LIGHT.label,minHeight:"18px"}}>{label}</div>
+        <div data-band-keep="title" style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:LIGHT.label,minHeight:"18px"}}>{label}</div>
         {body(LIGHT)}
       </div>
     </div>
@@ -269,7 +269,7 @@ export function FrontCard({ label, badge = null, body, on = true, fill = false, 
       <style>{CSS}</style>
       <div className="card-stack-card" style={{background:LIGHT.bg,border:DARK.border,boxShadow:DARK.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",display:"flex",flexDirection:"column",...(fill && {height:"100%",boxSizing:"border-box"})}}>
         <div className={`card-stack-dark${on ? " on" : ""}`} aria-hidden="true"/>
-        <div style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:FRONT.label,minHeight:"18px"}}>{label}{badge}</div>
+        <div data-band-keep="title" style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:FRONT.label,minHeight:"18px"}}>{label}{badge}</div>
         {body(FRONT)}
       </div>
     </div>

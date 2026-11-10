@@ -97,7 +97,7 @@ const figureSize = text => (text.length > 12 ? 34 : text.length > 9 ? 40 : 46);
 
 function Figure({ theme, text, ariaLabel }) {
   return (
-    <div role="group" aria-label={ariaLabel}
+    <div role="group" aria-label={ariaLabel} data-band-keep="figure"
       style={{ fontFamily: theme.fontFigure, fontWeight: 700, color: theme.bandText, lineHeight: 1, letterSpacing: "-0.01em", fontSize: figureSize(text), fontVariantNumeric: "tabular-nums" }}>
       {text}
     </div>
@@ -435,7 +435,7 @@ export function DetailScreen({ theme, format, formatAxis, labels, title, value, 
   const hasMore = more && more.length > 0;
   const band = (
       <>
-        <button type="button" onClick={onBack} aria-label={labels.backSaid}
+        <button type="button" onClick={onBack} aria-label={labels.backSaid} data-band-keep="title"
           style={{ display: "flex", alignItems: "center", gap: 2, minHeight: 44, margin: "0 0 4px -8px", padding: "0 8px 0 0", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: theme.bandMuted }}>
           <ChevronLeft size={20} strokeWidth={2} aria-hidden="true"/>
           {logo && <img src={logo} alt="" width="22" height="22" style={{ width: 22, height: 22, borderRadius: 6, objectFit: "contain", background: "#fff", margin: "0 7px 0 2px" }}/>}

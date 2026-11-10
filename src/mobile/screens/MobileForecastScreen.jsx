@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
 import { TilePopover, anchor } from "../MobileTile.jsx";
 import { useElementWidth } from "../useElementWidth.js";
@@ -260,7 +261,7 @@ function NetWorthBand({ age, horizon, trajectory, chartWidth }) {
   const end = values[horizon];
   return (
     <>
-      <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"6px"}}>{signed(end)}</div>
+      <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"6px"}}>{signed(end)}</div>
       <p style={SR_ONLY}>
         {age ? `At age ${age + horizon}` : `In ${horizon} years`}, in {year0 + horizon}, from {signed(values[0])} now. {labelled.slice(1, -1).map(y => `${year0 + y}: ${signed(values[y])}.`).join(" ")}
       </p>
@@ -510,7 +511,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
   const onLeft = at != null && sx(at) > W - 120;
   return (
     <>
-      <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px",marginTop:"6px"}}>
+      <div data-band-keep="figure" style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px",marginTop:"6px"}}>
         <span style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em"}}>{fmt(putIn)}</span>
         <span style={{fontSize:"12px",fontWeight:600,color:CREAM_SOFT}}>put in by {year0 + horizon}</span>
       </div>
@@ -590,7 +591,9 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
         <PillMoneyInput onDark label="Each month" labelExtra={info} value={surplus} onChange={setSurplus} placeholder={formatThousands(estimate)}/>
         {lumpLocked ? <LockedLumpPill onClick={onLocked}/> : <PillMoneyInput onDark label="One-off today" value={lumpSum} onChange={setLumpSum}/>}
       </div>
-      <AnimatePresence>
+      {/* Out on the page: the band is pinned on a phone (ScreenBand.jsx),
+          which would hold the pop-out under the sheet. */}
+      {createPortal(<AnimatePresence>
         {why && (
           <TilePopover key="each-month" title="Each month" onClose={() => setWhy(false)} style={POP_CENTRED}>
             <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
@@ -599,7 +602,7 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
             </div>
           </TilePopover>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
     </div>
   );
 }

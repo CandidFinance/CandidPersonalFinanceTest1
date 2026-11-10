@@ -96,8 +96,8 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, unchecked
     <section aria-label="Your figures" data-tour="home-score">
       <div style={{display:"flex",alignItems:"flex-start",gap:"14px"}}>
         <div style={{flex:1,minWidth:0}}>
-          <div style={BAND_LABEL}>{lead.label}</div>
-          <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
+          <div data-band-keep="title" style={BAND_LABEL}>{lead.label}</div>
+          <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
             {lead.value} <span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,letterSpacing:0,whiteSpace:"nowrap"}}>a year</span>
           </div>
           <p style={{fontSize:"13px",color:CREAM_SOFT,lineHeight:1.45,margin:"8px 0 0"}}>{lead.sub}</p>

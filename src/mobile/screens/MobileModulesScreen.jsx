@@ -41,7 +41,7 @@ button.modules-tile:active { transform: scale(0.98); }
 // A big figure on a card: £ in the serif, with its unit after in sans.
 function Figure({ t, value, unit }) {
   return (
-    <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
+    <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
       {value}{unit && <span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,marginLeft:"5px",letterSpacing:0}}>{unit}</span>}
     </div>
   );
@@ -174,13 +174,13 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   // bar splits what's been found into saved and still left, as on Home.
   const found = totalBanked + totalOpp;
   const hero = live > 0
-    ? <FrontCard label="Left on the table" body={t => (
+    ? <FrontCard data-band-keep="carry" label="Left on the table" body={t => (
         <>
           <Figure t={t} value={fmt(totalOpp)} unit="a year"/>
           {totalBanked > 0 && (
             // As Home's bar (HomeHero.jsx): saved fills in the gain green, the
             // rest striped, "Saved +£x" at its end on the same line.
-            <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
+            <div data-band-fade style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
               <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:t.track}}>
                 <div style={{width:`${totalBanked / found * 100}%`,background:GAIN_ON_DARK}}/>
                 <div style={{flex:1,background:STRIPE_ON_DARK}}/>
@@ -194,10 +194,10 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         </>
       )}/>
     // Before any module's answered: the card greyed, its figure blank.
-    : <StillCard label="Left on the table" body={t => (
+    : <StillCard data-band-keep="carry" label="Left on the table" body={t => (
         <>
-          <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
-          <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's left on the table shows here once a module is answered.</p>
+          <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
+          <p data-band-fade style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's left on the table shows here once a module is answered.</p>
         </>
       )}/>;
 

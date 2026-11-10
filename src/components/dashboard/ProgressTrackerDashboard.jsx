@@ -441,18 +441,18 @@ const WARN_ZONE = { in: "red", edge: "amber" };
 // £100,000), then the bands with a marker at their income.
 function ShieldBand({ income, t }) {
   if (income.zone === "none") {
-    return <div style={{...heroFig(t),color:t.body,opacity:0.5}}>£–</div>;
+    return <div data-band-keep="figure" style={{...heroFig(t),color:t.body,opacity:0.5}}>£–</div>;
   }
   const { trap, gap } = income;
   return (
     <>
       {income.zone === "in"
         ? trap
-          ? <div style={heroFig(t)}>{fmt(trap.tax)}<span style={unit}>more tax a year</span></div>
-          : <div style={heroFig(t)}>{fmt(income.income - 100000)}<span style={unit}>over £100k</span></div>
+          ? <div data-band-keep="figure" style={heroFig(t)}>{fmt(trap.tax)}<span style={unit}>more tax a year</span></div>
+          : <div data-band-keep="figure" style={heroFig(t)}>{fmt(income.income - 100000)}<span style={unit}>over £100k</span></div>
         : gap === 0
-          ? <div style={heroFig(t)}>£100,000<span style={unit}>the trap's edge</span></div>
-          : <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>{income.zone === "clear" ? "below £100k" : "to £100k"}</span></div>}
+          ? <div data-band-keep="figure" style={heroFig(t)}>£100,000<span style={unit}>the trap's edge</span></div>
+          : <div data-band-keep="figure" style={heroFig(t)}>{fmt(gap)}<span style={unit}>{income.zone === "clear" ? "below £100k" : "to £100k"}</span></div>}
       <BandTrack income={income} t={t}/>
     </>
   );

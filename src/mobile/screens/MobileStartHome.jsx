@@ -48,8 +48,8 @@ export default function MobileStartHome({ d, m, onStartModule, onEditInputs }) {
         <section aria-label="Your figures" data-tour="home-score">
           <div style={{display:"flex",alignItems:"flex-start",gap:"14px"}}>
             <div style={{flex:1,minWidth:0}}>
-              <div style={BAND_LABEL}>Left on the table</div>
-              <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM_FAINT,lineHeight:1.05,marginTop:"8px"}}>£–</div>
+              <div data-band-keep="title" style={BAND_LABEL}>Left on the table</div>
+              <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM_FAINT,lineHeight:1.05,marginTop:"8px"}}>£–</div>
               <p style={{fontSize:"13px",color:CREAM,lineHeight:1.5,margin:"10px 0 0"}}>
                 {needsScored
                   ? `Your Candid score covers ${listText(SCORED_MODULES.map(k => moduleMeta(k).title))}. Finish one of them to see it.`
