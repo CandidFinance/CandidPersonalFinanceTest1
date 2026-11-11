@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { Check } from "lucide-react";
 import { topRate } from "./lib/savingsRates.js";
 import { calcMetrics } from "./lib/metrics.js";
 import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch, onTrackKeys, droppedOffTrack, reviewedDone } from "./lib/moduleStatus.js";
@@ -17,6 +16,7 @@ import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
+import OwnFiguresNote from "./mobile/OwnFiguresNote.jsx";
 import CheckedCard from "./mobile/CheckedCard.jsx";
 import CashTour from "./mobile/onboarding/CashTour.jsx";
 import AppTour from "./mobile/onboarding/AppTour.jsx";
@@ -87,7 +87,7 @@ const BLANK_DATA = {
   // fund is at its target (cleared once it falls below).
   // `trapSubscribeClosed`: the £100k tax trap's subscribe tile closed.
   // `comingUpMin`: Home's Coming up tile minimised to its one-line timeline.
-  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emailOfferDismissed:false, inviteDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false, comingUpMin:false, emergencyFundMin:false,
+  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emailOfferDismissed:false, inviteDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false, comingUpMin:false, emergencyFundMin:false, ownFiguresSeen:{},
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
@@ -1112,13 +1112,11 @@ export default function AppShell() {
                 onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
             )}
             {/* Figures from the quick start's bands, until they're changed;
-                then a line saying the answer is on their own. */}
+                then, once and briefly, a line saying the answer is on their own. */}
             {ownFigures(mobileActiveModule, d) && (
-              <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
-                <Check size={14} strokeWidth={2.5} color={G} aria-hidden="true"/>
-                <span>Worked out on your own figures.</span>
-                <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Edit</button>
-              </p>
+              <OwnFiguresNote seen={!!d.ownFiguresSeen?.[mobileActiveModule]}
+                onSeen={() => setRawD(p => ({ ...p, ownFiguresSeen: { ...(p.ownFiguresSeen || {}), [mobileActiveModule]: true } }))}
+                onEdit={() => openInputs(mobileActiveModule)}/>
             )}
             {quickEstimateLine(mobileActiveModule, d) && (
               <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>

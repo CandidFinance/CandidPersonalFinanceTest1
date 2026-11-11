@@ -6,9 +6,9 @@ import { Check, Coins, SlidersHorizontal } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SC, SUCCESS, PROGRESS_GREEN, SANS, SR_ONLY } from "../../design-tokens.js";
 import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
-import { MODULE_META, isOnTrack, reviewedDone } from "../../lib/moduleStatus.js";
+import { MODULE_META, isOnTrack, reviewedDone, COSTS_MISSING, CASH_REASONS } from "../../lib/moduleStatus.js";
 import { moduleLimits } from "../../lib/moduleLimits.js";
-import { statusLine } from "../statusLabel.js";
+import { statusLabel, statusLine } from "../statusLabel.js";
 import MobileCashDeepDive, { CashBand } from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
 import MobileInvestmentsDeepDive from "../deepdive/MobileInvestmentsDeepDive.jsx";
@@ -21,6 +21,15 @@ import MobileTaxTrapDeepDive from "../deepdive/MobileTaxTrapDeepDive.jsx";
 // (Mark as reviewed + back to Modules). All 4 active modules now have a
 // mobile deep dive — Pension is a trimmed v1 (see that file for what's
 // deferred to a later, full-parity pass).
+// Cash's "Worth a look" reasons (moduleStatus.js cashReason) as the band's
+// status, short enough to fit beside "Cash · Opportunity" on a 375px phone.
+const BAND_REASONS = {
+  [CASH_REASONS.emergencyShort]: "Emergency fund",
+  [CASH_REASONS.tooMuchCash]: "Cash over target",
+  [CASH_REASONS.spendingGap]: "Spending over income",
+  [CASH_REASONS.livingOffSavings]: "Living off savings",
+};
+
 const CONTENT_BY_KEY = {
   cash: MobileCashDeepDive,
   studentLoan: MobileStudentLoanDeepDive,
@@ -100,16 +109,22 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   // up over it, as each tab's landing page (ScreenBand.jsx). The band takes
   // the place of the header here.
   if (moduleKey === "cash") {
-    // Red only for "Action needed" (a £ saving at stake: statusLabel.js);
-    // "Worth a look", "Find out" and "On track" stay cream.
-    const cashStatus = statusLine({ ...statuses[moduleKey], status, elsewhere, onTrack });
+    // Red only for "Action needed" (a £ saving at stake: statusLabel.js).
+    // "Worth a look" shows just its reason, cut short to fit the band on a
+    // phone, in orange: worth a look, but no money lost. Monthly costs not
+    // added is a gap in the answers, not a worry, so it stays cream, as do
+    // "Find out" and "On track".
+    const cashMm = { ...statuses[moduleKey], status, elsewhere, onTrack };
+    const cashLabel = statusLabel(cashMm);
+    const worry = cashLabel === "Worth a look" && BAND_REASONS[cashMm.reason];
+    const cashStatus = worry || (cashLabel === "Find out" && cashMm.reason === COSTS_MISSING ? "Costs not added" : statusLine(cashMm));
     return (
       <div>
         {introShown && <GuidanceIntro key={moduleKey}/>}
         <ScreenBand tone="dark">
           <h1 style={SR_ONLY}>{meta?.title || "Cash"}</h1>
           <CashBand d={d} m={m} savingsRates={savingsRates} onOpenAssist={onOpenAssist} onShowReveal={onShowReveal} onEditInputs={onEditInputs}
-            status={cashStatus} statusAlert={cashStatus === "Action needed"}/>
+            status={cashStatus} statusTone={cashLabel === "Action needed" ? "alert" : worry ? "warn" : null}/>
         </ScreenBand>
         <ScreenSheet slick>
           {lead}

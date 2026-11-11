@@ -14,7 +14,7 @@ import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK, NEON_GREEN, STRIPE_ON_LIGHT } from "../../design-tokens.js";
+import { MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK, WARN_ON_DARK, NEON_GREEN, STRIPE_ON_LIGHT } from "../../design-tokens.js";
 import { CREAM_SOFT } from "../ScreenBand.jsx";
 import { Button } from "../ui";
 
@@ -73,7 +73,7 @@ function useCashFigures(d, m, savingsRates, onOpenAssist) {
 // (`data-band-keep`). `data-tour="figure"`: lit up by the Cash tour
 // (CashTour.jsx).
 const GLASS_PILL = { display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:RADIUS_PILL, background:"rgba(255,255,255,0.10)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.16)", fontSize:"11px", fontWeight:700, whiteSpace:"nowrap" };
-export function CashBand({ d, m, savingsRates, onOpenAssist, status, statusAlert = false, onShowReveal, onEditInputs }) {
+export function CashBand({ d, m, savingsRates, onOpenAssist, status, statusTone = null, onShowReveal, onEditInputs }) {
   const { calc, opp, gain } = useCashFigures(d, m, savingsRates, onOpenAssist);
   const shown = gain > 50 ? gain : 0;
   // The tour's first stop only when there's a loss to show (CashTour.jsx
@@ -82,7 +82,7 @@ export function CashBand({ d, m, savingsRates, onOpenAssist, status, statusAlert
     <section aria-label="Cash opportunity" data-tour={shown > 0 ? "figure" : undefined}>
       <div style={{display:"flex",alignItems:"center",gap:"10px",minHeight:"28px"}}>
         <div data-band-keep="title" style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:CREAM_SOFT,whiteSpace:"nowrap"}}>Cash · Opportunity</div>
-        {status && <span style={{...GLASS_PILL,color:statusAlert ? ALERT_ON_DARK : CREAM}}>{status}</span>}
+        {status && <span style={{...GLASS_PILL,color:statusTone === "alert" ? ALERT_ON_DARK : statusTone === "warn" ? WARN_ON_DARK : CREAM}}>{status}</span>}
         {onEditInputs && (
           <button type="button" onClick={onEditInputs} aria-label="Edit your finances" className="tap44" style={{marginLeft:"auto",background:"none",border:"none",padding:"4px",marginRight:"-4px",cursor:"pointer",color:CREAM,display:"flex"}}>
             <SlidersHorizontal size={20} strokeWidth={2.2} aria-hidden="true"/>
@@ -259,7 +259,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             // about the £ figures) while the tile's minimised.
             <button type="button" onClick={() => setFundMin(false)} aria-expanded="false"
               aria-label={`Emergency fund: ${fmt(runwayCurrent)}${runwayTarget > 0 ? ` of ${fmt(runwayTarget)}` : ""}${runwayNote ? `, ${runwayNote.toLowerCase()}` : ""}. Open`}
-              style={{display:"block",width:"100%",background:"none",border:"none",padding:"6px 0 18px",cursor:"pointer"}}>
+              // Side padding as in the open tile (16px and its 1px edge), so
+              // the chunks keep the same width and line up with the tiles' text.
+              style={{display:"block",width:"100%",background:"none",border:"none",padding:"6px 17px 18px",cursor:"pointer"}}>
               {fundBar}
             </button>
           ) : (

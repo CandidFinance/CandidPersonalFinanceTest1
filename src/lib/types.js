@@ -24,6 +24,7 @@
  * @property {boolean} [appTourDone] The app's tour of Home, Progress and Modules started (AppTour.jsx).
  * @property {boolean} [comingUpMin] Home's Coming up tile minimised (ComingUp.jsx).
  * @property {boolean} [emergencyFundMin] Cash's Emergency fund tile minimised to its month chunks.
+ * @property {Object<string, boolean>} [ownFiguresSeen] By module: "Worked out on your own figures" shown (OwnFiguresNote.jsx).
  * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.
  * @property {boolean} [emailOfferDismissed] The email offer under an answer closed.
  * @property {boolean} [inviteDismissed] The invite card under an answer closed.

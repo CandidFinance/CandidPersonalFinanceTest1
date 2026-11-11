@@ -42,6 +42,7 @@ export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid gree
 export const NEON_GREEN = "#2fe07a"; // the Emergency fund tile's filled months (Cash)
 export const GAIN_ON_DARK = "#4fd18b"; // a gain (saved £) on the dark band: bar fill and "+£x" (Harvey, 8 Nov 2026)
 export const ALERT_ON_DARK = "#ff6b78"; // GAIN_ON_DARK's red: a status needing action on the dark band (Cash's "Action needed")
+export const WARN_ON_DARK = "#ffa64d"; // its orange: worth a look but no money lost, on the dark band (Cash's "Emergency fund")
 // The track still to fill under a saved bar on the dark band: diagonal stripes.
 export const STRIPE_ON_DARK = "repeating-linear-gradient(135deg, rgba(246,234,208,0.28) 0 4px, rgba(246,234,208,0.1) 4px 8px)";
 // The same stripes on a light surface (as the walk-throughs' bars, ModuleExplainer.jsx).

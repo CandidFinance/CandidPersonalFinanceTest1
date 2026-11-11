@@ -173,11 +173,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Why it needs action when the £ left (under £50) doesn't say so: a few
   // words beside "Action needed".
   const cashReason = cashAmount >= ON_TRACK_FLOOR ? null
-    : spendingGap ? "More going out than coming in"
-    : livingOffSavings && runway < 12 ? "Living off savings"
+    : spendingGap ? CASH_REASONS.spendingGap
+    : livingOffSavings && runway < 12 ? CASH_REASONS.livingOffSavings
     : m.expensesUnknown ? COSTS_MISSING
-    : tooMuchCash ? "Over twice your emergency fund"
-    : emergencyShort ? "Below your emergency fund"
+    : tooMuchCash ? CASH_REASONS.tooMuchCash
+    : emergencyShort ? CASH_REASONS.emergencyShort
     : null;
   s.cash = {
     status: spendingGap || (livingOffSavings && runway < 6) || tooMuchCash || cashImpact > 800 || (emergencyCritical && !livingOffSavings) ? "critical"
@@ -582,6 +582,14 @@ export function bankedFor(d, key, now = new Date()) {
 export const ON_TRACK_FLOOR = 50;
 // Cash's reason when its monthly costs aren't in: a figure to find out.
 export const COSTS_MISSING = "Monthly costs not added";
+// Cash's other reasons, with no £ figure to show. Cash's band shortens them
+// (MobileModuleDeepDive.jsx BAND_REASONS), keyed by these.
+export const CASH_REASONS = {
+  spendingGap: "More going out than coming in",
+  livingOffSavings: "Living off savings",
+  tooMuchCash: "Over twice your emergency fund",
+  emergencyShort: "Below your emergency fund",
+};
 // The modules on track now, as sorted keys, for comparing with the last
 // time (`d.onTrackLast`): one that's dropped off since has its reviewed
 // tick taken away (CandidApp), so a new gap reads as not yet looked at.
