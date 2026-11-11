@@ -33,7 +33,10 @@ const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 const CRON_SECRET = process.env.CRON_SECRET;
 const FLAG_TO = process.env.EVENTS_FLAG_TO || "admin@candid-finance.co.uk";
 
-const MODEL = "claude-opus-5-5";
+// Sonnet, not Opus: the Saturday draft is a web search plus a short email, and
+// Opus at high effort cost about $3 a week (12 searches' results re-read on
+// every pause). Cost is per draft, not per subscriber.
+const MODEL = "claude-sonnet-5-5";
 // Pauses in Claude's search loop (stop_reason "pause_turn") resumed at most
 // this many times.
 const MAX_CONTINUATIONS = 3;
@@ -74,8 +77,8 @@ const rowsFor = ids => ids.length ? db(`event_emails?select=${COLUMNS}&event_id=
 async function askClaude({ system, prompt, tool, searches = 6, deadline = Infinity }) {
   const body = {
     model: MODEL,
-    max_tokens: 16000,
-    output_config: { effort: "high" },
+    max_tokens: 8000,
+    output_config: { effort: "medium" },
     // A declined request is re-run on Anthropic's recommended fallback.
     fallbacks: "default",
     system,
