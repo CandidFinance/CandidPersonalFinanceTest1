@@ -44,11 +44,12 @@ export default function MobileTile({ title, subtitle, menu = [], level = 2, badg
 // `align`: a plain row that keeps the chevron's space, so its figure lines
 // up with those of tappable rows in the same tile.
 // `expanded` (with `onClick`): the row opens content under itself, its
-// chevron turning down while open.
+// chevron turning down while open. `chevron={false}`: a tappable row with no
+// chevron, its figures running to the row's right edge.
 const CHEVRON = 16, CHEVRON_GAP = "10px";
 // A row's padding above and below its text.
 const ROW_PAD = "9px";
-export function TileRow({ first = false, onClick, align = false, expanded, id, children, style }) {
+export function TileRow({ first = false, onClick, align = false, expanded, chevron = true, id, children, style }) {
   const box = {borderTop:first ? "none" : HAIRLINE,padding:`${ROW_PAD} 16px ${ROW_PAD} 0`,scrollMarginTop:"80px",...style};
   if (!onClick && align) return (
     <div id={id} style={{...box,display:"flex",alignItems:"center",gap:CHEVRON_GAP}}>
@@ -61,7 +62,7 @@ export function TileRow({ first = false, onClick, align = false, expanded, id, c
     <button type="button" id={id} onClick={onClick} aria-expanded={expanded}
       style={{...box,display:"flex",alignItems:"center",gap:CHEVRON_GAP,width:"100%",borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
       <span style={{display:"block",flex:1,minWidth:0}}>{children}</span>
-      <ChevronRight size={CHEVRON} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:expanded ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>
+      {chevron && <ChevronRight size={CHEVRON} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:expanded ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>}
     </button>
   );
 }
@@ -81,10 +82,11 @@ export const ROW = {
 // the right, centred on the row as the chevron is. `inline`: the note on the
 // label's line, so a tile of short rows keeps one depth. `tool`: a small
 // button beside the label (the spanner that edits the figure, or a ?).
-export function RowText({ label, note, figure, inline = false, figureStyle, tool }) {
+// `figureOnLabel`: the figure on the label's line, not centred on the row.
+export function RowText({ label, note, figure, inline = false, figureStyle, tool, figureOnLabel = false }) {
   const head = <span style={{...ROW.label,fontWeight:600}}>{label}</span>;
   return (
-    <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+    <div style={{display:"flex",alignItems:figureOnLabel ? "baseline" : "center",gap:"12px"}}>
       <div style={{flex:1,minWidth:0}}>
         {inline ? (
           <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",columnGap:"6px"}}>{head}{tool}{note && <span style={{...ROW.note,marginTop:0}}>{note}</span>}</div>

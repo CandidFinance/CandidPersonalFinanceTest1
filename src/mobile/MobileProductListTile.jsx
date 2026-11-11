@@ -17,10 +17,19 @@ const FLUSH_ROWS = 2;
 // the heading and the frame. `flush`: rows of a MobileTile, each with a
 // hairline above that runs to the tile's right edge (the tile has no right
 // padding, so the row keeps its own). In flush rows a product's `feature`
-// goes under its type. `noun`: what "See all N …" counts.
-export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false, flush = false, noun = "rates" }) {
+// goes under its type. `noun`: what "See all N …" counts. `figureOnName`:
+// the rate on the name's line, not centred on the row.
+export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false, flush = false, noun = "rates", figureOnName = false }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
+  const name = p => <span style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:TEXT}}>{p.name}</span>;
+  const badge = p => p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD_TEXT,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>;
+  const rate = p => (
+    <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+      <span style={{...TILE_FIGURE,color:G}}>{p.rate}</span>
+      <ExternalLink size={13} color={MUT}/>
+    </div>
+  );
 
   return (
     <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
@@ -40,20 +49,21 @@ export default function MobileProductListTile({ heading, subheading, products, d
             ...(flush ? { borderTop:HAIRLINE } : { borderBottom: i < products.length-1 ? "1px solid rgba(22,47,36,0.06)" : "none" }),
             textDecoration:"none",
           }}>
-            <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0,...(figureOnName && {flex:1})}}>
             {flush && <ProviderLogo url={p.productUrl} name={p.name}/>}
-            <div style={{minWidth:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
-                <span style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:TEXT}}>{p.name}</span>
-                {p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD_TEXT,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>}
+            <div style={{minWidth:0,...(figureOnName && {flex:1})}}>
+              <div style={{display:"flex",alignItems:figureOnName ? "baseline" : "center",gap:"6px",flexWrap:figureOnName ? "nowrap" : "wrap"}}>
+                {figureOnName ? (
+                  <>
+                    <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>{name(p)}{badge(p)}</span>
+                    {rate(p)}
+                  </>
+                ) : <>{name(p)}{badge(p)}</>}
               </div>
               <div style={{fontSize:"12px",color:MUT,marginTop:"1px"}}>{p.type}</div>
             </div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-              <span style={{...TILE_FIGURE,color:G}}>{p.rate}</span>
-              <ExternalLink size={13} color={MUT}/>
-            </div>
+            {!figureOnName && rate(p)}
             {/* Under the whole row, lined up with the name past the logo. */}
             {flush && p.feature && <div style={{flexBasis:"100%",paddingLeft:"44px",marginTop:"-6px",fontSize:"12px",color:MUT,lineHeight:1.45}}>{p.feature}</div>}
           </a>

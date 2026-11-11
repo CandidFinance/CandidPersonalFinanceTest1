@@ -1,20 +1,22 @@
 import { useState, useEffect, useMemo } from "react";
-import { Bell, Info, Pencil, EyeOff } from "lucide-react";
+import { Bell, Info, Pencil, EyeOff, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
-import { cashOpportunity, accountName, assistItems } from "../../lib/assist.js";
-import { fmt, fmtCompact } from "../../lib/format.js";
+import { cashOpportunity, accountName, assistItems, cashSources, savingsTax } from "../../lib/assist.js";
+import { fmt } from "../../lib/format.js";
 import { premiumOpen } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileTile, { TileRow, RowText, ROW, priorityTag } from "../MobileTile.jsx";
+import { AnimatePresence } from "framer-motion";
+import MobileTile, { TileRow, RowText, ROW, TilePopover, priorityTag } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE } from "../../design-tokens.js";
-import OpportunityTile from "./OpportunityTile.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK } from "../../design-tokens.js";
+import { CREAM_SOFT } from "../ScreenBand.jsx";
+import { Button } from "../ui";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Three tiles (MobileTile, rows on the
@@ -42,6 +44,68 @@ function AccountLines({ lines, rowStyle }) {
   });
 }
 
+// The page's figures, shared by its band (CashBand) and its tiles.
+function useCashFigures(d, m, savingsRates, onOpenAssist) {
+  const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
+  const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
+  const calc = calcCashOptimisation(m, isaRatePct, nonIsaRatePct, savingsRates);
+  const products = getModuleProducts("cash", d, m, savingsRates);
+  // With the rates loaded, the same after-tax figure and choices as Candid
+  // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
+  const opp = cashOpportunity(d, m, savingsRates);
+  const gain = opp ? opp.gain : calc.optimisationGain;
+  // Candid Assist is a premium feature, with a cash item to open only above
+  // its threshold and not snoozed. "See options" goes there when it can, or
+  // else to the provider lists on this page, which are free.
+  const assistCash = useMemo(() => premiumOpen(d) && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
+  const assistHasCash = !!onOpenAssist && gain > 50 && assistCash;
+  const hasIsaList = !!products.products?.length, hasSavingsList = !!products.nonIsaProducts?.length;
+  const scrollTo = id => () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const seeOptions = assistHasCash ? () => onOpenAssist("cash") : hasIsaList ? scrollTo("cash-isas") : hasSavingsList ? scrollTo("cash-savings") : null;
+  return { calc, products, opp, gain, hasIsaList, hasSavingsList, seeOptions };
+}
+
+// The page's top, on the dark band (ScreenBand, in MobileModuleDeepDive):
+// "Cash · Opportunity" with the module's status in glass beside it (in
+// ALERT_ON_DARK when it needs action) and the spanner to the inputs, then
+// the yearly loss to low rates, large, and "Explain this" (the answer step
+// by step). The title and figure stay as the sheet comes up
+// (`data-band-keep`). `data-tour="figure"`: lit up by the Cash tour
+// (CashTour.jsx).
+const GLASS_PILL = { display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:RADIUS_PILL, background:"rgba(255,255,255,0.10)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.16)", fontSize:"11px", fontWeight:700, whiteSpace:"nowrap" };
+export function CashBand({ d, m, savingsRates, onOpenAssist, status, statusAlert = false, onShowReveal, onEditInputs }) {
+  const { calc, opp, gain } = useCashFigures(d, m, savingsRates, onOpenAssist);
+  const shown = gain > 50 ? gain : 0;
+  // The tour's first stop only when there's a loss to show (CashTour.jsx
+  // leaves it out otherwise).
+  return (
+    <section aria-label="Cash opportunity" data-tour={shown > 0 ? "figure" : undefined}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",minHeight:"28px"}}>
+        <div data-band-keep="title" style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:CREAM_SOFT,whiteSpace:"nowrap"}}>Cash · Opportunity</div>
+        {status && <span style={{...GLASS_PILL,color:statusAlert ? ALERT_ON_DARK : CREAM}}>{status}</span>}
+        {onEditInputs && (
+          <button type="button" onClick={onEditInputs} aria-label="Edit your finances" className="tap44" style={{marginLeft:"auto",background:"none",border:"none",padding:"4px",marginRight:"-4px",cursor:"pointer",color:CREAM,display:"flex"}}>
+            <SlidersHorizontal size={20} strokeWidth={2.2} aria-hidden="true"/>
+          </button>
+        )}
+      </div>
+      <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
+        {fmt(shown)}<span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,marginLeft:"5px",letterSpacing:0}}>a year</span>
+      </div>
+      <div style={{fontSize:"13px",color:CREAM_SOFT,lineHeight:1.45,marginTop:"6px"}}>
+        {shown > 0 ? (opp ? "Lost to low rates, after tax" : "Lost to low rates")
+          : calc.totalPot > 0 ? "Your savings are already on good rates."
+          : "Add your savings in your details to see what they could earn."}
+      </div>
+      {onShowReveal && (
+        <Button variant="secondary" onClick={onShowReveal} style={{marginTop:"16px",border:"none",paddingRight:"12px"}}>
+          Explain this<ChevronRight size={17} strokeWidth={2.5} aria-hidden="true" style={{marginLeft:"-4px"}}/>
+        </Button>
+      )}
+    </section>
+  );
+}
+
 export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssist, onEditInputs }) {
   // Each tile's "How this is worked out" note, from its menu.
   const [notes, setNotes] = useState({});
@@ -53,8 +117,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   useEffect(() => { if (news && !news.opened) markCashOpened(); }, [news]);
   useEffect(() => () => markCashSeen(), []);
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:TILE_LABEL_SIZE, color:TEXT, padding:"5px 0" };
-  const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
-  const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
+  const { calc, products, opp, gain, hasIsaList, hasSavingsList, seeOptions } = useCashFigures(d, m, savingsRates, onOpenAssist);
   const {
     psaLimit, isaRateDisplay, nonIsaRateDisplay, PB_RATE,
     currentGrossTotal, trPct, currentTaxCost,
@@ -62,17 +125,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
     step3Pb, step3PbInterest,
     optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain, todayBlendedRate,
     isaLines, savingsLines,
-  } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct, savingsRates);
-  const products = getModuleProducts("cash", d, m, savingsRates);
-  // With the rates loaded, the same after-tax figure and choices as Candid
-  // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
-  const opp = cashOpportunity(d, m, savingsRates);
-  const gain = opp ? opp.gain : optimisationGain;
-  // Candid Assist is a premium feature, with a cash item to open only above
-  // its threshold and not snoozed. Below, "See options" goes there when it
-  // can, or else to the provider lists on this page, which are free.
-  const assistCash = useMemo(() => premiumOpen(d) && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
-  const assistHasCash = !!onOpenAssist && gain > 50 && assistCash;
+  } = calc;
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
   const reminder = useReminder({
     id: "cash-move-surplus",
@@ -87,13 +140,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
 
   const showEmergencyWin = m.emergencyShortfall > 0;
   const monthsToCloseGap = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
-  const hasIsaList = !!products.products?.length, hasSavingsList = !!products.nonIsaProducts?.length;
-
-  // The Opportunity tile is the yearly loss alone; the emergency fund, a gap
-  // closed once rather than lost each year, is shown as progress in its own
-  // tile below.
-  const opportunityCols = [];
-  if (gain > 50) opportunityCols.push({ label: opp ? "Lost to low rates, after tax" : "Lost to low rates", value: `${fmtCompact(gain)}/yr` });
 
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
@@ -107,23 +153,62 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const belowTarget = runwayTarget > 0 && runwayPctRaw < 100;
   useEffect(() => { if (belowTarget && d.emergencyCardDismissed && set) set("emergencyCardDismissed", false); }, [belowTarget, d.emergencyCardDismissed]);
 
-  // A Savings row's way on: its provider list on this page, or Candid Assist
-  // for Premium Bonds (no list here). Null leaves the row plain.
-  const scrollTo = id => () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const seeOptions = assistHasCash ? () => onOpenAssist("cash") : hasIsaList ? scrollTo("cash-isas") : hasSavingsList ? scrollTo("cash-savings") : null;
-  const rowTarget = section =>
-    section === "Cash ISA" && hasIsaList ? scrollTo("cash-isas")
-    : section === "Savings account" && hasSavingsList ? scrollTo("cash-savings")
-    : assistHasCash ? () => onOpenAssist("cash") : undefined;
   const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
   const howItem = (k, label = "How this is worked out") => ({ icon: Info, label: notes[k] ? "Hide the explanation" : label, onClick: () => toggleNote(k) });
+  // A tile's explanation as a bubble from its "more" button (TilePopover),
+  // over the page rather than opening the tile downwards.
+  const howPop = (k, title, body) => (
+    <AnimatePresence>
+      {notes[k] && body && (
+        <TilePopover key={k} title={title} onClose={() => setNotes(n => ({ ...n, [k]: false }))} style={{top:"44px"}}>
+          <p style={{...ROW.text,margin:0}}>{body}</p>
+        </TilePopover>
+      )}
+    </AnimatePresence>
+  );
+  // The Savings tile in three parts: where the money sits now, the accounts
+  // that would earn more (the opportunity), and the two together, the money
+  // left where it is plus what moves. `key` matches an option's `from` index
+  // ("pb" for Premium Bonds held), so what moves comes off its account.
+  const heldNow = opp ? [
+    ...cashSources(d, m).map(s => ({ key: s.index, name: s.name || (s.index == null ? "Your cash" : `Account ${s.index + 1}`), amount: s.amount, ratePct: s.ratePct })),
+    m.bonds > 0 && { key: "pb", name: "Premium Bonds", amount: +m.bonds, ratePct: opp.bondsPrize / m.bonds * 100 },
+  ].filter(Boolean) : [];
+  const moved = opp ? opp.lines.flatMap(l => l.option.from || []) : [];
+  // The provider alone, as in the lists below: a product's full name
+  // ("… Easy Access Autumn Account (Issue 2)") is too long for a line.
+  const optionName = o => o.pb ? "Premium Bonds" : (o.provider || accountName(o));
+  // Premium Bonds bought and those still held are one holding: one row, at
+  // their average rate. ISA interest and prizes are tax-free; the rest is
+  // taxed above the tax-free allowance (savingsTax), shown as its own line.
+  const optimal = [];
+  if (opp) {
+    const rows = [
+      ...opp.lines.map(l => ({ name: optionName(l.option), amount: l.option.amount, ratePct: l.option.ratePct, taxFree: !!(l.option.isa || l.option.pb) })),
+      ...heldNow.map(h => ({ ...h, taxFree: h.key === "pb", amount: h.amount - moved.filter(f => f.index === h.key).reduce((t, f) => t + f.amount, 0) })).filter(h => h.amount >= 1),
+    ];
+    for (const r of rows) {
+      const same = r.name === "Premium Bonds" && optimal.find(x => x.name === "Premium Bonds");
+      if (!same) { optimal.push({ ...r }); continue; }
+      const interest = same.amount * same.ratePct + r.amount * r.ratePct;
+      same.amount += r.amount;
+      same.ratePct = interest / same.amount;
+    }
+  }
+  const optimalGross = optimal.reduce((t, x) => t + x.amount * x.ratePct / 100, 0);
+  const optimalTaxable = optimal.filter(x => !x.taxFree).reduce((t, x) => t + x.amount * x.ratePct / 100, 0);
+  const optimalTax = optimalTaxable - savingsTax(m).kept(optimalTaxable);
+  const money = v => <span style={{whiteSpace:"nowrap"}}>{v}</span>;
+  const header = (label, figure, color = TEXT) => <RowText label={<span style={{fontWeight:700}}>{label}</span>} figure={money(figure)} figureStyle={{color}} figureOnLabel/>;
+  const subLine = (key, left, value) => (
+    <div key={key} style={{...ROW.note,display:"flex",justifyContent:"space-between",gap:"12px"}}>
+      <span>{left}</span>{value != null && money(value)}
+    </div>
+  );
+  const line = x => `${x.name} · ${fmt(x.amount)} at ${x.ratePct.toFixed(2)}%`;
 
   return (
     <div>
-      {opportunityCols.length > 0 && (
-        <OpportunityTile tour="figure" figures={opportunityCols}
-          action={seeOptions ? { label: "See options", onClick: seeOptions } : null}/>
-      )}
 
       {/* The emergency fund, above the other tiles: £ held of the target,
           and months of spending covered. `data-tour`: lit up by the Cash
@@ -172,7 +257,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         </MobileTile>
       )}
 
-      <MobileTile data-tour="working" title="Savings"
+      <MobileTile data-tour="working" title="Savings this year"
         badge={news ? <NewBadge count={news.count} label={rateUpdatesLabel(news.count)}/> : null}
         menu={[
           // Once set, the row in the tile says so; the menu has nothing more to do.
@@ -182,33 +267,30 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         ]}>
         {totalPot > 0 && opp ? (
           <>
-            {gain <= 50 && <TileRow first align><span style={ROW.label}>Your savings are already on good rates.</span></TileRow>}
-            <TileRow first={gain > 50} align>
-              <RowText label="What your savings earn now, after tax" figure={`${fmt(opp.currentKept + opp.bondsPrize)}/yr`}
-                note={opp.bondsPrize > 0 && `Including about ${fmt(opp.bondsPrize)} in Premium Bond prizes, at the average rate`}/>
-            </TileRow>
-            {opp.lines.map(l => {
-              const o = l.option;
-              const fromBonds = (o.from || []).filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
-              return (
-                <TileRow key={l.section} onClick={rowTarget(l.section)} align>
-                  <RowText label={`${fmt(o.amount)} in ${accountName(o)} at ${o.ratePct.toFixed(2)}%${o.pb ? " (an average)" : ""}`}
-                    figure={`+${fmt(o.gain)}/yr`} figureStyle={{color:SUCCESS}}
-                    note={`${l.section}${fromBonds > 0 ? `, ${fmt(fromBonds)} of it from your Premium Bonds` : ""}`}/>
-                </TileRow>
-              );
-            })}
-            <TileRow align>
-              <RowText label={<span style={{fontWeight:700}}>Together, after tax</span>} figure={`${fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr`} figureStyle={{color:SUCCESS}}/>
+            {gain <= 50 && <TileRow first><span style={ROW.label}>Your savings are already on good rates.</span></TileRow>}
+            <TileRow first={gain > 50}>
+              {header("What you earn now", fmt(opp.currentKept + opp.bondsPrize))}
+              {heldNow.length > 0 && subLine("now", heldNow.map(h => h.name).join(" + "))}
             </TileRow>
             {gain > 50 && (
-              <TileRow align><ReminderPills reminder={reminder}/></TileRow>
+              <>
+                {/* The whole row leads on, as "See options" does: no chevron,
+                    so its figures line up with the rows either side. */}
+                <TileRow onClick={seeOptions || undefined} chevron={false}>
+                  {header("What you're missing", `+${fmt(gain)}`, SUCCESS)}
+                  {opp.lines.map(l => subLine(l.section, line({ name: optionName(l.option), amount: l.option.amount, ratePct: l.option.ratePct }), `+${fmt(l.option.gain)}`))}
+                </TileRow>
+                <TileRow>
+                  {header("Optimal earnings", fmt(optimalGross - optimalTax))}
+                  {optimal.map((x, i) => subLine(i, line(x), fmt(x.amount * x.ratePct / 100)))}
+                  {optimalTax >= 1 && subLine("tax", "Tax", `-${fmt(optimalTax)}`)}
+                </TileRow>
+              </>
             )}
-            {notes.savings && (
-              <TileRow>
-                <p style={ROW.text}>The highest-earning option in each, worked out together so no money is counted twice. The lists below show the other providers in each.</p>
-              </TileRow>
+            {gain > 50 && (
+              <TileRow><ReminderPills reminder={reminder} action={seeOptions && { label: "Show me how", onClick: seeOptions }}/></TileRow>
             )}
+            {howPop("savings", "How this is worked out", "The highest-earning option in each, worked out together so no money is counted twice. The lists below show the other providers in each.")}
           </>
         ) : totalPot > 0 ? (
           <>
@@ -269,16 +351,14 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
       </MobileTile>
 
       {/* The provider lists, one tile each and unnumbered: places to look,
-          not steps. A Savings row leads to its list (rowTarget). */}
+          not steps. The Savings tile's "What you're missing" row leads here. */}
       {[
         hasIsaList && { id: "cash-isas", title: "Cash ISAs", sub: mobileIsaSubheading(m), list: products.products },
         hasSavingsList && { id: "cash-savings", title: "Savings accounts", sub: mobilePsaSubheading(), list: products.nonIsaProducts },
       ].filter(Boolean).map(t => (
-        <MobileTile key={t.id} id={t.id} title={t.title} subtitle={t.sub} menu={[howItem(t.id, "About these rates"), editItem]}>
-          <MobileProductListTile embedded flush products={t.list}/>
-          {notes[t.id] && products.disclaimer && (
-            <TileRow><p style={{...ROW.note,marginTop:0}}>{products.disclaimer}</p></TileRow>
-          )}
+        <MobileTile key={t.id} id={t.id} title={t.title} subtitle={t.sub} menu={[products.disclaimer && howItem(t.id, "About these rates"), editItem]}>
+          <MobileProductListTile embedded flush figureOnName products={t.list}/>
+          {howPop(t.id, "About these rates", products.disclaimer)}
         </MobileTile>
       ))}
     </div>

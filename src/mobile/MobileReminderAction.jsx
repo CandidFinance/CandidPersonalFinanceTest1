@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { reportStorageFailure } from "../lib/storage.js";
 import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS, CTA_BLUE } from "../design-tokens.js";
@@ -68,31 +69,36 @@ export function useReminder({ id, title, description, email, who = "HR" }) {
 // open the drafted email (`email`, optional) and add the calendar reminder
 // (`reminder`, from useReminder). Two buttons, as a page can hand off to the
 // phone only once per tap. Short labels, so the two fit side by side at
-// phone width; the reminder's date in a note under them.
-const pillStyle = done => ({
-  display:"inline-flex", alignItems:"center", gap:"8px", whiteSpace:"nowrap",
-  background: done ? "rgba(196,150,58,0.12)" : "transparent", color: done ? "#8a6a24" : G,
-  border:`1.5px solid ${done ? GOLD : G}`, borderRadius:RADIUS_PILL, padding:"9px 16px",
-  fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor:"pointer",
-});
-export function ReminderPills({ reminder, email, who = "HR" }) {
+// phone width; the reminder's date in a note under them. The kit's 37px
+// secondary button (ui/Button), gold once done. `action` (optional,
+// { label, onClick }): a primary button first (Cash's "Show me how").
+// Once the reminder's set its button goes, leaving a quiet line with the
+// date in its place, so what's done takes no more attention.
+const DONE = { background:"rgba(196,150,58,0.12)", color:"#8a6a24", border:`1.5px solid ${GOLD}`, cursor:"pointer" };
+export function ReminderPills({ reminder, email, who = "HR", action }) {
   const [emailOpened, setEmailOpened] = useState(false);
   return (
     <>
-      <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+      <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"8px 14px"}}>
+        {action && <Button onClick={action.onClick} style={{whiteSpace:"nowrap"}}>{action.label}</Button>}
         {email && (
-          <button type="button" onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }} style={pillStyle(emailOpened)}>
-            {emailOpened ? <Check size={15} aria-hidden="true"/> : <Mail size={15} aria-hidden="true"/>}{emailOpened ? "Email opened" : `Email ${who}`}
-          </button>
+          <Button variant="secondary" icon={emailOpened ? Check : Mail} onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }}
+            style={{whiteSpace:"nowrap",...(emailOpened && DONE)}}>
+            {emailOpened ? "Email opened" : `Email ${who}`}
+          </Button>
         )}
-        <button type="button" onClick={reminder.isSet ? undefined : reminder.setReminder} style={{...pillStyle(reminder.isSet),cursor:reminder.isSet ? "default" : "pointer"}}>
-          {reminder.isSet ? <BellRing size={15} aria-hidden="true"/> : <Bell size={15} aria-hidden="true"/>}
-          {reminder.isSet ? "Reminder set" : "Remind me"}
-        </button>
+        {reminder.isSet ? (
+          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+            style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"12px",color:MUT,lineHeight:1.45,whiteSpace:"nowrap"}}>
+            <BellRing size={14} aria-hidden="true"/>Reminder set for {reminder.dateLabel}
+          </motion.span>
+        ) : (
+          <Button variant="secondary" icon={Bell} onClick={reminder.setReminder} style={{whiteSpace:"nowrap"}}>Remind me</Button>
+        )}
       </div>
-      <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"6px"}}>
-        {reminder.isSet ? `In your calendar for ${reminder.dateLabel}` : `The reminder is for ${reminder.dateLabel}`}
-      </div>
+      {!reminder.isSet && (
+        <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"6px"}}>The reminder is for {reminder.dateLabel}</div>
+      )}
     </>
   );
 }

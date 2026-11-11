@@ -1101,28 +1101,32 @@ export default function AppShell() {
       <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}>
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
-        {/* Cash: the email, until it's given or the tile's closed, once
-            the tour is over. */}
-        {mobileActiveModule === "cash" && d.cashTourDone && !tourShowing && !d.emailTileDismissed && (
-          <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="cash_tile" onEmail={saveEmail("cash_tile")} style={{marginTop:0,marginBottom:"16px"}}
-            onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
-        )}
-        {/* Figures from the quick start's bands, until they're changed;
-            then a line saying the answer is on their own. */}
-        {ownFigures(mobileActiveModule, d) && (
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
-            <Check size={14} strokeWidth={2.5} color={G} aria-hidden="true"/>
-            <span>Worked out on your own figures.</span>
-            <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Edit</button>
-          </p>
-        )}
-        {quickEstimateLine(mobileActiveModule, d) && (
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
-            {quickEstimateLine(mobileActiveModule, d)}{" "}
-            <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
-          </p>
-        )}
+        {/* `lead`: above the page's own content (on Cash, at the top of the
+            sheet, under its band). */}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}
+          lead={<>
+            {/* Cash: the email, until it's given or the tile's closed, once
+                the tour is over. */}
+            {mobileActiveModule === "cash" && d.cashTourDone && !tourShowing && !d.emailTileDismissed && (
+              <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="cash_tile" onEmail={saveEmail("cash_tile")} style={{marginTop:0,marginBottom:"16px"}}
+                onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
+            )}
+            {/* Figures from the quick start's bands, until they're changed;
+                then a line saying the answer is on their own. */}
+            {ownFigures(mobileActiveModule, d) && (
+              <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
+                <Check size={14} strokeWidth={2.5} color={G} aria-hidden="true"/>
+                <span>Worked out on your own figures.</span>
+                <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Edit</button>
+              </p>
+            )}
+            {quickEstimateLine(mobileActiveModule, d) && (
+              <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
+                {quickEstimateLine(mobileActiveModule, d)}{" "}
+                <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
+              </p>
+            )}
+          </>}
           onShowExplainer={MODULE_EXPLAINERS[mobileActiveModule] ? () => { posthog.capture("explainer_chosen", { module: mobileActiveModule, route: "replay" }); setExplainer({ module: mobileActiveModule, stage: "play", replay: true }); } : undefined}
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); setRevealReplay(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
