@@ -88,9 +88,12 @@ export function ReminderPills({ reminder, email, who = "HR", action }) {
           </Button>
         )}
         {reminder.isSet ? (
+          // The bell says "reminder", so the words can be short enough to sit
+          // beside the button on a 375px phone (iPhone 12 mini).
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+            role="img" aria-label={`Reminder set for ${reminder.dateLabel}`}
             style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"12px",color:MUT,lineHeight:1.45,whiteSpace:"nowrap"}}>
-            <BellRing size={14} aria-hidden="true"/>Reminder set for {reminder.dateLabel}
+            <BellRing size={14} aria-hidden="true"/>Set for {reminder.dateLabel}
           </motion.span>
         ) : (
           <Button variant="secondary" icon={Bell} onClick={reminder.setReminder} style={{whiteSpace:"nowrap"}}>Remind me</Button>

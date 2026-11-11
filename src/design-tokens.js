@@ -39,10 +39,13 @@ export const INPUT_BG_DARK = "#0f2018";
 // unintentional one-off rather than a deliberate distinct colour.
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
 export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid green, lighter than G
+export const NEON_GREEN = "#2fe07a"; // the Emergency fund tile's filled months (Cash)
 export const GAIN_ON_DARK = "#4fd18b"; // a gain (saved £) on the dark band: bar fill and "+£x" (Harvey, 8 Nov 2026)
 export const ALERT_ON_DARK = "#ff6b78"; // GAIN_ON_DARK's red: a status needing action on the dark band (Cash's "Action needed")
 // The track still to fill under a saved bar on the dark band: diagonal stripes.
 export const STRIPE_ON_DARK = "repeating-linear-gradient(135deg, rgba(246,234,208,0.28) 0 4px, rgba(246,234,208,0.1) 4px 8px)";
+// The same stripes on a light surface (as the walk-throughs' bars, ModuleExplainer.jsx).
+export const STRIPE_ON_LIGHT = "repeating-linear-gradient(135deg, rgba(22,47,36,0.24) 0 4px, rgba(22,47,36,0.08) 4px 8px)";
 export const ON_TRACK_FILL = "#edf6f1"; // a very pale PROGRESS_GREEN: the fill of an on-track module tile
 export const REVIEWED_FILL = "#f4f2ec"; // muted: a reviewed module tile with something still to act on
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL

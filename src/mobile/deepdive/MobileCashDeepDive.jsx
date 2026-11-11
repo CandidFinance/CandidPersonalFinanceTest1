@@ -6,7 +6,7 @@ import { fmt } from "../../lib/format.js";
 import { premiumOpen } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import MobileTile, { TileRow, RowText, ROW, TilePopover, priorityTag } from "../MobileTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
@@ -14,7 +14,7 @@ import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK } from "../../design-tokens.js";
+import { MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK, NEON_GREEN, STRIPE_ON_LIGHT } from "../../design-tokens.js";
 import { CREAM_SOFT } from "../ScreenBand.jsx";
 import { Button } from "../ui";
 
@@ -144,14 +144,50 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
   const runwayPctRaw = runwayTarget > 0 ? (runwayCurrent / runwayTarget) * 100 : 0;
-  const runwayLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
-  const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
+  // A few words on where the fund stands, after "£x of £y".
+  const runwayNote = runwayTarget <= 0 ? null
+    : runwayPctRaw >= 150 ? "Well past your target"
+    : runwayPctRaw >= 100 ? "Target reached"
+    : runwayPctRaw >= 80 ? "Nearly there"
+    : runwayPctRaw >= 33 ? "Part way there"
+    : "A way to go";
+  // One chunk per month of the target, each filled as far as the savings
+  // reach (0 to 1). None without a target (no spending entered), as empty
+  // chunks would read as no savings.
+  const runwayChunks = Array.from({ length: runwayTarget > 0 ? m.bufferMonths || 0 : 0 }, (_, i) =>
+    Math.max(0, Math.min(1, (runwayPctRaw / 100) * m.bufferMonths - i)));
   // A fund at its target can be hidden; it comes back, and can be hidden
   // again, once savings fall below the target (`emergencyCardDismissed`).
   const funded = runwayTarget > 0 && runwayPctRaw >= 100;
   const fundHidden = funded && !!d.emergencyCardDismissed;
   const belowTarget = runwayTarget > 0 && runwayPctRaw < 100;
   useEffect(() => { if (belowTarget && d.emergencyCardDismissed && set) set("emergencyCardDismissed", false); }, [belowTarget, d.emergencyCardDismissed]);
+  // Minimised to the chunks alone (d.emergencyFundMin), with the timing of
+  // Home's Coming up (ComingUp.jsx).
+  const reduceMotion = useReducedMotion();
+  const canMinimise = !!set && runwayChunks.length > 0;
+  const fundMin = canMinimise && !!d.emergencyFundMin;
+  const fundMove = { duration: reduceMotion ? 0 : 0.38, ease: [0.2, 0, 0, 1] };
+  // The tile's white, title text and rows fade in only when it's opened from
+  // minimised, not each time the page opens.
+  const [fundToggled, setFundToggled] = useState(false);
+  const fundAnimate = fundToggled && !reduceMotion;
+  const fundFade = fundAnimate ? { initial: { opacity: 0 }, animate: { opacity: 1, transition: { ...fundMove, delay: 0.12 } } } : {};
+  const setFundMin = v => { setFundToggled(true); set("emergencyFundMin", v); };
+  // A tap anywhere on the tile but its controls, menu, pop-out and their
+  // backdrops (aria-hidden) minimises it.
+  const onFundTap = e => { if (!e.target.closest("button, a, [role=menu], [role=dialog], [aria-hidden=true]")) setFundMin(true); };
+  const fundBar = runwayChunks.length > 0 && (
+    <div role="img" aria-label={`${m.runwayMonths.toFixed(1)} of ${m.bufferMonths} months of spending covered`}
+      style={{display:"flex",gap:"4px",marginTop:fundMin ? 0 : "2px"}}>
+      {runwayChunks.map((f, i) => (
+        <motion.div key={i} layoutId={`ef-chunk-${i}`} transition={fundMove}
+          style={{flex:1,height:"14px",borderRadius:"4px",overflow:"hidden",background:STRIPE_ON_LIGHT}}>
+          {f > 0 && <div style={{width:`${f * 100}%`,height:"100%",background:NEON_GREEN}}/>}
+        </motion.div>
+      ))}
+    </div>
+  );
 
   const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
   const howItem = (k, label = "How this is worked out") => ({ icon: Info, label: notes[k] ? "Hide the explanation" : label, onClick: () => toggleNote(k) });
@@ -210,51 +246,64 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   return (
     <div>
 
-      {/* The emergency fund, above the other tiles: £ held of the target,
-          and months of spending covered. `data-tour`: lit up by the Cash
-          tour (CashTour.jsx), as are the tiles either side. */}
+      {/* The emergency fund, above the other tiles: one chunk per month of
+          the target, then £ held of the target. A tap on the tile minimises
+          it to the chunks alone on the page (d.emergencyFundMin), as Home's
+          Coming up does: the chunks move into place and the rest fades. A
+          tap on them opens it again. `data-tour`: lit up by the Cash tour
+          (CashTour.jsx), as are the tiles either side. */}
       {!fundHidden && (
-        <MobileTile data-tour="fund" title="Emergency fund"
-          menu={[
-            howItem("fund", "How the target is worked out"),
-            editItem,
-            funded && set && { icon: EyeOff, label: "Hide this tile", onClick: () => set("emergencyCardDismissed", true) },
-          ]}>
-          <TileRow first>
-            <div style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:G}}>{runwayLabel}</div>
-            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",flexWrap:"wrap",margin:"4px 0 10px"}}>
-              <div style={{...TILE_FIGURE,color:TEXT,lineHeight:1.15}}>
-                <span>{fmt(runwayCurrent)}</span>
-                {runwayTarget > 0 && <span style={{color:MUT}}> of {fmt(runwayTarget)}</span>}
-              </div>
-              <span style={{fontSize:TILE_LABEL_SIZE,color:MUT}}>{m.runwayMonths.toFixed(1)} of {m.bufferMonths} months</span>
-            </div>
-            <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,${CRITICAL} 0%,${GOLD} 33%,${SUCCESS} 60%,#1e4d35 100%)`}}>
-              <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
-              <span style={{fontSize:"11px",color:MUT}}>0 mo</span>
-              <span style={{fontSize:"11px",color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
-              <span style={{fontSize:"11px",color:MUT}}>{m.bufferMonths*2}mo+</span>
-            </div>
-          </TileRow>
-          {showEmergencyWin && (
-            <TileRow>
-              <RowText label="Gap to your target" figure={fmt(m.emergencyShortfall)}
-                tool={priorityTag}
-                note={monthsToCloseGap > 0 && `Your spare ${fmt(Math.round(m.monthlySurplus))} a month would close it in about ${monthsToCloseGap} month${monthsToCloseGap===1?"":"s"}`}/>
-            </TileRow>
+        <LayoutGroup>
+          {fundMin && runwayChunks.length > 0 ? (
+            // No data-tour: the Cash tour skips its fund stop (which talks
+            // about the £ figures) while the tile's minimised.
+            <button type="button" onClick={() => setFundMin(false)} aria-expanded="false"
+              aria-label={`Emergency fund: ${fmt(runwayCurrent)}${runwayTarget > 0 ? ` of ${fmt(runwayTarget)}` : ""}${runwayNote ? `, ${runwayNote.toLowerCase()}` : ""}. Open`}
+              style={{display:"block",width:"100%",background:"none",border:"none",padding:"6px 0 18px",cursor:"pointer"}}>
+              {fundBar}
+            </button>
+          ) : (
+            <MobileTile data-tour="fund" title="Emergency fund"
+              onClick={canMinimise ? onFundTap : undefined}
+              // Opened from minimised, the tile's white and edge fade in
+              // (ef-card-in, below) around the chunks as they move into place.
+              style={{cursor:canMinimise ? "pointer" : undefined,animation:fundAnimate ? "ef-card-in 0.38s cubic-bezier(0.2,0,0,1) 0.12s both" : undefined}}
+              menu={[
+                howItem("fund", "How the target is worked out"),
+                editItem,
+                funded && set && { icon: EyeOff, label: "Hide this tile", onClick: () => set("emergencyCardDismissed", true) },
+              ]}>
+              {fundAnimate && <style>{"@keyframes ef-card-in{from{background-color:transparent;border-color:transparent}}"}</style>}
+              <TileRow first>
+                {/* The chunks as a button too, so the tile can be minimised
+                    from the keyboard. */}
+                {canMinimise ? (
+                  <button type="button" onClick={() => setFundMin(true)} aria-expanded="true" aria-label="Minimise Emergency fund"
+                    style={{display:"block",width:"100%",background:"none",border:"none",padding:0,cursor:"pointer"}}>
+                    {fundBar}
+                  </button>
+                ) : fundBar}
+                <motion.div {...fundFade} style={{fontSize:TILE_LABEL_SIZE,color:MUT,lineHeight:1.45,marginTop:runwayChunks.length > 0 ? "8px" : 0}}>
+                  <span style={{color:TEXT,fontWeight:600}}>{fmt(runwayCurrent)}</span>
+                  {runwayTarget > 0 && <> of {fmt(runwayTarget)}</>}
+                  {runwayNote && <> · {runwayNote}</>}
+                </motion.div>
+              </TileRow>
+              {showEmergencyWin && (
+                <TileRow>
+                  <motion.div {...fundFade}>
+                    <RowText label="Gap to your target" figure={fmt(m.emergencyShortfall)}
+                      tool={priorityTag}
+                      note={monthsToCloseGap > 0 && `~${monthsToCloseGap} month${monthsToCloseGap === 1 ? "" : "s"} of spare ${m.monthlySurplus < 1000 ? fmt(Math.round(m.monthlySurplus)) : `£${(m.monthlySurplus / 1000).toFixed(1).replace(/\.0$/, "")}k`}/mo closes it`}/>
+                  </motion.div>
+                </TileRow>
+              )}
+              {howPop("fund", "How the target is worked out", m.bufferMonths > 0
+                ? `The target is ${m.bufferMonths} months of your spending, at ${fmt(Math.round(m.emergencyBuffer / m.bufferMonths))} a month. Your savings cover ${m.runwayMonths.toFixed(1)} months.`
+                : `You hold ${fmt(m.totalLiquid)} against a ${fmt(m.emergencyBuffer)} target.`)}
+            </MobileTile>
           )}
-          {notes.fund && (
-            <TileRow>
-              <p style={ROW.text}>
-                {m.bufferMonths > 0
-                  ? `The target is ${m.bufferMonths} months of your spending, at ${fmt(Math.round(m.emergencyBuffer / m.bufferMonths))} a month.`
-                  : `You hold ${fmt(m.totalLiquid)} against a ${fmt(m.emergencyBuffer)} target.`}
-              </p>
-            </TileRow>
-          )}
-        </MobileTile>
+        </LayoutGroup>
       )}
 
       <MobileTile data-tour="working" title="Savings this year"

@@ -87,7 +87,7 @@ const BLANK_DATA = {
   // fund is at its target (cleared once it falls below).
   // `trapSubscribeClosed`: the £100k tax trap's subscribe tile closed.
   // `comingUpMin`: Home's Coming up tile minimised to its one-line timeline.
-  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emailOfferDismissed:false, inviteDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false, comingUpMin:false,
+  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emailOfferDismissed:false, inviteDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false, comingUpMin:false, emergencyFundMin:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
