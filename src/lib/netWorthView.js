@@ -354,29 +354,40 @@ const ACCESS = [
 export const GROUPINGS = ["type", "account", "access"];
 
 // `ctx`: { rates (the savings rate rows, for Premium Bonds' prize rate and
-// the best easy access rate), now }.
+// the best easy access rate), now, showHidden }.
+// Accounts hidden on Progress (`worthHidden`, worthEdit.js) leave their rows
+// for one Hidden row at the foot of the assets or debts (`hidden: true`),
+// still counted, so the tiles add up as before. `showHidden`: in their rows
+// as usual (an account's own page, opened from the Hidden row).
 // A category's lines an account's own repeat, left out of its page.
 const OWN_LINES = ["Interest/yr", "Unrealised gains", "Taxable if sold today", "CGT allowance used", "Days left to use it", "Gain"];
-export function worthGroups(d, m, worth, by, ctx = {}) {
+export function worthGroups(d, m, worth0, by, ctx = {}) {
   const now = ctx.now || new Date();
+  const hide = new Set(ctx.showHidden || !Array.isArray(d.worthHidden) ? [] : d.worthHidden);
+  const shownCat = c => { const accounts = c.accounts.filter(a => !hide.has(a.id)); return { ...c, accounts, value: sum(accounts) }; };
+  const worth = hide.size ? { ...worth0, assets: worth0.assets.map(shownCat), debts: worth0.debts.map(shownCat) } : worth0;
+  const hiddenRow = (cats, key, debt) => {
+    const accounts = cats.flatMap(c => c.accounts).filter(a => hide.has(a.id));
+    return accounts.length ? [{ key, label: "Hidden", kind: "hidden", module: null, debt, accounts, value: sum(accounts), gain: debt ? undefined : gainFor(accounts), facts: [], hidden: true }] : [];
+  };
   const byDesc = list => [...list].filter(g => g.value !== 0).sort((a, b) => b.value - a.value);
   // A category that's one account: the account's own facts, then the
   // category's overall ones (less any its own repeat). Several: the
   // category's overall ones, each account's on its own page.
   const oneAccount = (c, a) => {
-    const own = accountFacts(a, d, m, worth, ctx.rates, now);
-    return [...own, ...catFacts(c.key, d, m, worth, now).filter(([k]) => !(own.length && OWN_LINES.includes(k.replace(/, \d\d\/\d\d( \(est\.\))?$/, ""))))];
+    const own = accountFacts(a, d, m, worth0, ctx.rates, now);
+    return [...own, ...catFacts(c.key, d, m, worth0, now).filter(([k]) => !(own.length && OWN_LINES.includes(k.replace(/, \d\d\/\d\d( \(est\.\))?$/, ""))))];
   };
   // Each row's `gain` this tax year, for the line under its £ on Progress:
   // { v, base }, null where it can't be known yet, undefined for a debt.
   const gainFor = accounts => (accounts.length ? catGain(accounts, d, m, now) : null);
   const fromCat = c => ({ key: c.key, label: c.label, kind: c.key, module: c.module, debt: c.debt, accounts: c.accounts, value: c.value,
     gain: gainFor(c.accounts),
-    facts: c.accounts.length === 1 ? oneAccount(c, c.accounts[0]) : catFacts(c.key, d, m, worth, now) });
+    facts: c.accounts.length === 1 ? oneAccount(c, c.accounts[0]) : catFacts(c.key, d, m, worth0, now) });
   const perAccount = c => c.accounts.map(a => ({
     key: `acc-${a.id}`, label: a.label, kind: c.key, module: c.module, debt: c.debt, accounts: [a], value: a.value,
     gain: gainFor([a]),
-    facts: c.accounts.length === 1 ? oneAccount(c, a) : accountFacts(a, d, m, worth, ctx.rates, now),
+    facts: c.accounts.length === 1 ? oneAccount(c, a) : accountFacts(a, d, m, worth0, ctx.rates, now),
   }));
   const debts = by === "account" ? byDesc(worth.debts.flatMap(perAccount)) : byDesc(worth.debts.map(fromCat));
   let assets;
@@ -392,10 +403,10 @@ export function worthGroups(d, m, worth, by, ctx = {}) {
     assets = byDesc(ACCESS.map(g => ({
       key: g.key, label: g.label, kind: g.kind, module: g.id === "lisa" ? "investments" : g.id === "pension" ? "pension" : null, debt: false,
       accounts: pick[g.id], value: sum(pick[g.id]), gain: gainFor(pick[g.id]),
-      facts: g.id === "home" ? catFacts("home", d, m, worth, now) : accessFacts(g.id, d, m, worth),
+      facts: g.id === "home" ? catFacts("home", d, m, worth0, now) : accessFacts(g.id, d, m, worth0),
     })));
   } else assets = byDesc(worth.assets.map(fromCat));
-  return { assets, debts };
+  return { assets: [...assets, ...hiddenRow(worth0.assets, "hidden-assets", false)], debts: [...debts, ...hiddenRow(worth0.debts, "hidden-debts", true)] };
 }
 
 // A cash account: its rate, and its interest this tax year so far and for
@@ -484,12 +495,15 @@ function studentLoanFacts(d, m, now = new Date()) {
   return facts;
 }
 
-// Every row's page by its key, across all three groupings.
+// Every row's page by its key, across all three groupings. A hidden
+// account's own page is found among them all, as if it weren't hidden.
 export function worthGroupByKey(d, m, worth, key, ctx = {}) {
-  for (const by of GROUPINGS) {
-    const { assets, debts } = worthGroups(d, m, worth, by, ctx);
-    const g = [...assets, ...debts].find(x => x.key === key);
-    if (g) return g;
+  for (const showHidden of [false, true]) {
+    for (const by of GROUPINGS) {
+      const { assets, debts } = worthGroups(d, m, worth, by, { ...ctx, showHidden });
+      const g = [...assets, ...debts].find(x => x.key === key);
+      if (g) return g;
+    }
   }
   return null;
 }

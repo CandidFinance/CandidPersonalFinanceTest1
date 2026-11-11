@@ -1,5 +1,5 @@
-import { Banknote, GraduationCap, Home, Landmark, Lock, CreditCard, PiggyBank, TrendingUp, Unlock } from "lucide-react";
-import { G, CREAM, WHITE, TEXT, MUT, SANS, SERIF, GAIN_ON_DARK, GOLD_TEXT, ERROR_TEXT, SUCCESS, MODULE_CHART_COLOR as C } from "../../design-tokens.js";
+import { Banknote, EyeOff, GraduationCap, Home, Landmark, Lock, CreditCard, PiggyBank, TrendingUp, Unlock } from "lucide-react";
+import { G, CREAM, WHITE, TEXT, MUT, MUT_ON_CDARK, SANS, SERIF, GAIN_ON_DARK, GOLD_TEXT, ERROR_TEXT, SUCCESS, MODULE_CHART_COLOR as C } from "../../design-tokens.js";
 import { CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
 import { HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "../../lib/moduleStatus.js";
 
@@ -50,6 +50,8 @@ export const KIND = {
   mortgage: { color: C.mortgage, Icon: Landmark },
   studentLoan: { color: MODULE_INK.studentLoan, Icon: GraduationCap },
   personalLoan: { color: C.personalLoan, Icon: CreditCard },
+  // Accounts hidden from the lists, together at the foot of their tile.
+  hidden: { color: MUT_ON_CDARK, Icon: EyeOff },
 };
 export const icon = I => <I size={16} strokeWidth={2} aria-hidden="true"/>;
 
@@ -91,7 +93,12 @@ export const WORTH_LABELS = {
 };
 export const DETAIL_LABELS = WORTH_LABELS;
 export const VIEWS = [{ key: "type", label: "Category" }, { key: "account", label: "Account" }, { key: "access", label: "Access" }];
-export const WINDOWS = [{ key: "1y", label: "1Y", months: 12 }, { key: "5y", label: "5Y", months: 60 }, { key: "all", label: "All time", months: Infinity }];
+// `nowAt`: where Now sits across the chart as it opens. 1M, 6M and LTM look
+// back, Now at the right edge; 1Y and longer show the projection after it.
+export const WINDOWS = [
+  { key: "1m", label: "1M", months: 1, nowAt: 1 }, { key: "6m", label: "6M", months: 6, nowAt: 1 }, { key: "ltm", label: "LTM", months: 12, nowAt: 1 },
+  { key: "1y", label: "1Y", months: 12 }, { key: "5y", label: "5Y", months: 60 }, { key: "all", label: "All time", months: Infinity },
+];
 
 export const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 

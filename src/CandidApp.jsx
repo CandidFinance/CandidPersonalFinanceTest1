@@ -861,7 +861,8 @@ export default function AppShell() {
           onOpen={next => { navigate(`/app/progress/worth/${rowKey}/${next}`); scrollToTop(); }}
           onOpenRow={key => { navigate(`/app/progress/worth/${key}`); scrollToTop(); }}
           onBack={() => { if (window.history.state?.idx > 0) navigate(-1); else navigate(more ? `/app/progress/worth/${rowKey}` : "/app/progress"); }}
-          onOpenModule={key => { posthog.capture("progress_module_opened", { module: key }); navigate(`/app/module/${key}`); }}/>
+          onOpenModule={key => { posthog.capture("progress_module_opened", { module: key }); navigate(`/app/module/${key}`); }}
+          onSave={(patch, what) => { posthog.capture("progress_worth_account_changed", { row: rowKey, change: what }); const capped = Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, typeof v === "string" ? String(capField(k, v)) : v])); setRawD(p => ({ ...p, ...capped })); }}/>
       </MobileLayout>
     );
   }

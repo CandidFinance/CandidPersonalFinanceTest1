@@ -240,24 +240,25 @@ function WorthBand({ worth, change, chart }) {
 // largest first. A count beside a name says the row is several accounts.
 // Grouped by Category, Account or Access (Access applies to the assets;
 // the debts stay by category), switched by a swipe across the lists or the
-// dots centred above them, the lists sliding as the band's views do. Each
-// tile's title says the grouping.
+// dots centred above them, the lists sliding as the band's views do. The
+// grouping is named on the dots' line (ViewDots).
 function WorthLists({ groups, worth, grouping, onOpen }) {
   if (!groups.assets.length && !groups.debts.length) {
     return <p style={{...helpText,padding:"0 2px"}}>Savings, investments, pensions and debts show here once they're entered.</p>;
   }
-  const by = VIEWS[grouping.view];
   const soon = comingSoonRows(worth);
   const list = { theme: WORTH_THEME, format: fmtWorth, onOpen };
-  const assets = [...groups.assets.map(toRow), ...soon.assets];
-  const debts = [...groups.debts.map(toRow), ...soon.debts];
+  // Accounts hidden from the lists (worthEdit.js), in one row at the foot.
+  const foot = (list, soonRows) => [...list.filter(g => !g.hidden).map(toRow), ...soonRows, ...list.filter(g => g.hidden).map(toRow)];
+  const assets = foot(groups.assets, soon.assets);
+  const debts = foot(groups.debts, soon.debts);
   return (
     <div {...grouping.bandProps}>
       <ViewDots theme={WORTH_THEME} views={VIEWS} view={grouping.view} moved={grouping.moved} onPick={grouping.showView} label={WORTH_LABELS.viewAria}/>
       <BandReel reel={grouping.reel}>
-        <GroupedList {...list} first title={`${WORTH_LABELS.assetsTitle} by ${by.label.toLowerCase()}`} total={worth.assetsTotal} items={assets} barAria={WORTH_LABELS.assetsBarAria}/>
+        <GroupedList {...list} first title={WORTH_LABELS.assetsTitle} total={worth.assetsTotal} items={assets} barAria={WORTH_LABELS.assetsBarAria}/>
         {debts.length > 0 && (
-          <GroupedList {...list} title={`${WORTH_LABELS.debtsTitle} by ${by.key === "account" ? "account" : "category"}`} total={worth.debtsTotal || null} totalNegative items={debts} barAria={WORTH_LABELS.debtsBarAria}/>
+          <GroupedList {...list} title={WORTH_LABELS.debtsTitle} total={worth.debtsTotal || null} totalNegative items={debts} barAria={WORTH_LABELS.debtsBarAria}/>
         )}
       </BandReel>
     </div>

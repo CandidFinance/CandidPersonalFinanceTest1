@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, ChevronLeft, Crown, Plus } from "lucide-react";
 
 // Net worth's presentational parts: Progress's net worth view
@@ -40,20 +41,35 @@ export function Segmented({ options, value, onChange, theme, onBand, ariaLabel }
 }
 
 // A small button showing the current choice, opening a short list. The button
-// is 44px tall to tap, with a 28px pill drawn inside it.
+// is 44px tall to tap, with a 28px pill drawn inside it. The list is drawn
+// over the whole page, below the button, so the sheet rising over the band
+// can't cover its foot; a scroll closes it.
 export function Dropdown({ options, value, onChange, theme, onBand, ariaLabel, alignRight = onBand }) {
   const [open, setOpen] = useState(false);
+  const [at, setAt] = useState(null);
   const root = useRef(null), list = useRef(null), trigger = useRef(null);
   const current = options.find(o => o.key === value);
 
+  useLayoutEffect(() => {
+    if (!open || !trigger.current) return;
+    const r = trigger.current.getBoundingClientRect();
+    setAt({ top: r.bottom - 4, left: r.left, right: window.innerWidth - r.right });
+  }, [open]);
+
+  // Focus moves into the list once it's drawn (`at`, a render after opening).
+  useEffect(() => {
+    if (open && at) list.current?.querySelector('[aria-selected="true"]')?.focus();
+  }, [open, at]);
+
   useEffect(() => {
     if (!open) return undefined;
-    list.current?.querySelector('[aria-selected="true"]')?.focus();
-    const away = e => { if (!root.current?.contains(e.target)) setOpen(false); };
+    const away = e => { if (!root.current?.contains(e.target) && !list.current?.contains(e.target)) setOpen(false); };
     const esc = e => { if (e.key === "Escape") { setOpen(false); trigger.current?.focus(); } };
+    const scrolled = e => { if (!list.current?.contains(e.target)) setOpen(false); };
     document.addEventListener("pointerdown", away);
     document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
+    window.addEventListener("scroll", scrolled, true);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); window.removeEventListener("scroll", scrolled, true); };
   }, [open]);
 
   const onListKey = e => {
@@ -74,9 +90,9 @@ export function Dropdown({ options, value, onChange, theme, onBand, ariaLabel, a
           <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 160ms ease" }}/>
         </span>
       </button>
-      {open && (
+      {open && at && createPortal(
         <div ref={list} role="listbox" aria-label={ariaLabel} onKeyDown={onListKey}
-          style={{ position: "absolute", top: "calc(100% - 4px)", right: alignRight ? 0 : "auto", left: alignRight ? "auto" : 0, zIndex: 20, minWidth: 136, padding: 4, background: theme.surface, borderRadius: 12, boxShadow: "0 8px 22px rgba(0,0,0,0.24)" }}>
+          style={{ position: "fixed", top: at.top, right: alignRight ? at.right : "auto", left: alignRight ? "auto" : at.left, zIndex: 4700, minWidth: 136, padding: 4, background: theme.surface, borderRadius: 12, boxShadow: "0 8px 22px rgba(0,0,0,0.24)", fontFamily: theme.fontBody }}>
           {options.map(o => {
             const on = o.key === value;
             return (
@@ -87,7 +103,8 @@ export function Dropdown({ options, value, onChange, theme, onBand, ariaLabel, a
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -170,20 +187,23 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
 
   const n = points.length;
   const plotW = Math.max(20, width - GUTTER - PL);
-  const months = windows.find(w => w.key === range)?.months ?? Infinity;
+  const win = windows.find(w => w.key === range);
+  const months = win?.months ?? Infinity;
+  const nowAt = win?.nowAt ?? 0.75;
   const span = Math.max(1, Math.min(months, n - 1));
   const perMonth = plotW / span;
   const maxScroll = Math.max(0, (n - 1) * perMonth - plotW);
 
   // Opens with Now three-quarters across: the past to its left and the start
-  // of the projection to its right, so there's visibly more either way.
+  // of the projection to its right, so there's visibly more either way. A
+  // window that looks back (`nowAt` 1) opens with Now at the right edge.
   useLayoutEffect(() => {
-    const target = clamp(nowIndex * perMonth - 0.75 * plotW, 0, maxScroll);
+    const target = clamp(nowIndex * perMonth - nowAt * plotW, 0, maxScroll);
     if (scroller.current) scroller.current.scrollLeft = target;
     slRef.current = target;
     setSl(target);
     setReading(null);
-  }, [nowIndex, perMonth, plotW, maxScroll]);
+  }, [nowIndex, perMonth, plotW, maxScroll, nowAt]);
 
   useEffect(() => {
     if (reduceMotion) { setRevealed(true); return undefined; }
@@ -235,13 +255,14 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
   const xNow = xAt(nowIndex);
   const futureInView = last > nowIndex;
 
-  const step = span <= 18 ? 3 : span <= 72 ? 12 : 60;
+  const step = span <= 6 ? 1 : span <= 18 ? 3 : span <= 72 ? 12 : 60;
   const ticks = [];
   for (let i = a; i <= b; i++) {
     if (i === nowIndex || points[i].t % step) continue;
     const x = xAt(i);
-    if (x < 16 || x > plotW - 16 || Math.abs(x - xNow) < 36) continue;
-    ticks.push({ i, x, text: step < 12 ? points[i].label : String(Math.floor(points[i].t / 12)) });
+    // One at the left edge reads from there (1M's start month).
+    if (x < -1 || (x > PL + 1 && x < 16) || x > plotW - 16 || Math.abs(x - xNow) < 36) continue;
+    ticks.push({ i, x: Math.max(0, x), anchor: x < 16 ? "start" : "middle", text: step < 12 ? points[i].label : String(Math.floor(points[i].t / 12)) });
   }
 
   const readAt = e => {
@@ -320,7 +341,7 @@ export function TrendChart({ theme, format, formatAxis, labels, windows, range, 
                   <circle cx={xAt(reading)} cy={yAt(readout.value)} r={5} fill={line}/>
                 </g>
               )}
-              {ticks.map(t => <text key={t.i} x={t.x} y={H - 6} textAnchor="middle" {...small}>{t.text}</text>)}
+              {ticks.map(t => <text key={t.i} x={t.x} y={H - 6} textAnchor={t.anchor} {...small}>{t.text}</text>)}
               {xNow >= 0 && xNow <= plotW + PL && (
                 <text x={xNow} y={H - 6} textAnchor={xNow < 18 ? "start" : xNow > plotW - 18 ? "end" : "middle"} {...small} style={{ ...small.style, fontWeight: 700 }} fill={theme.bandText}>{labels.now}</text>
               )}
@@ -350,9 +371,12 @@ export function CompositionBar({ theme, parts, ariaLabel }) {
 // the one showing in ink, each a 44px-tall button (overlapping what's
 // around it, so the row takes little room), and a line for screen readers
 // as each switch happens. Swiping the lists switches too (useBandViews).
+// The grouping showing is named on the left of the same line, in a tile's
+// title type (Harvey, 11 Nov 2026).
 export function ViewDots({ theme, views, view, moved, onPick, label }) {
   return (
-    <div role="group" aria-label={label} style={{ display: "flex", justifyContent: "center", margin: "-16px 0 -8px" }}>
+    <div role="group" aria-label={label} style={{ position: "relative", display: "flex", justifyContent: "center", margin: "-16px 0 -8px" }}>
+      <span style={{ ...kicker(theme), position: "absolute", left: 2, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>{views[view].label}</span>
       {views.map((v, i) => (
         <button key={v.key} type="button" onClick={() => onPick(i)} aria-label={`Group by ${v.label.toLowerCase()}`} aria-pressed={i === view}
           style={{ width: 24, height: 44, background: "none", border: 0, padding: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
