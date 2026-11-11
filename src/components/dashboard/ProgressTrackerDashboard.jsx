@@ -149,7 +149,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
         </section>
       </ScreenBand>
 
-      <ScreenSheet>
+      <ScreenSheet slick>
         <SheetGlass view={view}>{shown => (<>
           {shown === WORTH && (
             <div data-tour="progress-worth">

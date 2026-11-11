@@ -8,12 +8,12 @@ import { useCashNews } from "./visitNews.js";
 // tabs' order (MobileLayout); the phone's bar puts Chat in the middle.
 export const MOBILE_NAV_ITEMS = [
   { key:"home", label:"Home", path:"/app/home", icon:Home },
-  { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
   { key:"progress", label:"Progress", path:"/app/progress", icon:Target },
+  { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
   { key:"forecast", label:"Forecasts", path:"/app/forecast", icon:LineChart },
   { key:"chat", label:"Chat", path:"/app/chat", icon:Sparkles },
 ];
-export const BAR_ORDER = ["home", "modules", "chat", "progress", "forecast"];
+export const BAR_ORDER = ["home", "progress", "chat", "modules", "forecast"];
 const SPRING = { type:"spring", stiffness:420, damping:34, mass:0.8 };
 // The gap under the bar. On an iPhone it takes most of the home indicator's
 // inset (34px), which on its own floated the bar well clear of the bottom in

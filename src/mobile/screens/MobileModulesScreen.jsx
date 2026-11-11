@@ -2,8 +2,9 @@ import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronRight, Lock, Star } from "lucide-react";
 import { TilePopover } from "../MobileTile.jsx";
-import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, TILE_KICKER } from "../../design-tokens.js";
-import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
+import { G, GOLD, MUT, TEXT, SERIF, SANS, SR_ONLY, SUCCESS, CRITICAL, WARNING_TEXT, MODULE_SOON_TILE, MODULE_QUIET_TILE, TILE_KICKER, GAIN_ON_DARK, STRIPE_ON_DARK, CREAM } from "../../design-tokens.js";
+import { ScreenBand, ScreenSheet, CREAM_SOFT, CREAM_FAINT } from "../ScreenBand.jsx";
+import { DARK } from "../CardStack.jsx";
 import { getModuleBreakdown, reviewedDone } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, ELSEWHERE } from "../statusLabel.js";
@@ -15,7 +16,7 @@ import { useCashNews } from "../visitNews.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
-// Mobile Modules screen. A pale band at the top with, printed on it, what's
+// Mobile Modules screen. A dark band (the slick) at the top with, printed on it, what's
 // left on the table a year across the live modules, and what's been saved
 // with a bar splitting the two, as on Home. Below, on the page's
 // cream, how many are live, not started and need action in a small line,
@@ -96,10 +97,10 @@ const TILE_LOOK = {
   quiet: { bg:MODULE_QUIET_TILE.bg, shadow:"0 0 0 1px rgba(22,47,36,0.08), 0 2px 10px rgba(22,47,36,0.06)", title:MUT, art:"-not-live", panel:MODULE_QUIET_TILE.panel },
 };
 const SOON_BY_KEY = Object.fromEntries(COMING_SOON.map(s => [s.key, s]));
-// The hero's ink on the pale band: the brand green figure, its small text a
-// step darker than MUT to hold 4.5:1 on the band's deepest corner (as
-// Progress's BAND_T.light), a firmer track and a dark stripe.
-const ON_BAND = { figure:G, label:"#585858", track:"rgba(22,47,36,0.12)", stripe:"repeating-linear-gradient(135deg, rgba(22,47,36,0.24) 0 4px, rgba(22,47,36,0.08) 4px 8px)" };
+// The hero's ink on the dark band (the slick, as Home's): the cream figure
+// of Home and Forecasts (not the card stack's warmer beige), softer cream
+// small text, and Home's bar colours (HomeHero.jsx).
+const ON_BAND = { figure:CREAM, label:CREAM_SOFT, faint:CREAM_FAINT, track:DARK.track, stripe:STRIPE_ON_DARK, gain:GAIN_ON_DARK };
 // Its pop-open card, centred on the screen rather than hung off a half-width
 // tile.
 const POP = { position:"fixed", inset:0, margin:"auto", height:"fit-content", width:"min(340px, calc(100vw - 40px))", transformOrigin:"center", padding:"18px 20px 20px" };
@@ -184,18 +185,18 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {live > 0
         ? <Figure t={ON_BAND} value={fmt(totalOpp)} unit="a year"/>
         // Before any module's answered: the figure blank.
-        : <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>}
+        : <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:ON_BAND.faint,lineHeight:1,marginTop:"8px"}}>£–</div>}
       {live > 0 && totalBanked > 0 && (
-        // As Home's bar (HomeHero.jsx), in the light band's colours: saved
-        // fills in green, the rest striped, "Saved +£x" at its end.
+        // As Home's bar (HomeHero.jsx): saved fills in the gain green, the
+        // rest striped, "Saved +£x" at its end.
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"18px"}}>
           <div aria-hidden="true" style={{flex:1,minWidth:0,height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:ON_BAND.track}}>
-            <div style={{width:`${totalBanked / found * 100}%`,background:SUCCESS}}/>
+            <div style={{width:`${totalBanked / found * 100}%`,background:ON_BAND.gain}}/>
             <div style={{flex:1,background:ON_BAND.stripe}}/>
           </div>
           <span style={{display:"inline-flex",alignItems:"baseline",gap:"6px",whiteSpace:"nowrap",flexShrink:0}}>
             <span style={{fontSize:"12px",fontWeight:600,color:ON_BAND.label}}>Saved</span>
-            <span style={{fontSize:"12px",fontWeight:800,color:SUCCESS}}>+{fmt(totalBanked)}</span>
+            <span style={{fontSize:"12px",fontWeight:800,color:ON_BAND.gain}}>+{fmt(totalBanked)}</span>
           </span>
         </div>
       )}
@@ -206,12 +207,12 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   return (
     <div>
       <style>{CSS}</style>
-      <ScreenBand>
+      <ScreenBand tone="dark">
         <h1 style={SR_ONLY}>Modules</h1>
         <section aria-label="Left on the table" data-tour="modules-cards">{hero}</section>
       </ScreenBand>
 
-      <ScreenSheet>
+      <ScreenSheet slick>
         {/* "Did you make the change?" prompts. */}
         {set && moduleList.map(mm => <BankConfirm key={mm.key} d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>)}
         {/* The counts in a line, kept small so the figures lead. None before

@@ -65,7 +65,7 @@ export default function MobileStartHome({ d, m, onStartModule, onEditInputs }) {
         </section>
       </ScreenBand>
 
-      <ScreenSheet>
+      <ScreenSheet slick>
         <div data-tour="home-modules" style={ROW_TILE}>
           <h2 style={SECTION_TITLE}>Your modules</h2>
           <div style={{display:"flex",flexDirection:"column",marginTop:"8px"}}>

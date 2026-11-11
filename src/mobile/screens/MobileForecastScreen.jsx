@@ -134,7 +134,7 @@ export default function MobileForecastScreen({ d, m }) {
       </ScreenBand>
       <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_lump_sum" onClose={() => setPremiumOpen(false)}/>
 
-      <ScreenSheet>
+      <ScreenSheet slick>
         <SheetGlass view={view}>{shown => (
           <section aria-label={`${VIEWS[shown]} details`}>
             {shown === 0

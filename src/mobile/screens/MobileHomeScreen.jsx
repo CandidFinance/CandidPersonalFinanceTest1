@@ -101,7 +101,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <HomeHero totalOpp={totalOpp} saved={gainedSoFar(d).perYear} score={score} scoreColor={scoreColor} unchecked={unchecked}/>
       </ScreenBand>
 
-      <ScreenSheet>
+      <ScreenSheet slick>
         <div className="home-sheet">
           {/* The next dates that touch their money (src/lib/comingUp.js). */}
           <ComingUp items={comingUp(d)} min={!!d.comingUpMin} onMinimise={v => set("comingUpMin", v)}/>

@@ -59,9 +59,12 @@ const CSS = `
 .band-reel > div { display: grid; }
 .band-reel > div > * { grid-area: 1 / 1; min-width: 0; }
 .screen-sheet { position: relative; margin: -28px -20px 0; padding: 20px 20px 0; background: ${CREAM}; border-radius: 28px 28px 0 0; box-sizing: border-box; min-height: ${28 + BLEED}px; }
+.screen-sheet.slick { background: linear-gradient(160deg, ${BAND_STOPS.light[0]} 0%, ${BAND_STOPS.light[1]} 50%, ${BAND_STOPS.light[2]} 100%); }
+@media (max-width: 580px) { .screen-sheet.slick { margin-bottom: -120px; padding-bottom: 120px; } }
 @media (min-width: 581px) {
   .screen-band { --bleed: 0px; margin: 0; padding: 22px 20px; border-radius: 28px; }
   .screen-sheet { margin: 0; padding: 20px 0 0; border-radius: 0; min-height: 0; }
+  .screen-sheet.slick { margin-top: 12px; padding: 20px 20px 4px; border-radius: 28px; }
 }
 .screen-band { --cover-tint: rgba(22,47,36,0.10); --top-solid: var(--band-a); }
 .screen-band.dark, .screen-band.green { --cover-tint: rgba(4,12,8,0.5); }
@@ -93,11 +96,13 @@ export function ScreenBand({ tone = "light", children, ...rest }) {
   );
 }
 
-export function ScreenSheet({ children }) {
+// `slick`: the sheet in the light band's pale slick, not cream (each tab's
+// landing page; the 120px past its foot runs on under the tab bar).
+export function ScreenSheet({ slick = false, children }) {
   const ref = useRef(null);
   useSheetPull(ref);
   useBandCover(ref);
-  return <div ref={ref} className="screen-sheet">{children}</div>;
+  return <div ref={ref} className={slick ? "screen-sheet slick" : "screen-sheet"}>{children}</div>;
 }
 
 // On a phone, scrolling down, the band stays put (sticky) and the sheet
