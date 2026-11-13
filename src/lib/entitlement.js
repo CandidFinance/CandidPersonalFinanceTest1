@@ -67,7 +67,7 @@ export async function startCheckout(plan, module, email) {
 // On opening the app: back from checkout (?checkout=success&session_id=)
 // or from a sign-in link (?restore=), then a check of what's held. Returns
 // "paid", "restored" (signed in, subscribed or not), "check-email" (paid
-// with the email of an account already there, which is sent a sign-in link
+// without being signed in to the account, which is sent a sign-in link
 // rather than opened here), "cancelled" or null, and tidies the address bar.
 export async function checkAccessOnLoad() {
   const url = new URL(window.location.href);
@@ -78,7 +78,7 @@ export async function checkAccessOnLoad() {
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }
   try {
-    if (sessionId) { const r = await call("confirm", { sessionId }); if (r.token) save(r); outcome = r.linkSent ? "check-email" : r.active && r.token ? "paid" : null; }
+    if (sessionId) { const r = await call("confirm", { sessionId, token: read()?.token }); if (r.token) save(r); outcome = r.linkSent ? "check-email" : r.active && r.token ? "paid" : null; }
     else if (restoreToken) { const r = await call("status", { token: restoreToken }); save(r); outcome = r.token ? "restored" : null; }
     else {
       if (back === "cancelled") outcome = "cancelled";

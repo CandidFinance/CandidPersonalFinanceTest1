@@ -14,7 +14,10 @@ import { googleIdentity, markConfirmed } from "../server/google.js";
 // ?action=, to stay inside Vercel's function limit:
 //   checkout  POST {plan, module, email?, token?} -> { url } of Stripe's hosted
 //                                             checkout, for the signed-in account
-//   confirm   POST {sessionId}             -> { active, email, token } after checkout
+//   confirm   POST {sessionId, token?}     -> after checkout: { active, email,
+//                                             token } for the signed-in account
+//                                             that started it, else a sign-in
+//                                             link is emailed ({ linkSent })
 //   status    POST {token}                 -> { active, email, plan, periodEnd, token };
 //                                             a sign-in link's token opens an
 //                                             account for a new email
@@ -186,6 +189,23 @@ async function welcome(sub, email, name) {
   }
 }
 
+// A checkout that no signed-in account started names its email only by what
+// was typed at Stripe, which nobody has proved. It never replaces another
+// customer's live subscription on that email's row, or free access given by
+// hand (comp): paying with a subscriber's address would otherwise put the
+// payer's subscription on their account, and cancelling it would end theirs
+// while their own kept billing. A referral month does give way, so someone
+// on one can subscribe without signing in first. True when the row must be
+// left alone (and looked at: someone has paid for a subscription that isn't
+// recorded).
+async function anothersLiveSubscription(email, sub) {
+  const row = email && await rowFor(email);
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+  const taken = !!row && accessFor(row).active && row.plan !== "referral" && row.stripe_customer_id !== customerId;
+  if (taken) console.error(`[api/billing] checkout not recorded: ${email} already has ${row.plan} access (${row.stripe_customer_id || "no Stripe customer"}); new subscription ${sub.id}, customer ${customerId}. Refund or cancel it in Stripe.`);
+  return taken;
+}
+
 // ── The raw body: Vercel's parser is off (config below) so the webhook can
 // check Stripe's signature against the exact bytes; the other actions parse it.
 export const config = { api: { bodyParser: false } };
@@ -208,7 +228,10 @@ async function webhook(req, res, raw) {
   const obj = event.data?.object;
   if (event.type === "checkout.session.completed" && obj?.mode === "subscription" && obj.subscription) {
     const sub = await stripe("GET", `/subscriptions/${obj.subscription}`);
-    const email = await saveSubscription(sub, cleanEmail(obj.metadata?.account) || cleanEmail(obj.customer_details?.email || obj.customer_email));
+    const account = cleanEmail(obj.metadata?.account);
+    const typed = cleanEmail(obj.customer_details?.email || obj.customer_email);
+    if (!account && await anothersLiveSubscription(typed, sub)) return res.status(200).json({ received: true });
+    const email = await saveSubscription(sub, account || typed);
     await welcome(sub, email, obj.customer_details?.name);
   } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
     // Only for an account already recorded (checkout records a new one, by
@@ -255,19 +278,21 @@ async function confirm(body, res, origin) {
   const sub = await stripe("GET", `/subscriptions/${session.subscription}`);
   const account = cleanEmail(session.metadata?.account);
   const typed = cleanEmail(session.customer_details?.email || session.customer_email);
-  // Stripe doesn't check the email typed at checkout, so it signs in only
-  // the account that started it, or an email new to Candid. An account
-  // already there is sent a sign-in link instead, so paying with someone
-  // else's address never opens their account.
-  const existed = !account && typed ? !!await rowFor(typed) : false;
-  const email = await saveSubscription(sub, account || typed);
-  await welcome(sub, email, session.customer_details?.name);
-  const access = accessFor(await rowFor(email));
-  if (existed) {
-    await sendSignInLink(email, origin, true);
-    return res.status(200).json({ ...access, token: null, linkSent: true });
-  }
-  return res.status(200).json({ ...access, token: makeToken(email, "access", ACCESS_TTL_MS) });
+  // Only the signed-in account that started the checkout is signed in here,
+  // and only to whoever still holds that account's token: a session id alone
+  // (it's in the return address, so in history and logs) opens nothing.
+  // Anyone else is emailed a sign-in link. Stripe doesn't check the email
+  // typed at checkout, so paying with an address never opens its account,
+  // whether it's new to Candid or not: the link proves it's theirs.
+  const proven = !!account && readToken(body.token, "access") === account;
+  const taken = !account && await anothersLiveSubscription(typed, sub);
+  const email = taken ? typed : await saveSubscription(sub, account || typed);
+  if (!taken) await welcome(sub, email, session.customer_details?.name);
+  if (proven) return res.status(200).json({ ...accessFor(await rowFor(email)), token: makeToken(email, "access", ACCESS_TTL_MS) });
+  // One link per checkout, however often its return address is opened.
+  const first = !redis || (await redis.set(`confirm-link:${sessionId}`, 1, { nx: true, ex: 30 * 24 * 3600 })) === "OK";
+  if (first) await sendSignInLink(email, origin, true);
+  return res.status(200).json({ active: false, token: null, linkSent: true });
 }
 async function status(body, res) {
   const { token } = body;
