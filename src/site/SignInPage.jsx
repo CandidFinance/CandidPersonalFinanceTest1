@@ -40,7 +40,7 @@ export default function SignInPage({ app = false }) {
   // Back from paying with the email of an account already there (CandidApp,
   // checkAccessOnLoad "check-email"): its sign-in link is on its way.
   const paidSent = params.get("sent") === "1";
-  const [stage, setStage] = useState(restore ? "checking" : paidSent ? "sent" : "form"); // form | link | sent | checking | invalid | setup
+  const [stage, setStage] = useState(restore ? "confirm" : paidSent ? "sent" : "form"); // form | link | sent | confirm | checking | invalid | setup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(null); // which button is working: "passkey" | "password" | "link"
@@ -71,12 +71,18 @@ export default function SignInPage({ app = false }) {
     window.location.replace(hasAnswers ? "/app/home" : "/app/start");
   };
 
-  useEffect(() => {
-    if (!restore || ran.current) return;
+  // A link signs in when its button is tapped, not when the page opens: a
+  // link works once, and a mailbox's link scanner that opens the page would
+  // otherwise use it up before the person does.
+  const withLink = () => {
+    if (ran.current) return;
     ran.current = true;
-    window.history.replaceState(null, "", app ? "/app/signin" : "/signin");
+    setStage("checking");
     signInWithLink(takeSignInToken()).then(outcome => finish(outcome, "link")).catch(() => setStage("invalid"));
-  }, [restore]);
+  };
+  useEffect(() => {
+    if (restore) window.history.replaceState(null, "", app ? "/app/signin" : "/signin");
+  }, []);
 
   // The keyboard's passkey suggestion on the email field, waiting until
   // it's picked; asked for again after a passkey button is used and closed.
@@ -145,6 +151,13 @@ export default function SignInPage({ app = false }) {
           <>
             <div className="st-label">Your account</div>
             <h1 className="st-h2">Sign in or create an account</h1>
+          </>
+        )}
+
+        {stage === "confirm" && (
+          <>
+            <p style={p}>Your sign-in link is ready. It signs you in on this device.</p>
+            <button type="button" onClick={withLink} style={{...button(true),marginTop:"24px"}}>Sign in</button>
           </>
         )}
 
