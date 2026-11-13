@@ -109,7 +109,7 @@ export function referralRewardEmail({ kind, until = null, url = null, cap, credi
     subject: "A friend joined Candid: you've got a free month", preheader: "Candid Premium, free for a month.",
     blocks: [
       { p: `A friend you invited has joined Candid, so you've got a free month of Candid Premium: Candid Assist, what-ifs and your own goals${date ? `, until ${date}` : ""}.` },
-      { p: "Open this link on the phone or computer you use Candid on, and it's on. The link works for 7 days." },
+      { p: "Open this link on the phone or computer you use Candid on, and it's on. The link works once, for 24 hours. After that, sign in to Candid as usual and your free month is there." },
       { button: { label: "Turn on my free month", href: url } },
       { small: `The month ends by itself, and nothing is charged. ${where}` },
     ],

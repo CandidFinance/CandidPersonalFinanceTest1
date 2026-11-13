@@ -41,9 +41,9 @@ export const monthCreditPence = row => {
   const pence = Number(row?.amount_pence) || 0;
   return row?.plan === "yearly" ? Math.round(pence / 12) : pence;
 };
-// The emailed link that starts a free month signs them in: good for a week,
-// since it may not be opened the day it's sent.
-const SIGN_IN_LINK_MS = 7 * 24 * 3600 * 1000;
+// The emailed link with a free month signs them in, once, for a day. The
+// month is already theirs when it's sent; the link only saves signing in.
+const SIGN_IN_LINK_MS = 24 * 3600 * 1000;
 
 // Codes: 8 characters, no 0/o/1/l/i, so one read aloud or retyped survives.
 const CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
