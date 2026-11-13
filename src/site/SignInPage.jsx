@@ -5,6 +5,7 @@ import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE, G, MUT, 
 import { NavBar } from "../NavBar.jsx";
 import { accessInfo, accountSignIns, requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
+import { signInToken, takeSignInToken } from "../lib/signInLink.js";
 import { validEmail } from "../lib/unlock.js";
 import SiteLayout from "./SiteLayout.jsx";
 import { CTA_RADIUS } from "./StartCheckButton.jsx";
@@ -34,7 +35,8 @@ import { CreateSignIn } from "../mobile/SignInSetup.jsx";
 // belongs to the surface it starts on, ahead of the app going native).
 export default function SignInPage({ app = false }) {
   const params = new URLSearchParams(window.location.search);
-  const restore = params.get("restore");
+  // A sign-in link's token, already out of the address (signInLink.js).
+  const restore = signInToken();
   // Back from paying with the email of an account already there (CandidApp,
   // checkAccessOnLoad "check-email"): its sign-in link is on its way.
   const paidSent = params.get("sent") === "1";
@@ -73,7 +75,7 @@ export default function SignInPage({ app = false }) {
     if (!restore || ran.current) return;
     ran.current = true;
     window.history.replaceState(null, "", app ? "/app/signin" : "/signin");
-    signInWithLink(restore).then(outcome => finish(outcome, "link")).catch(() => setStage("invalid"));
+    signInWithLink(takeSignInToken()).then(outcome => finish(outcome, "link")).catch(() => setStage("invalid"));
   }, [restore]);
 
   // The keyboard's passkey suggestion on the email field, waiting until

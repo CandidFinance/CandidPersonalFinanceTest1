@@ -3,6 +3,7 @@ import { mergeAnswers, mergeCompleted } from "./mergeAnswers.js";
 import { startAuthentication, startRegistration, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, WebAuthnAbortService } from "@simplewebauthn/browser";
 import { reportStorageFailure } from "./storage.js";
 import { getConsent } from "./consent.js";
+import { takeSignInToken } from "./signInLink.js";
 
 // Whether this browser is signed in to a Candid account, and whether that
 // account has a subscription (api/billing.js). Accounts are for anyone,
@@ -71,15 +72,17 @@ export async function startCheckout(plan, module, email) {
 // rather than opened here), "cancelled" or null, and tidies the address bar.
 export async function checkAccessOnLoad() {
   const url = new URL(window.location.href);
-  const sessionId = url.searchParams.get("session_id"), restoreToken = url.searchParams.get("restore"), back = url.searchParams.get("checkout");
+  // The sign-in token left the address as the page loaded (signInLink.js).
+  const sessionId = url.searchParams.get("session_id"), restoreToken = takeSignInToken(), back = url.searchParams.get("checkout");
   let outcome = null;
-  if (sessionId || restoreToken || back) {
-    ["session_id", "restore", "checkout"].forEach(p => url.searchParams.delete(p));
+  if (sessionId || back) {
+    ["session_id", "checkout"].forEach(p => url.searchParams.delete(p));
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }
   try {
     if (sessionId) { const r = await call("confirm", { sessionId, token: read()?.token }); if (r.token) save(r); outcome = r.linkSent ? "check-email" : r.active && r.token ? "paid" : null; }
-    else if (restoreToken) { const r = await call("status", { token: restoreToken }); save(r); outcome = r.token ? "restored" : null; }
+    // A link that's expired or been used leaves whoever is signed in here signed in.
+    else if (restoreToken) { const r = await call("status", { token: restoreToken }); if (r.token) save(r); outcome = r.token ? "restored" : null; }
     else {
       if (back === "cancelled") outcome = "cancelled";
       const held = read();

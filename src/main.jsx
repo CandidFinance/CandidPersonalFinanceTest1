@@ -12,6 +12,7 @@ import { getConsent, analyticsPersistence } from "./lib/consent.js"
 import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
 import { setStorageFailureReporter, reportStorageFailure } from "./lib/storage.js"
 import { captureReferral } from "./lib/referral.js"
+import { holdSignInToken } from "./lib/signInLink.js"
 import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
@@ -57,6 +58,9 @@ function getAcquisition() {
   return { ...record, fresh: true }
 }
 const acquisition = getAcquisition()
+
+// A sign-in link's token leaves the address before analytics can record it.
+holdSignInToken()
 
 // ── Analytics — runs once at module load, production only ─────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {

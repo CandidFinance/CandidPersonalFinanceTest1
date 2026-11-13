@@ -17,6 +17,18 @@ export function makeToken(email, kind, ttl) {
   const body = b64(JSON.stringify({ e: email, k: kind, x: Date.now() + ttl }));
   return `${body}.${sign(body)}`;
 }
+// For a token readToken has accepted: a Redis key naming it, and the seconds
+// until it expires, to mark it used for the rest of its life. From the
+// signed part alone: readToken ignores anything after the signature, so the
+// whole string could be varied to look like a new token.
+export function tokenUse(token) {
+  const body = token.split(".")[0];
+  const { x } = JSON.parse(Buffer.from(body, "base64url").toString());
+  return {
+    key: crypto.createHash("sha256").update(body).digest("base64url"),
+    seconds: Math.max(60, Math.ceil((x - Date.now()) / 1000) + 60),
+  };
+}
 export function readToken(token, kind) {
   if (!SECRET || typeof token !== "string" || !token.includes(".")) return null;
   const [body, mac] = token.split(".");

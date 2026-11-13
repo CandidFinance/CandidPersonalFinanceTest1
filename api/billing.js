@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
-import { cleanEmail, makeToken, readToken } from "../server/tokens.js";
+import { cleanEmail, makeToken, readToken, tokenUse } from "../server/tokens.js";
 import { accessFor, accountState, reportIds } from "../server/access.js";
 import { referralLink, codeIsValid, inboxOf, CODE_RE } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
@@ -299,13 +299,22 @@ async function status(body, res) {
   // A sign-in link's token (restore) is swapped for an access token here,
   // and brings their saved answers with it, for a new device. The link
   // proves the email, so a new one gets an account, and counts as confirmed.
-  const signIn = readToken(token, "restore");
+  // A link signs in once: opened again (from history, a log, a forwarded
+  // email), it answers as an expired one does.
+  const linked = readToken(token, "restore");
+  const signIn = linked && await firstSignIn(token) ? linked : null;
   const email = readToken(token, "access") || signIn;
   if (!email) return res.status(200).json({ active: false, email: null, token: null });
-  let row = await rowFor(email);
-  if (signIn) {
-    if (!row) row = await openAccount(email);
-    await markConfirmed(email);
+  let row;
+  try {
+    row = await rowFor(email);
+    if (signIn) {
+      if (!row) row = await openAccount(email);
+      await markConfirmed(email);
+    }
+  } catch (e) {
+    if (signIn) await unuseSignIn(token);
+    throw e;
   }
   // No row: the account was deleted, so the token held is dropped.
   if (!row) return res.status(200).json({ active: false, email: null, token: null });
@@ -313,6 +322,17 @@ async function status(body, res) {
     ...accessFor(row), token: makeToken(email, "access", ACCESS_TTL_MS),
     ...(signIn ? { state: row.saved_state || null } : {}),
   });
+}
+// True the first time a sign-in link's token is used, false after, for as
+// long as the token lasts. unuseSignIn gives the use back when the sign-in
+// then fails, so the link still works on a retry.
+const signInKey = token => `sign-in-link:${tokenUse(token).key}`;
+async function firstSignIn(token) {
+  if (!redis) return true;
+  return (await redis.set(signInKey(token), 1, { nx: true, ex: tokenUse(token).seconds })) === "OK";
+}
+async function unuseSignIn(token) {
+  if (redis) await redis.del(signInKey(token)).catch(() => {});
 }
 // An account's answers, saved as they change, so a sign-in elsewhere
 // brings them back.
