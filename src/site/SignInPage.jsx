@@ -153,7 +153,7 @@ export default function SignInPage({ app = false }) {
         )}
 
         {stage === "sent" && (
-          <p style={p}>{paidSent && !email ? "Thanks for subscribing. That email already has a Candid account, so a sign-in link is on its way to it." : `A sign-in link is on its way to ${email.trim()}.`} Open it on this device; it works for 20 minutes.</p>
+          <p style={p}>{paidSent && !email ? "Thanks for subscribing. A sign-in link is on its way to the email you paid with." : `A sign-in link is on its way to ${email.trim()}.`} Open it on this device; it works for 20 minutes.</p>
         )}
 
         {(stage === "form" || stage === "invalid") && (
