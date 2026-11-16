@@ -12,6 +12,8 @@ const config = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8"));
 export const rewrites = config.rewrites;
 // Retired addresses that point somewhere else, e.g. /about.html to /about.
 export const redirects = config.redirects ?? [];
+// The security headers sent with every response (one rule, for every path).
+export const headers = config.headers?.[0]?.headers ?? [];
 
 // Vercel's sources here are plain paths with ":name" segments, each
 // matching one segment of the request path.

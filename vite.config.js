@@ -7,7 +7,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fillFigures } from './src/lib/pageFigures.js'
 import { applySitePartials } from './src/lib/sitePartials.js'
-import { redirectFor, rewriteFor } from './scripts/vercel-routes.js'
+import { headers, redirectFor, rewriteFor } from './scripts/vercel-routes.js'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 
@@ -38,13 +38,15 @@ const assistAgent = {
 // first, then real files as they are, the app's routes from their rewrite
 // (app-shell.html, or a prerendered page), and anything else
 // 404.html with a 404 status. Vite's own preview would answer every unknown
-// path with the homepage.
+// path with the homepage. Every response carries vercel.json's security
+// headers, so a page the policy would break breaks here first.
 const vercelRouting = {
   name: 'candid-vercel-routing',
   configurePreviewServer(server) {
     const outDir = join(root, 'dist')
     server.middlewares.use((req, res, next) => {
       const url = new URL(req.url, 'http://localhost')
+      for (const h of headers) res.setHeader(h.key, h.value)
       const redirect = redirectFor(url.pathname)
       if (redirect) {
         res.writeHead(redirect.permanent ? 308 : 307, { Location: redirect.destination + url.search })
