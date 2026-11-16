@@ -2,6 +2,9 @@
 // STRIPE_BILLING_TOKEN_SECRET. `kind` says what one is for ("access", held
 // by the browser; "restore", a sign-in link), and each expires. Made and
 // read by api/billing.js; server/referrals.js makes sign-in links with them.
+// An access token also carries `v`, the account's token_version when it was
+// made (api/billing.js refuses one the account has moved on from), and `s`,
+// when its holder last signed in, which renewing a token never changes.
 // Kept outside api/ so it's bundled into each function, not deployed alone.
 import crypto from "crypto";
 import { safeEqual } from "./http.js";
@@ -13,8 +16,11 @@ export const cleanEmail = e => typeof e === "string" && EMAIL_RE.test(e.trim()) 
 const b64 = s => Buffer.from(s).toString("base64url");
 const sign = body => crypto.createHmac("sha256", SECRET).update(body).digest("base64url");
 
-export function makeToken(email, kind, ttl) {
-  const body = b64(JSON.stringify({ e: email, k: kind, x: Date.now() + ttl }));
+// However often it's renewed, a sign-in lasts this long at most.
+export const SESSION_MAX_MS = 180 * 24 * 3600 * 1000;
+
+export function makeToken(email, kind, ttl, extra = {}) {
+  const body = b64(JSON.stringify({ e: email, k: kind, x: Date.now() + ttl, ...extra }));
   return `${body}.${sign(body)}`;
 }
 // For a token readToken has accepted: a Redis key naming it, and the seconds
@@ -29,12 +35,24 @@ export function tokenUse(token) {
     seconds: Math.max(60, Math.ceil((x - Date.now()) / 1000) + 60),
   };
 }
-export function readToken(token, kind) {
+// The signed contents of a token of this kind that hasn't expired, or null.
+function open(token, kind) {
   if (!SECRET || typeof token !== "string" || !token.includes(".")) return null;
   const [body, mac] = token.split(".");
   if (!safeEqual(mac, sign(body))) return null;
   try {
     const t = JSON.parse(Buffer.from(body, "base64url").toString());
-    return t.k === kind && t.x > Date.now() ? cleanEmail(t.e) : null;
+    return t && t.k === kind && t.x > Date.now() && cleanEmail(t.e) ? t : null;
   } catch { return null; }
+}
+export const readToken = (token, kind) => cleanEmail(open(token, kind)?.e);
+// An access token's { email, version, since } (`since`: the sign-in, in ms),
+// or null, also once the sign-in is older than SESSION_MAX_MS. A token from
+// before these were kept reads as version 0 with no sign-in time.
+export function readSession(token) {
+  const t = open(token, "access");
+  if (!t) return null;
+  const since = Number.isFinite(t.s) ? t.s : null;
+  if (since !== null && Date.now() - since > SESSION_MAX_MS) return null;
+  return { email: cleanEmail(t.e), version: Number.isInteger(t.v) ? t.v : 0, since };
 }

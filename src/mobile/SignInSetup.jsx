@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, CREAM, FIELD_BORDER, SANS } from "../design-tokens.js";
-import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, signedIn, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, signedIn, passkeyName, passkeyNotSavedHelp, signOut, endSignInsEverywhere } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
 import useDialogFocus from "./useDialogFocus.js";
@@ -202,8 +202,11 @@ export function CreateSignIn({ email, onDone }) {
 
 // Signs out and goes to the app's sign-in, reloading so nothing of the last
 // account stays in memory to be saved again.
-export async function switchAccount(from) {
-  posthog.capture("signed_out", { from });
+// `everywhere`: every other device is signed out too. That comes first and
+// throws when it can't be done, leaving this device signed in.
+export async function switchAccount(from, { everywhere = false } = {}) {
+  if (everywhere) await endSignInsEverywhere();
+  posthog.capture("signed_out", { from, everywhere });
   // The next account on this device starts as a new person in PostHog.
   posthog.reset();
   await signOut();

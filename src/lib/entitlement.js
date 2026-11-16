@@ -136,9 +136,20 @@ export async function identifySubscriber() {
 // cookie choice, where they came from, whether a passkey is here.
 const KEEP_ON_SIGN_OUT = ["candid_cookie_choice", "candid_acquisition", "candid_passkey_here", "candid_dev_custom_presets"];
 export async function signOut() {
+  await savePending();
+  forgetThisDevice("sign_out");
+}
+// Answers still waiting to be saved to the account, saved now.
+async function savePending() {
   clearTimeout(saveTimer);
   if (pendingSave) { const p = pendingSave; pendingSave = null; await call("save", p).catch(() => {}); }
-  forgetThisDevice("sign_out");
+}
+// Ends every sign-in to the account, on this device and every other
+// (api/billing.js sign-out-everywhere). This device still holds its copy:
+// signOut clears that. Throws the server's message when it can't.
+export async function endSignInsEverywhere() {
+  await savePending();
+  await call("sign-out-everywhere", { token: read()?.token });
 }
 function forgetThisDevice(why) {
   try {
@@ -252,7 +263,13 @@ export async function addPasskey() {
   markPasskeyHere();
 }
 export async function linkGoogle(credential) { await call("google-link", { token: read()?.token, credential }); }
-export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
+// A new password ends every other sign-in to the account; this device
+// carries on with the token sent back.
+export async function setPassword(password) {
+  const r = await call("password-set", { token: read()?.token, password });
+  const held = read();
+  if (r.token && held) write({ ...held, token: r.token });
+}
 // Candid's emails on or off (the Account sheet's Notifications); returns
 // whether they're on now.
 export async function setEmailAlerts(on) { return (await call("alerts-set", { token: read()?.token, on })).alerts; }

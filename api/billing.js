@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
-import { cleanEmail, makeToken, readToken, tokenUse } from "../server/tokens.js";
+import { cleanEmail, makeToken, readToken, readSession, tokenUse } from "../server/tokens.js";
 import { accessFor, accountState, reportIds } from "../server/access.js";
 import { referralLink, codeIsValid, inboxOf, CODE_RE } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
@@ -74,6 +74,8 @@ const BILLING_HOSTNAMES = [...ALLOWED_HOSTNAMES,
   ...(process.env.BILLING_EXTRA_HOSTS || "").split(",").map(h => h.trim()).filter(Boolean)];
 const ACCESS_TTL_MS = 30 * 24 * 3600 * 1000;
 const RESTORE_TTL_MS = 20 * 60 * 1000;
+// How long after signing in the sign-in still counts as recent (`recent`).
+const RECENT_SIGN_IN_MS = 30 * 60 * 1000;
 // The app's inputs are a few kB; this is a ceiling, not a target.
 const MAX_STATE_CHARS = 200000;
 
@@ -284,11 +286,12 @@ async function confirm(body, res, origin) {
   // Anyone else is emailed a sign-in link. Stripe doesn't check the email
   // typed at checkout, so paying with an address never opens its account,
   // whether it's new to Candid or not: the link proves it's theirs.
-  const proven = !!account && readToken(body.token, "access") === account;
+  const held = account ? await sessionFrom(body.token) : null;
+  const proven = !!held && held.email === account;
   const taken = !account && await anothersLiveSubscription(typed, sub);
   const email = taken ? typed : await saveSubscription(sub, account || typed);
   if (!taken) await welcome(sub, email, session.customer_details?.name);
-  if (proven) return res.status(200).json({ ...accessFor(await rowFor(email)), token: makeToken(email, "access", ACCESS_TTL_MS) });
+  if (proven) { const row = await rowFor(email); return res.status(200).json({ ...accessFor(row), token: accessToken(row, held.since) }); }
   // One link per checkout, however often its return address is opened.
   const first = !redis || (await redis.set(`confirm-link:${sessionId}`, 1, { nx: true, ex: 30 * 24 * 3600 })) === "OK";
   if (first) await sendSignInLink(email, origin, true);
@@ -303,7 +306,8 @@ async function status(body, res) {
   // email), it answers as an expired one does.
   const linked = readToken(token, "restore");
   const signIn = linked && await firstSignIn(token) ? linked : null;
-  const email = readToken(token, "access") || signIn;
+  const held = signIn ? null : readSession(token);
+  const email = signIn || held?.email;
   if (!email) return res.status(200).json({ active: false, email: null, token: null });
   let row;
   try {
@@ -316,10 +320,14 @@ async function status(body, res) {
     if (signIn) await unuseSignIn(token);
     throw e;
   }
-  // No row: the account was deleted, so the token held is dropped.
-  if (!row) return res.status(200).json({ active: false, email: null, token: null });
+  // No row: the account was deleted, so the token held is dropped. So is one
+  // the account has moved on from (a password change, signing out everywhere).
+  if (!row || (held && !current(row, held))) return res.status(200).json({ active: false, email: null, token: null });
+  // Renewing keeps when they signed in. A token from before that was kept
+  // starts its clock now, as a sign-in that isn't recent.
+  const since = signIn ? Date.now() : held.since ?? Date.now() - RECENT_SIGN_IN_MS;
   return res.status(200).json({
-    ...accessFor(row), token: makeToken(email, "access", ACCESS_TTL_MS),
+    ...accessFor(row), token: accessToken(row, since),
     ...(signIn ? { state: row.saved_state || null } : {}),
   });
 }
@@ -444,22 +452,60 @@ const DUMMY_HASH = "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAA
 // Signed in: the same answer as a sign-in link (status with a restore
 // token), whether subscribed or not.
 function signedInAnswer(row) {
-  return { ...accessFor(row), token: makeToken(row.email, "access", ACCESS_TTL_MS), state: row.saved_state || null };
+  return { ...accessFor(row), token: accessToken(row), state: row.saved_state || null };
 }
 async function signedIn(email, res) {
   const row = await rowFor(email);
   if (!row) return res.status(401).json({ error: "That account has been deleted." });
   return res.status(200).json(signedInAnswer(row));
 }
+// An access token for the account as it stands: it stops working when the
+// account's token_version moves on (`current`). `since`: when its holder
+// signed in, which is now unless a token is being renewed.
+const versionOf = row => row.token_version || 0;
+const accessToken = (row, since = Date.now()) => makeToken(row.email, "access", ACCESS_TTL_MS, { v: versionOf(row), s: since });
+const current = (row, session) => versionOf(row) === session.version;
+// Who an access token signs in: { email, row, since }, or null when it's
+// expired, its account is gone, or the account has moved on from it.
+async function sessionFrom(token) {
+  const session = readSession(token);
+  const row = session && await rowFor(session.email);
+  return row && current(row, session) ? { email: session.email, row, since: session.since } : null;
+}
 // The signed-in account's email, or null.
-async function accountFrom(token) {
-  const email = readToken(token, "access");
-  return email && await rowFor(email) ? email : null;
+const accountFrom = async token => (await sessionFrom(token))?.email || null;
+// Ends every sign-in to the account, on every device: the tokens they hold
+// are for the version before. Returns the row as it now stands.
+async function endSessions(row, changes = {}) {
+  const token_version = versionOf(row) + 1;
+  await supa("PATCH", `?email=eq.${enc(row.email)}`, { ...changes, token_version });
+  return { ...row, ...changes, token_version };
+}
+// Changing how the account is signed in to, or deleting it, takes a recent
+// sign-in once the account has a way to sign in: a token alone (a borrowed
+// or stolen browser) can't add its own way in or lock the owner out. An
+// account with none yet (SignInGate, straight after a link) sets its first
+// with whatever sign-in it has.
+const SIGN_IN_AGAIN = "For your security, sign out and sign in again to do this.";
+const recent = session => session.since !== null && Date.now() - session.since < RECENT_SIGN_IN_MS;
+async function mustSignInAgain(session) {
+  if (recent(session)) return false;
+  if (session.row.password_hash || session.row.google_sub) return true;
+  return (await passkeys("GET", `?email=eq.${enc(session.email)}&select=id&limit=1`)).length > 0;
+}
+const signInAgain = res => res.status(403).json({ error: SIGN_IN_AGAIN, reauth: true });
+
+// "Sign out everywhere" (the Account sheet): this device and every other.
+async function signOutEverywhere(body, res) {
+  const session = await sessionFrom(body.token);
+  if (!session) return res.status(401).json({ error: "Not signed in" });
+  await endSessions(session.row);
+  return res.status(200).json({ ok: true });
 }
 
 // The account, and what's set up for signing in (the Account sheet).
 async function account(body, res) {
-  const email = readToken(body.token, "access");
+  const email = await accountFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   // Whether emails are on is a side detail: if it can't be read, the
   // account still loads (alerts null), so Delete and the sign-ins work.
@@ -493,10 +539,9 @@ async function emailsOn(email) {
 // optIn): every row with their address asks for emails (none yet is fine),
 // and the unsubscribe is lifted.
 async function alertsSet(body, res) {
-  const email = readToken(body.token, "access");
-  if (!email || typeof body.on !== "boolean") return res.status(400).json({ error: "Bad request" });
-  const row = await rowFor(email);
-  if (!row) return res.status(401).json({ error: "Not signed in" });
+  if (typeof body.on !== "boolean") return res.status(400).json({ error: "Bad request" });
+  const email = await accountFrom(body.token);
+  if (!email) return res.status(401).json({ error: "Not signed in" });
   if (!body.on) {
     await table("alert_optouts")("POST", "?on_conflict=email", { email }, "resolution=ignore-duplicates,return=minimal");
   } else {
@@ -513,10 +558,14 @@ async function alertsSet(body, res) {
 // records; an unsubscribe (alert_optouts) is kept, so they're never emailed
 // again. Passkeys go with the account row (ON DELETE CASCADE).
 async function deleteAccount(body, res) {
-  const email = readToken(body.token, "access");
-  if (!email || body.confirm !== "DELETE") return res.status(400).json({ error: "Bad request" });
-  const row = await rowFor(email);
-  if (!row) return res.status(200).json({ ok: true });
+  const asked = readSession(body.token);
+  if (!asked || body.confirm !== "DELETE") return res.status(400).json({ error: "Bad request" });
+  // Already deleted (asked twice): done.
+  if (!await rowFor(asked.email)) return res.status(200).json({ ok: true });
+  const session = await sessionFrom(body.token);
+  if (!session) return res.status(401).json({ error: "Not signed in" });
+  if (await mustSignInAgain(session)) return signInAgain(res);
+  const { email, row } = session;
   if (accountState(row).paidLive) return res.status(409).json({ error: "Cancel your subscription first, in Manage subscription." });
   // Only `col=eq.value` filters with the email: the whole value is taken as
   // it is there, so nothing in an address (a comma, a bracket, a *) is read
@@ -537,8 +586,10 @@ async function deleteAccount(body, res) {
 }
 
 async function passkeyEnrolOptions(body, res, origin) {
-  const email = await accountFrom(body.token);
-  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const session = await sessionFrom(body.token);
+  if (!session) return res.status(401).json({ error: "Not signed in" });
+  if (await mustSignInAgain(session)) return signInAgain(res);
+  const { email } = session;
   const existing = await passkeys("GET", `?email=eq.${enc(email)}&select=id,transports`);
   const options = await generateRegistrationOptions({
     rpName: "Candid", rpID: rpIdFor(origin), userName: email, userDisplayName: email,
@@ -554,9 +605,11 @@ async function passkeyEnrolOptions(body, res, origin) {
   return res.status(200).json({ options, challengeToken: sealChallenge("enrol", options.challenge, email) });
 }
 async function passkeyEnrol(body, res, origin) {
-  const email = await accountFrom(body.token);
+  const session = await sessionFrom(body.token);
+  const email = session?.email;
   const ch = openChallenge(body.challengeToken, "enrol");
   if (!email || !ch || ch.e !== email) return res.status(400).json({ error: "That took too long. Please try again." });
+  if (await mustSignInAgain(session)) return signInAgain(res);
   if (!await firstUse(ch.c)) return res.status(400).json({ error: "That took too long. Please try again." });
   const result = await verifyRegistrationResponse({
     response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: true,
@@ -593,14 +646,17 @@ async function passkeyLogin(body, res, origin) {
   return signedIn(cred.email, res);
 }
 
+// A new password ends every other sign-in to the account; this one carries
+// on with the token in the answer.
 async function passwordSet(body, res) {
-  const email = await accountFrom(body.token);
-  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const session = await sessionFrom(body.token);
+  if (!session) return res.status(401).json({ error: "Not signed in" });
+  if (await mustSignInAgain(session)) return signInAgain(res);
   const { password } = body;
   if (typeof password !== "string" || password.length < PASSWORD_MIN) return res.status(400).json({ error: `Use at least ${PASSWORD_MIN} characters.` });
   if (password.length > PASSWORD_MAX) return res.status(400).json({ error: `Use at most ${PASSWORD_MAX} characters.` });
-  await supa("PATCH", `?email=eq.${enc(email)}`, { password_hash: await hashPassword(password), password_set_at: new Date().toISOString() });
-  return res.status(200).json({ ok: true });
+  const row = await endSessions(session.row, { password_hash: await hashPassword(password), password_set_at: new Date().toISOString() });
+  return res.status(200).json({ ok: true, token: accessToken(row, session.since) });
 }
 async function passwordLogin(req, body, res) {
   const email = cleanEmail(body.email);
@@ -651,8 +707,7 @@ async function googleLink(body, res) {
 }
 
 async function portal(body, res, origin) {
-  const email = readToken(body.token, "access");
-  const row = email && await rowFor(email);
+  const row = (await sessionFrom(body.token))?.row;
   if (!row) return res.status(401).json({ error: "Not signed in" });
   if (!row.stripe_customer_id) return res.status(400).json({ error: "There's no subscription to manage." });
   const session = await stripe("POST", "/billing_portal/sessions", { customer: row.stripe_customer_id, return_url: `${origin}/app/inputs` });
@@ -690,6 +745,7 @@ export default async function handler(req, res) {
     if (action === "save") return await saveState(body, res);
     if (action === "account") return await account(body, res);
     if (action === "delete-account") return await deleteAccount(body, res);
+    if (action === "sign-out-everywhere") return await signOutEverywhere(body, res);
     if (action === "alerts-set") return await alertsSet(body, res);
     if (action === "passkey-enrol-options") return await passkeyEnrolOptions(body, res, returnTo);
     if (action === "passkey-enrol") return await passkeyEnrol(body, res, returnTo);

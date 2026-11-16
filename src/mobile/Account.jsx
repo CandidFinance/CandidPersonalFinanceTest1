@@ -186,6 +186,7 @@ function AccountSheet({ page, setPage, onClose, panel }) {
 // Stripe), and the ways to sign in on another device.
 function AccountSettings({ held, account, reload, loadError }) {
   const [error, setError] = useState(null);
+  const [everywhereError, setEverywhereError] = useState(null);
   const line = (label, value) => (
     <div style={{padding:"12px 16px"}}>
       <div style={{fontSize:"12px",color:MUT}}>{label}</div>
@@ -206,6 +207,10 @@ function AccountSettings({ held, account, reload, loadError }) {
           <div style={{...group,padding:"4px 16px 12px"}}>
             <SignInMethods signIns={account} reload={reload}/>
           </div>
+          <Group>
+            <Row label="Sign out everywhere" sub="This device and every other one signed in to your account." onClick={() => switchAccount("account", { everywhere: true }).catch(e => setEverywhereError(e.message))}/>
+          </Group>
+          {everywhereError && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT,marginTop:"6px"}}>{everywhereError}</div>}
         </>
       )}
       {loadError}
