@@ -2,11 +2,12 @@
 // TrueLayer data back to the app via an authenticated same-origin fetch —
 // never via a URL param, so it can't leak through browser history, server
 // access logs, or Referer headers.
-import { parseCookies, isAllowedOrigin, COOKIE_DOMAIN } from "../../server/http.js";
+import { parseCookies, isAllowedOrigin, COOKIE_DOMAIN, TRUELAYER_ENABLED } from "../../server/http.js";
 
 const DATA_COOKIE = "tl_data";
 
 export default function handler(req, res) {
+  if (!TRUELAYER_ENABLED) return res.status(404).end();
   if (req.method !== "GET") return res.status(405).end();
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
 

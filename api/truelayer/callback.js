@@ -3,7 +3,7 @@
 // onboarding fields. No request signing here: TrueLayer's ES512/kid signing is
 // a Payments API concept and doesn't apply to Data API calls, which just use a
 // Bearer access token from a standard OAuth code exchange.
-import { parseCookies, COOKIE_DOMAIN } from "../../server/http.js";
+import { parseCookies, COOKIE_DOMAIN, TRUELAYER_ENABLED } from "../../server/http.js";
 
 const AUTH_BASE = "https://auth.truelayer-sandbox.com";
 const DATA_BASE = "https://api.truelayer-sandbox.com";
@@ -82,6 +82,7 @@ async function persistRefreshToken(email, refreshToken) {
 }
 
 export default async function handler(req, res) {
+  if (!TRUELAYER_ENABLED) return res.status(404).end();
   if (req.method !== "GET") return res.status(405).end();
 
   const { code, state, error } = req.query;

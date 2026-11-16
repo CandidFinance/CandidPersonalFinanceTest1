@@ -13,6 +13,11 @@ export const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co
 // same Domain and Path it was set with, so every cookie uses this one.
 export const COOKIE_DOMAIN = ".candid-finance.co.uk";
 
+// The bank-connect routes in api/truelayer answer only when this is set to "1".
+// They are a sandbox trial, not built for real accounts, so they are off
+// everywhere by default, production included.
+export const TRUELAYER_ENABLED = process.env.TRUELAYER_ENABLED === "1";
+
 // The request's own site (Origin, or Referer when there's no Origin), if it
 // is one of `hostnames`, else null.
 export function allowedOrigin(req, hostnames = ALLOWED_HOSTNAMES) {

@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { COOKIE_DOMAIN } from "../../server/http.js";
+import { COOKIE_DOMAIN, TRUELAYER_ENABLED } from "../../server/http.js";
 
 // Sandbox only — see truelayer/callback.js for the corresponding exchange.
 const AUTH_BASE = "https://auth.truelayer-sandbox.com";
@@ -9,6 +9,7 @@ const STATE_TTL_SECONDS = 600;
 const MAX_EMAIL_LEN = 254;
 
 export default function handler(req, res) {
+  if (!TRUELAYER_ENABLED) return res.status(404).end();
   if (req.method !== "GET") return res.status(405).end();
 
   const clientId = process.env.TRUELAYER_SANDBOX_CLIENT_ID;

@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import * as tlSigning from "truelayer-signing";
-import { isAllowedOrigin, clientIp, redis, rateLimiter } from "../../server/http.js";
+import { isAllowedOrigin, clientIp, redis, rateLimiter, TRUELAYER_ENABLED } from "../../server/http.js";
 
 // Sandbox only — stages a mock bank-transfer pay-in via TrueLayer's Payments
 // API v3 and hands back a hosted payment page URL for the human to complete
@@ -75,6 +75,7 @@ function buildHostedPaymentUrl(paymentId, resourceToken, returnUri) {
 }
 
 export default async function handler(req, res) {
+  if (!TRUELAYER_ENABLED) return res.status(404).end();
   if (req.method !== "POST") return res.status(405).end();
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
 
