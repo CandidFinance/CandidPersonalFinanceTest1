@@ -6,6 +6,7 @@ import { G, WHITE, MUT, TEXT, FIELD_BORDER, SERIF, CARD, NOTICE_LABEL, SECTION_T
 import { fmt } from "../lib/format.js";
 import { yearProjection, salaryDrift, driftDismissal, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
+import { Select } from "./ui";
 
 // The £100k trap through the year, for subscribers: their taxable pay to
 // date from each payslip (d.payToDate, as of d.payToDateOn) turns their
@@ -32,22 +33,35 @@ export function addPaydayReminder(d) {
   posthog.capture("payday_reminder_added");
 }
 
+const ordinal = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
+const PAYDAYS = Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: ordinal(i + 1) }));
+
 function PayToDateForm({ d, set, onSaved, submitLabel = "Save" }) {
   const [pay, setPay] = useState("");
+  // Pay to date is read against their payday (taxTrap.js yearProjection), so
+  // it's asked with the pay until they've said.
+  const askPayday = !d.payday;
+  const [payday, setPayday] = useState("");
   const save = e => {
     e.preventDefault();
     const value = String(pay).replace(/[^\d.]/g, "");
     if (!(+value > 0)) return;
+    if (askPayday && payday) set("payday", payday);
     set("payToDate", value);
     set("payToDateOn", today());
     posthog.capture("pay_to_date_entered");
     onSaved?.();
   };
   return (
-    <form onSubmit={save} style={{display:"flex",gap:"8px"}}>
+    <form onSubmit={save} style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+      {askPayday && (
+        <Select size="compact" value={payday} onChange={setPayday} options={PAYDAYS} placeholder="Which day of the month are you paid?" ariaLabel="Which day of the month are you paid?"/>
+      )}
+      <div style={{display:"flex",gap:"8px"}}>
       <input inputMode="numeric" value={pay} onChange={e => setPay(e.target.value)} placeholder={d.payToDate ? `Last time ${fmt(+d.payToDate)}` : "£0"} aria-label="Taxable pay to date"
         style={{flex:1,minWidth:0,boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <button type="submit" style={{...pill(true),flex:"0 0 auto"}}>{submitLabel}</button>
+      </div>
     </form>
   );
 }

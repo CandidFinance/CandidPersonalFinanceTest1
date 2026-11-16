@@ -394,6 +394,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
         <span style={{fontSize:"12px",color:MUT}}>Adjusted net income this tax year</span>
         <span style={{fontSize:"12px",color:MUT,whiteSpace:"nowrap"}}>{fmt(t.ani)} to <b style={{fontFamily:SANS,fontSize:"13px",color:p.ani <= TRAP_START ? G : CRITICAL}}>{fmt(p.ani)}</b></span>
       </div>
+      {m.savingsInterest > 0 && <p style={note}>Includes {fmt(Math.round(m.savingsInterest))} a year of interest on savings outside an ISA.</p>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}}>
         <Cell label="Into your pension" text={signed(p.pension)} tone={p.pension > 0 ? "gain" : "plain"}/>
         {kids && <Cell label="Childcare back" text={p.childcare > 0 ? signed(p.childcare) : fmt(0)} tone={p.childcare > 0 ? "gain" : "plain"}/>}
