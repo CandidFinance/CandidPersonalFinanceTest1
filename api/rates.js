@@ -26,7 +26,7 @@ const RUN_BUDGET_MS = 45000;
 const FETCH_TIMEOUT_MS = 15000;
 const USER_AGENT = "Mozilla/5.0 (compatible; CandidRateCheck/1.0; +https://candid-finance.co.uk)";
 
-const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:rates-admin");
+const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:rates-admin", { strict: true });
 
 // ── Supabase (service role) ──────────────────────────────────────────────────
 async function db(path, { method = "GET", body, prefer } = {}) {
@@ -238,6 +238,7 @@ export default async function handler(req, res) {
   if (!ADMIN_PASSWORD) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
   const auth = await checkAdminPassword(req, ADMIN_PASSWORD, attemptLimiter, "api/rates");
+  if (auth === 503) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (auth === 429) return res.status(429).json({ error: "Too many attempts, try again shortly" });
   if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
 

@@ -52,7 +52,7 @@ const LIST_BACK_DAYS = 30;
 const LIST_AHEAD_DAYS = 60;
 const COLUMNS = "event_id,outcome,subject,intro,items,note,drafted_by,drafted_at,approved_at,updated_at";
 
-const adminLimiter = rateLimiter(20, "10 m", "ratelimit:events-admin");
+const adminLimiter = rateLimiter(20, "10 m", "ratelimit:events-admin", { strict: true });
 
 async function db(path, { method = "GET", body, prefer } = {}) {
   const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
@@ -225,6 +225,7 @@ export default async function handler(req, res) {
   if (!ADMIN_PASSWORD) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
   const auth = await checkAdminPassword(req, ADMIN_PASSWORD, adminLimiter, "api/events");
+  if (auth === 503) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (auth === 429) return res.status(429).json({ error: "Too many attempts, try again shortly" });
   if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
   if (req.method !== "POST") return res.status(405).end();

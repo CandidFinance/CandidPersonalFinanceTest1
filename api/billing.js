@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
-import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
+import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis, limitsReady } from "../server/http.js";
 import { cleanEmail, makeToken, readToken, readSession, tokenUse } from "../server/tokens.js";
 import { accessFor, accountState, reportIds } from "../server/access.js";
 import { referralLink, codeIsValid, inboxOf, CODE_RE } from "../server/referrals.js";
@@ -80,8 +80,8 @@ const RECENT_SIGN_IN_MS = 30 * 60 * 1000;
 const MAX_STATE_CHARS = 200000;
 
 const limiter = rateLimiter(30, "10 m", "ratelimit:billing");
-const restoreLimiter = rateLimiter(3, "1 h", "ratelimit:billing-restore");
-const restoreEmailLimiter = rateLimiter(5, "1 d", "ratelimit:billing-restore-email");
+const restoreLimiter = rateLimiter(3, "1 h", "ratelimit:billing-restore", { strict: true });
+const restoreEmailLimiter = rateLimiter(5, "1 d", "ratelimit:billing-restore-email", { strict: true });
 
 const configured = () => !!(STRIPE_KEY && WEBHOOK_SECRET && PRICES.monthly && PRICES.yearly && TOKEN_SECRET && SUPA_URL && SERVICE_KEY);
 
@@ -241,7 +241,10 @@ async function webhook(req, res, raw) {
     // or ending after its account was deleted doesn't bring it back.
     const customerId = typeof obj.customer === "string" ? obj.customer : obj.customer?.id;
     if (!await rowForCustomer(customerId)) return res.status(200).json({ received: true });
-    await saveSubscription(obj, null);
+    // Stripe doesn't promise events in order, so the event's own snapshot may
+    // be older than one already saved (an "updated" arriving after the
+    // "deleted"). What's saved is the subscription as it is now.
+    await saveSubscription(await stripe("GET", `/subscriptions/${encodeURIComponent(obj.id)}`), null);
   }
   return res.status(200).json({ received: true });
 }
@@ -398,7 +401,11 @@ async function sendSignInLink(email, origin, app = false) {
 // passkey suggestion, which may not be tapped straight away.
 const CHALLENGE_TTL_MS = 5 * 60 * 1000, LOGIN_CHALLENGE_TTL_MS = 15 * 60 * 1000;
 const PASSWORD_MIN = 10, PASSWORD_MAX = 200;
-const passwordLimiter = rateLimiter(10, "1 h", "ratelimit:billing-password");
+// Wrong-password guesses: 10 an hour from one address at one email, so someone
+// guessing can't lock the owner out from elsewhere; 50 an hour at one email
+// from everywhere, against guessing spread over many addresses.
+const passwordLimiter = rateLimiter(10, "1 h", "ratelimit:billing-password", { strict: true });
+const passwordEmailLimiter = rateLimiter(50, "1 h", "ratelimit:billing-password-email", { strict: true });
 const enc = encodeURIComponent;
 
 // The passkey's site: the parent domain on the live site, so one passkey
@@ -663,7 +670,8 @@ async function passwordLogin(req, body, res) {
   const { password } = body;
   if (!email || typeof password !== "string" || !password || password.length > PASSWORD_MAX) return res.status(400).json({ error: "Enter your email and password." });
   if (passwordLimiter) {
-    const { success } = await passwordLimiter.limit(email);
+    const [here, everywhere] = await Promise.all([passwordLimiter.limit(`${clientIp(req)}:${email}`), passwordEmailLimiter.limit(email)]);
+    const success = here.success && everywhere.success;
     if (!success) return res.status(429).json({ error: "Too many attempts. Try again in an hour, or email yourself a sign-in link." });
   }
   const row = await rowFor(email);
@@ -732,6 +740,9 @@ export default async function handler(req, res) {
       const { success } = await limiter.limit(clientIp(req));
       if (!success) return res.status(429).json({ error: "Too many requests. Try again shortly." });
     }
+    // Sign-in guesses and passkey replays are counted in Redis: without it
+    // (production only) those routes are closed rather than unguarded.
+    if (!limitsReady() && ["restore", "password-login", "passkey-login", "passkey-enrol"].includes(action)) return res.status(503).json({ error: "Sign-in is unavailable right now. Please try again shortly." });
     // Checkout and sign-in links return to the site they were asked from.
     const returnTo = origin;
     let body;

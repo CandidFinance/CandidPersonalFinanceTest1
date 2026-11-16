@@ -91,7 +91,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROW_COLUMNS = "id,created_at,email,name,age,employment_status,salary,other_income,monthly_expenses,cash_savings,savings_rate,premium_bonds,has_pension,pension_my_pct,pension_employer_pct,pension_pot,has_bonus,bonus_amount,has_kids,num_kids,isa_this_year,student_loan_plan,student_loan_balance";
 const RATE_COLUMNS = "id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,app_only,product_url,updated_at,is_isa";
 
-const adminLimiter = rateLimiter(20, "10 m", "ratelimit:alerts-admin");
+const adminLimiter = rateLimiter(20, "10 m", "ratelimit:alerts-admin", { strict: true });
 const unsubscribeLimiter = rateLimiter(30, "10 m", "ratelimit:alerts-unsubscribe");
 
 // ── Supabase (service role) ──────────────────────────────────────────────────
@@ -424,6 +424,7 @@ export default async function handler(req, res) {
   if (!ADMIN_PASSWORD) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
   const auth = await checkAdminPassword(req, ADMIN_PASSWORD, adminLimiter, "api/alerts");
+  if (auth === 503) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (auth === 429) return res.status(429).json({ error: "Too many attempts, try again shortly" });
   if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
   if (req.method !== "POST") return res.status(405).end();

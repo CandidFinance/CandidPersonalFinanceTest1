@@ -10,7 +10,7 @@ const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 
 // Brute-force guard on the shared password: this gates real users'
 // free-text opinions, so a tight window.
-const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:feedback-admin");
+const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:feedback-admin", { strict: true });
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
@@ -28,6 +28,7 @@ export default async function handler(req, res) {
   }
 
   const auth = await checkAdminPassword(req, ADMIN_PASSWORD, attemptLimiter, "api/feedback");
+  if (auth === 503) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (auth === 429) return res.status(429).json({ error: "Too many attempts — try again shortly" });
   if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
 
