@@ -68,5 +68,11 @@ export function rollTaxYear(d, now = new Date(), fallbackDate = null) {
   next.studentLoanOverpaidThisYear = "";
   next.mortgageOverpaidThisYear = "";
   next.dividendsThisYear = "";
+  // Each module's £ moves with the new year (top-ups and allowances end),
+  // so its baseline is re-taken on the new year's figures before any answer
+  // change is compared with it (moduleStatus.js pendingBank, baselinePatch).
+  if (d.moduleBaselines) {
+    next.moduleBaselines = Object.fromEntries(Object.entries(d.moduleBaselines).map(([key, base]) => [key, { ...base, rebase: true }]));
+  }
   return next;
 }

@@ -224,14 +224,15 @@ test("income position names the band and the distance to the next line", () => {
   const higher = incomePosition(base, calcMetrics(base));
   assert.equal(higher.band.name, "Higher rate");
   assert.equal(higher.trap, null);
-  const low = { ...base, salary: "40000", myContribution: "0", employerMatch: "0" };
+  // No savings rate given, so no interest in the income (metrics.js savingsInterest).
+  const low = { ...base, cashTiers: [{ amount: "12000", rate: "" }], savingsRate: "", salary: "40000", myContribution: "0", employerMatch: "0" };
   const lowPos = incomePosition(low, calcMetrics(low));
   assert.equal(lowPos.band.name, "Basic rate");
   assert.match(lowPos.context, /£10,270 below the higher rate/);
 });
 
 test("over £100,000 the trap's figures come from the tax trap module", () => {
-  const d = { ...base, salary: "110000", myContribution: "0", employerMatch: "0" };
+  const d = { ...base, cashTiers: [{ amount: "12000", rate: "" }], savingsRate: "", salary: "110000", myContribution: "0", employerMatch: "0" };
   const pos = incomePosition(d, calcMetrics(d));
   assert.equal(pos.band.name, "£100k tax trap");
   assert.equal(pos.trap.over, 10000);
@@ -244,7 +245,7 @@ test("over £100,000 the trap's figures come from the tax trap module", () => {
 });
 
 test("the trap zone: clear, near, within £5,000, in; and what a £10,000 rise would add", () => {
-  const at = salary => { const d = { ...base, salary: String(salary), myContribution: "0", employerMatch: "0" }; return incomePosition(d, calcMetrics(d)); };
+  const at = salary => { const d = { ...base, cashTiers: [{ amount: "12000", rate: "" }], savingsRate: "", salary: String(salary), myContribution: "0", employerMatch: "0" }; return incomePosition(d, calcMetrics(d)); };
   const clear = at(60000);
   assert.equal(clear.zone, "clear");
   assert.equal(clear.gap, 40000);
@@ -261,7 +262,8 @@ test("the trap zone: clear, near, within £5,000, in; and what a £10,000 rise w
   assert.equal(over.zone, "in");
   assert.equal(over.gap, null);
   assert.equal(over.rise, null);
-  const none = incomePosition({ ...base, salary: "0" }, calcMetrics({ ...base, salary: "0" }));
+  const noPay = { ...base, cashTiers: [{ amount: "12000", rate: "" }], savingsRate: "", salary: "0" };
+  const none = incomePosition(noPay, calcMetrics(noPay));
   assert.equal(none.zone, "none");
 });
 

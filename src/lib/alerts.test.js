@@ -23,8 +23,9 @@ test("before 5 April: early March, then a final reminder from 26 March, each sen
 
   const sent = [{ alert_key: "taxYearEnd:2026:early", kind: "taxYearEnd", sent_at: "2027-03-02T08:00:00Z" }];
   assert.deepEqual(kinds(alertsDue(trap, { today: day("2027-03-03"), sent })), []);
+  // 28 March 2027 is a Sunday, so the payday check-in comes on Friday 26th.
   const final = alertsDue(trap, { today: day("2027-03-26"), sent });
-  assert.deepEqual(kinds(final), ["taxYearEnd:2026:final"]);
+  assert.deepEqual(kinds(final), ["taxYearEnd:2026:final", "payday:2027-03"]);
   assert.match(final[0].subject, /^10 days to 5 April/);
   assert.deepEqual(kinds(alertsDue(trap, { today: day("2027-04-06") })).filter(k => k.startsWith("taxYearEnd")), []);
   assert.deepEqual(alertsDue(trap, { today: day("2026-10-18") }), []);

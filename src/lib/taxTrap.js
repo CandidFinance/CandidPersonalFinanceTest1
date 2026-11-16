@@ -23,7 +23,7 @@ import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { payGrowthOf, calcMetrics } from "./metrics.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { payFactor } from "./growth.js";
-import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps, calcBonusSacrificePotential } from "./pension.js";
 import { childcareSupport } from "./childcare.js";
 
 export const TRAP_START = PA_TAPER_START;
@@ -107,7 +107,10 @@ export function position(d, m, { salary = m.salary, sacrifice = 0, relief = 0, e
   // on income less the gross, plus the basic rate on the gross (that 20%
   // goes into the pension, or to the charity). E.g. £120,000 with £20,000
   // paid in: £27,432 on £100,000, plus £4,000, is £31,432.
-  const tax = calcIncomeAndDividendTax(ani - dividends, dividends, m.taxYear, !!m.scottish) + 0.2 * totalRelief;
+  // Savings interest (in `rest`) counts towards the allowance taper but
+  // isn't pay: taxed on its own rates, and not in take-home.
+  const interest = m.savingsInterest || 0;
+  const tax = calcIncomeAndDividendTax(ani - dividends - interest, dividends, m.taxYear, !!m.scottish, interest) + 0.2 * totalRelief;
   // From April 2029, salary sacrifice past £2,000 a year pays NI as pay.
   const niPay = pay + Math.max(0, totalSacrifice - salarySacrificeNiCap(m.taxYear));
   const ni = calcNI(niPay, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: !!m.pastStatePensionAge });
@@ -271,8 +274,16 @@ export function taxTrap(d, m) {
 
 const ymd = s => { const [y, mo, day] = String(s).split("-").map(Number); return y && mo && day ? new Date(y, mo - 1, day) : null; };
 const dayOnly = t => new Date(t.getFullYear(), t.getMonth(), t.getDate());
-// Their payday in a month: the day, or the month's last day if it's shorter.
-const paydayIn = (y, mo, payday) => new Date(y, mo, Math.min(payday, new Date(y, mo + 1, 0).getDate()));
+// Their payday in a month: the day, or the month's last day if it's
+// shorter, moved back to the Friday when it falls at a weekend (when the pay
+// arrives, and the payslip with it).
+const paydayIn = (y, mo, payday) => {
+  const t = new Date(y, mo, Math.min(payday, new Date(y, mo + 1, 0).getDate()));
+  const dow = t.getDay();
+  if (dow === 6) t.setDate(t.getDate() - 1);
+  else if (dow === 0) t.setDate(t.getDate() - 2);
+  return t;
+};
 // Paydays after `from` up to and including `to`.
 export function paydaysBetween(from, to, payday) {
   let n = 0;
@@ -291,8 +302,16 @@ export const topUpsThisYear = (d, today = new Date()) => {
 };
 const sum = (ups, route) => ups.reduce((s, u) => s + (!route || u.route === route ? +u.amount : 0), 0);
 // A month's payday in tax year `ty`: April to December in `ty`, January to
-// March after it.
-const paydayOfMonth = (ty, month, payday) => paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
+// March after it. April's falls before the tax year starts (6 April) when
+// it's on the 1st to 5th, or a weekend moves it there: the one in the tax
+// year is then the next April's, if that's still by 5 April. If it isn't
+// (paid on the 6th, a weekend before it both years), the tax year has no
+// April payday: null.
+const paydayOfMonth = (ty, month, payday) => {
+  if (month !== 4 || paydayIn(ty, 3, payday) >= new Date(ty, 3, 6)) return paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
+  const next = paydayIn(ty + 1, 3, payday);
+  return next <= taxYearEnd(ty) ? next : null;
+};
 
 // The month the bonus is paid (1 to 12): March when it isn't known.
 export const bonusMonthOf = d => +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
@@ -369,7 +388,10 @@ export const driftDismissal = (m, drift, today = new Date()) => ({ implied: drif
 // annual allowance (childcare.js). From their own answers
 // only: run on what this returns, it would count pay to date and the top-ups
 // twice.
+// Run on its own output, it hands that back as it is (m.thisTaxYear marks
+// it), so a screen given this year's figures can't count them twice.
 export function thisTaxYear(d, m, today = new Date()) {
+  if (m.thisTaxYear) return { d, m, y: m.thisTaxYear.y };
   const y = yearProjection(d, m, today);
   const ups = topUpsThisYear(d, today);
   const implied = effectiveSalary(d, m, today, y);
@@ -377,12 +399,28 @@ export function thisTaxYear(d, m, today = new Date()) {
   const salary = Math.round((implied ?? m.salary) - sum(ups, "sacrifice") / keptOf(d));
   if (salary === Math.round(m.salary) && !ups.length) return { d, m, y };
   const at = { ...d, salary: String(salary) };
-  const mm = { ...calcMetrics(at), salaryBeforeTopUps: implied ?? m.salary, topUpsTotal: sum(ups) };
+  const mm = { ...calcMetrics(at), salaryBeforeTopUps: implied ?? m.salary, topUpsTotal: sum(ups), thisTaxYear: { y } };
   return { d: at, m: relief ? { ...mm, adjustedNetIncome: mm.adjustedNetIncome - relief, topUpRelief: relief } : mm, y };
 }
 
 // Annual allowance left this year after the top-ups.
 export const allowanceLeft = (d, m, today = new Date()) => Math.max(0, calcAnnualAllowanceRoomBeforeTopUps(d, m).room - sum(topUpsThisYear(d, today)));
+// The annual allowance on this tax year's figures (calcAnnualAllowanceRoom's
+// shape): what goes in counts the top-ups too.
+export function allowanceThisYear(d, m, today = new Date()) {
+  const { d: yd, m: ym } = thisTaxYear(d, m, today);
+  const aa = calcAnnualAllowanceRoomBeforeTopUps(yd, ym);
+  const currentInputs = aa.currentInputs + sum(topUpsThisYear(yd, today));
+  return { ...aa, currentInputs, room: Math.max(0, aa.approxAA - currentInputs), excess: Math.max(0, currentInputs - aa.approxAA) };
+}
+// The bonus's avoidable tax (pension.js calcBonusSacrificePotential) on
+// this tax year's figures: pay to date, and the room the top-ups leave. The
+// Pension module, its reveal, the Sunday email and the bonus email all use
+// this, so they agree.
+export function bonusPotentialThisYear(d, m, today = new Date()) {
+  const { d: yd, m: ym } = thisTaxYear(d, m, today);
+  return calcBonusSacrificePotential(yd, ym, allowanceLeft(yd, ym, today));
+}
 // How far `extra` more on top of this year's top-ups goes past the annual
 // allowance (0 within it): past it, carry forward (Pension) may cover it.
 export function pastAllowance(d, m, extra = 0, today = new Date()) {
@@ -426,16 +464,28 @@ export function topUpMonths(d, today = new Date()) {
   const bonusMonth = num(d.bonusAmount) > 0 ? bonusMonthOf(d) : null;
   const out = [];
   for (const month of [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3]) {
-    if (paydayOfMonth(ty, month, payday) > now) out.push({ month, bonus: month === bonusMonth });
+    const on = paydayOfMonth(ty, month, payday);
+    if (on > now) out.push({ month, bonus: month === bonusMonth, on });
   }
-  return out;
+  // In date order: April's comes last when it's paid on the 1st to 5th.
+  return out.sort((a, b) => a.on - b.on).map(({ on, ...rest }) => rest);
 }
 
 // Whether today is on or after this month's payday and they haven't checked
 // in this month: the Home card's cue.
 export const monthKey = t => `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
+// A weekend can move next month's payday back into this month (paid on the
+// 1st, a Sunday: the Friday before), so this calendar month's paydays are
+// its own and, sometimes, next month's.
+const paydaysInMonth = (d, now) => {
+  const y = now.getFullYear(), mo = now.getMonth(), payday = paydayOf(d);
+  return [paydayIn(y, mo, payday), paydayIn(y, mo + 1, payday)].filter(p => p.getMonth() === mo);
+};
 export function paydayCheckDue(d, today = new Date()) {
   const now = dayOnly(today);
-  return now >= paydayIn(now.getFullYear(), now.getMonth(), paydayOf(d)) && d.paydayCheckedMonth !== monthKey(now);
+  return paydaysInMonth(d, now).some(p => now >= p) && d.paydayCheckedMonth !== monthKey(now);
 }
-export const isPayday = (d, today = new Date()) => dayOnly(today).getTime() === paydayIn(today.getFullYear(), today.getMonth(), paydayOf(d)).getTime();
+export const isPayday = (d, today = new Date()) => {
+  const now = dayOnly(today);
+  return paydaysInMonth(d, now).some(p => p.getTime() === now.getTime());
+};

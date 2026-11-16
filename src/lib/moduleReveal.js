@@ -14,13 +14,13 @@
 // student loan, say), in which case no reveal or "Explain this" is offered.
 
 import { fmt } from "./format.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
+import { isPensionContributing, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
-import { taxTrap, trapInView, lostTo, thisTaxYear, allowanceLeft } from "./taxTrap.js";
+import { taxTrap, trapInView, lostTo, thisTaxYear, allowanceLeft, allowanceThisYear, bonusPotentialThisYear } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { NATIONAL_STATS } from "./nationalStats.js";
@@ -164,7 +164,8 @@ function pensionSteps(d, m) {
 
   // Paying in more than the annual allowance (reduced for very high
   // earners, or £10,000 once an income has been drawn): the excess is taxed.
-  const aa = calcAnnualAllowanceRoom(d, m);
+  // This tax year's, with the £100k trap's top-ups (as the module's status).
+  const aa = allowanceThisYear(d, m);
   if (aa.excess > 0) {
     const charge = Math.round(aa.excess * (m.tr || 0));
     return [
@@ -192,7 +193,7 @@ function pensionSteps(d, m) {
   }
 
   // On track: where it's heading, and the bonus if there's one to use.
-  const bonus = calcBonusSacrificePotential(d, m);
+  const bonus = bonusPotentialThisYear(d, m);
   return [
     { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}.`,
       rows: [{ lead: "Your pension is projected to reach", figure: fmt(Math.round(m.projectedPot)), tone: "repay", size: "xl", note: `by ${retirementAgeFor(d)}, in today's money.` }] },

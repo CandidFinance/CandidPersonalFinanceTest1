@@ -2,15 +2,15 @@ import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
 import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby, Percent } from "lucide-react";
-import { taxTrap, trapInView, thisTaxYear, allowanceLeft, TRAP_EDGE } from "./taxTrap.js";
+import { taxTrap, trapInView, thisTaxYear, allowanceLeft, allowanceThisYear, bonusPotentialThisYear, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
+import { isPensionContributing, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
-import { isaFillable as isaFillableBy } from "./metrics.js";
+import { isaFillable as isaFillableBy, daysToTaxYearEnd } from "./metrics.js";
 import { calcStudentLoanScenario , pgScenario, bestLumpSum } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 
@@ -91,11 +91,7 @@ export function sanitizeForMvp(d) {
  */
 export function computeModuleStatuses(d, m, marketRates = {}) {
   const { isaRate = 5, nonIsaRate = 4.5 } = marketRates;
-  const daysToTaxEnd = (() => {
-    const now = new Date(), taxEnd = new Date(now.getFullYear(), 3, 5);
-    if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
-    return Math.ceil((taxEnd - now) / (1000*60*60*24));
-  })();
+  const daysToTaxEnd = daysToTaxYearEnd();
   const isaUrgencyBoost = daysToTaxEnd < 30 ? 3 : daysToTaxEnd < 90 ? 1.5 : 1;
 
   const s = {};
@@ -232,11 +228,15 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // triggers an allowance charge, which is what very high earners on a
   // tapered allowance would otherwise have been nudged towards.
   const contributing = isPensionContributing(d);
-  const aaRoom = calcAnnualAllowanceRoom(d, m);
+  // This tax year (thisTaxYear: pay to date and the £100k trap's top-ups),
+  // for the allowance and the bonus here, and Kids & family and the £100k
+  // tax trap below, so they all agree. The top-ups use up allowance too.
+  const year = thisTaxYear(d, m);
+  const aaRoom = allowanceThisYear(year.d, year.m);
   // Winning back the Personal Allowance over £100,000 is the £100k tax
   // trap module's figure (taxTrap.js), not counted here as well.
   const pensionTaperAmount = 0;
-  const bonusSacrifice = calcBonusSacrificePotential(d, m);
+  const bonusSacrifice = bonusPotentialThisYear(year.d, year.m);
   // "Not contributing" and "missed employer match" are mutually exclusive (the
   // latter only applies once you're contributing) — taper is an independent
   // opportunity that can stack on top of either.
@@ -248,9 +248,6 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // in. Shown, but not counted as a gap in the score: it needs spare money.
   const nonEarnerRelief = !contributing && m.noEarnings && !inRetirement(d) && (+d.age || 0) < PENSION_RELIEF_MAX_AGE;
   const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
-  // This tax year (thisTaxYear: pay to date and the £100k trap's top-ups),
-  // for Kids & family and the £100k tax trap below, so the two agree.
-  const year = thisTaxYear(d, m);
   // Child Benefit paid back (income over £60,000), when paying in could stop it.
   const cbCharge = childBenefitCharge(year.d, year.m);
   // Child Benefit is Kids & family's figure now (below), not Pension's.
@@ -528,7 +525,7 @@ const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(
 // A change made, banked straight away: its £ a year, dated today, on the
 // module's baseline (made if there isn't one yet). `until`: the last day
 // it counts, for one that lasts a tax year (a £100k trap top-up).
-export function bankChange(d, key, perYear, on = new Date().toISOString().slice(0, 10), until = null) {
+export function bankChange(d, key, perYear, on = isoDay(new Date()), until = null) {
   const base = (d.moduleBaselines || {})[key] || { amount: 0, answers: ownAnswers(d, key), banked: 0 };
   const add = Math.round(perYear);
   return { ...(d.moduleBaselines || {}), [key]: { ...base, banked: (base.banked || 0) + add, changes: [...(base.changes || []), { perYear: add, on, ...(until ? { until } : {}) }] } };
@@ -619,7 +616,9 @@ export function answersMoved(d, key) {
 }
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];
-  if (!base || base.answers === ownAnswers(d, key)) return 0;
+  // A new tax year (rollTaxYear marks it): the old amount isn't comparable,
+  // so nothing's asked until the baseline's re-taken (baselinePatch).
+  if (!base || base.rebase || base.answers === ownAnswers(d, key)) return 0;
   // Plus what's ended since the baseline was taken (`ended` then).
   const was = base.amount + endedPerYear(d, key) - (base.ended || 0);
   return was > amount ? Math.round(was - amount) : 0;
@@ -627,7 +626,7 @@ export function pendingBank(d, key, amount) {
 // Each change the user says they made is also logged with its date
 // (`changes`: [{ perYear, on }]), so Home can show what the changes have
 // added up to so far (gainedSoFar).
-export function bankPatch(d, key, amount, made, on = new Date().toISOString().slice(0, 10)) {
+export function bankPatch(d, key, amount, made, on = isoDay(new Date())) {
   const base = d.moduleBaselines[key];
   const add = made ? pendingBank(d, key, amount) : 0;
   return { ...d.moduleBaselines, [key]: {
@@ -643,6 +642,8 @@ export function bankPatch(d, key, amount, made, on = new Date().toISOString().sl
 // the £ it comes from. Capital gains tax saved (Investments) is saved for
 // its whole tax year at once, so it counts in full on the day it's banked.
 const IN_FULL = ["investments"];
+// Ends on the 5 April of the tax year it was made in.
+const changeEndsTaxYear = c => c.until === `${taxYearOf(new Date(c.on + "T12:00:00")) + 1}-04-05`;
 export const BANK_LOG_START = "2026-10-14";
 // The first day of the tax year `now` is in, as "YYYY-MM-DD".
 export const taxYearStart = (now = new Date()) => `${taxYearOf(now)}-04-06`;
@@ -665,7 +666,9 @@ export function gainedSoFar(d, now = new Date(), from = null) {
   for (const c of changes) {
     const end = c.until ? Math.min(today, Date.parse(c.until)) : today;
     const days = Math.max(0, Math.round((end - Math.max(Date.parse(c.on), since)) / 86400000) + 1);
-    const gained = IN_FULL.includes(c.key)
+    // A change that lasts one tax year (`until`: a £100k trap top-up) saves
+    // its tax for that year at once, so it counts in full too.
+    const gained = IN_FULL.includes(c.key) || c.until && changeEndsTaxYear(c)
       ? (Date.parse(c.on) >= since && Date.parse(c.on) <= today ? c.perYear : 0)
       : c.perYear * days / 365;
     const going = !c.until || Date.parse(c.until) >= today ? c.perYear : 0;
@@ -680,11 +683,16 @@ export function gainedSoFar(d, now = new Date(), from = null) {
 }
 // The baselines with any newly answered module added, or null if none is
 // new.
+// A baseline marked for a new tax year (rollTaxYear) is re-taken on this
+// year's £, keeping what was banked.
 export function baselinePatch(d, statuses) {
   const base = d.moduleBaselines || {};
   const added = MODULE_META.filter(mm => !(mm.key in base) && statuses[mm.key] && statuses[mm.key].status !== "na");
-  if (!added.length) return null;
-  return { ...base, ...Object.fromEntries(added.map(mm => [mm.key, { amount: Math.round(statuses[mm.key].amount || 0), answers: ownAnswers(d, mm.key), banked: 0 }])) };
+  const rebased = Object.keys(base).filter(key => base[key]?.rebase && statuses[key]);
+  if (!added.length && !rebased.length) return null;
+  let next = { ...base, ...Object.fromEntries(added.map(mm => [mm.key, { amount: Math.round(statuses[mm.key].amount || 0), answers: ownAnswers(d, mm.key), banked: 0 }])) };
+  for (const key of rebased) next = bankPatch({ ...d, moduleBaselines: next }, key, statuses[key].amount || 0, false);
+  return next;
 }
 
 export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount") {

@@ -23,9 +23,9 @@
 import { calcMetrics, isaFillable } from "./metrics.js";
 import { rollTaxYear } from "./taxYear.js";
 import { cashOpportunity } from "./assist.js";
-import { calcBonusSacrificePotential } from "./pension.js";
+import { bonusPotentialThisYear } from "./taxTrap.js";
 import { fmt } from "./format.js";
-import { taxFreeInterest, savingsTaxRates, INCOME_TAX_RATES, ISA_ALLOWANCE, PSA_BY_BAND } from "./tax.js";
+import { taxFreeInterest, savingsTaxRates, INCOME_TAX_RATES, ISA_ALLOWANCE, PSA_BY_BAND, calcNI } from "./tax.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -41,8 +41,6 @@ const RATES_LINE_MIN = 50;
 // A mortgage fix ending within this many days makes "Your week": long
 // enough to arrange the next deal.
 const FIX_SOON_DAYS = 183;
-// Above this, National Insurance on pay is 2%; below, 8% (2026/27).
-const NI_UPPER = 50270;
 export const PAID_PLANS = ["monthly", "yearly"];
 // The most free months invites can earn (server/referrals.js REFERRAL_CAP).
 export const REFERRAL_MONTHS = 12;
@@ -199,7 +197,10 @@ export const IMPACTS = {
       if (!(sacrificed > 0)) return null;
       const when = from ? ` from ${from}` : "";
       if (sacrificed <= limit) return `You sacrifice about ${fmt(sacrificed)} a year, under a ${fmt(limit)} cap${when}, so this wouldn't change what you pay.`;
-      const ni = Math.round((sacrificed - limit) * (m.salary > NI_UPPER ? 0.02 : 0.08));
+      // NI on the part over the cap, on top of the pay left after the
+      // sacrifice (8% up to £50,270, 2% over it).
+      const paid = m.salary - sacrificed;
+      const ni = Math.round(calcNI(paid + sacrificed - limit) - calcNI(paid));
       return `You sacrifice about ${fmt(sacrificed)} a year. Under a ${fmt(limit)} cap${when}, National Insurance would be due on ${fmt(sacrificed - limit)} of it: about ${fmt(ni)} a year.`;
     },
   },
@@ -336,7 +337,7 @@ export function comingUp(d, m, today) {
     const y = today.getUTCMonth() + 1 > month ? today.getUTCFullYear() + 1 : today.getUTCFullYear();
     const toBonus = Math.round((Date.UTC(y, month - 1, 1) - day) / DAY_MS);
     if (toBonus >= 0 && toBonus <= SOON_DAYS) {
-      const saving = Math.round(calcBonusSacrificePotential(d, m).standalone || 0);
+      const saving = Math.round(bonusPotentialThisYear(d, m, today).standalone || 0);
       out.push(`your bonus is usually paid in ${MONTHS[month - 1]}.${saving > 0 ? ` Up to ${fmt(saving)} of tax on it is avoidable if it's paid into your pension, arranged with payroll before it's paid.` : ""}`);
     }
   }

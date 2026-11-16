@@ -34,12 +34,12 @@
 
 import { calcMetrics, isaFillable } from "./metrics.js";
 import { rollTaxYear, taxYearOf } from "./taxYear.js";
-import { calcAnnualAllowanceRoomBeforeTopUps, calcPensionTaperSaving, calcBonusSacrificePotential, childBenefitCharge } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps, calcPensionTaperSaving, childBenefitCharge } from "./pension.js";
 import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
-import { trapInView, yearProjection, thisTaxYear, isPayday, monthKey, allowanceLost, bonusMonthOf, allowanceLeft, TRAP_START } from "./taxTrap.js";
+import { trapInView, yearProjection, thisTaxYear, isPayday, monthKey, allowanceLost, bonusMonthOf, bonusPotentialThisYear, TRAP_START } from "./taxTrap.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -118,7 +118,10 @@ function taxYearEnd(d, m, today) {
     if (year.topUp > 0 && tax > 0 && year.topUp <= room && (trapLine = true)) items.push({ tax, line: `${fmt(tax)} of tax: on your pay to date, your income this tax year is heading for ${fmt(year.projected)}. A pension payment of ${fmt(year.topUp)} (including the tax relief added) before 5 April would bring it back to £100,000.${childcare}` });
   } else if (taper.recoverable && taper.taperTaxSaving > 0) {
     trapLine = true;
-    items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
+    // The module's figure: the tax on the Personal Allowance lost, as with
+    // pay to date above (not all the tax the payment saves).
+    const tax = Math.round(allowanceLost(ym.adjustedNetIncome, !!m.scottish).tax);
+    items.push({ tax, line: `${fmt(tax)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
   }
   const cb = childBenefitCharge(yd, ym);
   if (cb && cb.charge > 0 && cb.payInNeeded <= room && !trapLine) {
@@ -156,8 +159,7 @@ function bonus(d, m, today) {
   if (today.getMonth() + 1 !== before) return null;
   // On this tax year's figures (thisTaxYear), as taxYearEnd: the £100k
   // trap's top-ups have used some of the room.
-  const { d: yd, m: ym } = thisTaxYear(d, m, today);
-  const saving = calcBonusSacrificePotential(yd, ym, allowanceLeft(yd, ym, today)).standalone;
+  const saving = bonusPotentialThisYear(d, m, today).standalone;
   if (!(saving > 0)) return null;
   const year = paid === 1 ? today.getFullYear() + 1 : today.getFullYear();
   const known = d.bonusMonth && +d.bonusMonth === paid;

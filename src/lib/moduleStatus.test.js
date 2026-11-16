@@ -39,7 +39,8 @@ test("cash: less than a month of essential costs is critical", () => {
 test("cash: spending more than take-home is critical, and the gap is what's shown", () => {
   const s = statusesFor({ salary: "23000", monthlyExpenses: "1650", cashTiers: [{ amount: "300", rate: "0" }] });
   assert.equal(s.cash.status, "critical");
-  assert.equal(s.cash.impactLabel, "£53 a month more going out than coming in");
+  // Take-home pays no NI on the salary sacrificed (5%).
+  assert.equal(s.cash.impactLabel, "£46 a month more going out than coming in");
 });
 
 test("cash: not working, savings are measured in months they'd last, not as spare", () => {

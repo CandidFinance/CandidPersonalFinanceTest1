@@ -1,4 +1,4 @@
-import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, EMPLOYER_NI_RATE, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, NI_RATE_ABOVE_UEL, salarySacrificeNiCap } from "./tax.js";
+import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, niOnBonusMonthly, EMPLOYER_NI_RATE, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, NI_RATE_ABOVE_UEL, salarySacrificeNiCap } from "./tax.js";
 import { salaryGrowthOf, pastStatePensionAge, retirementAgeFor } from "./metrics.js";
 import { slRepaymentThreshold, resolveSlRate, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
@@ -220,11 +220,13 @@ export function calcAnnualAllowanceTaper(d, m) {
   if (d.pensionType === "sacrifice") {
     thresholdIncome = baseGrossIncome;
   } else if (d.pensionType === "relief") {
-    thresholdIncome = baseGrossIncome - (personalContributionCash / 0.80);
+    // The % is of gross pay in, relief included, as metrics.js and
+    // calcAnnualAllowanceRoom take it.
+    thresholdIncome = baseGrossIncome - personalContributionCash;
   } else {
     thresholdIncome = baseGrossIncome - personalContributionCash;
   }
-  const employeeContribForAdjusted = d.pensionType === "relief" ? personalContributionCash / 0.80 : personalContributionCash;
+  const employeeContribForAdjusted = personalContributionCash;
   const adjustedIncome = thresholdIncome + employeeContribForAdjusted + employerContribCashAA;
   const AA_THRESHOLD_INCOME_LIMIT = 200000, AA_ADJUSTED_INCOME_LIMIT = 260000;
   const inAATaper = d.hasPension === "yes" && thresholdIncome > AA_THRESHOLD_INCOME_LIMIT && adjustedIncome > AA_ADJUSTED_INCOME_LIMIT;
@@ -332,11 +334,14 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const bonus = Math.max(0, +bonusInput || 0);
   const ongoingSacrifice = (+d.myContribution||0) / 100 * m.salary;
   const taxableSalary = Math.max(0, m.salary - ongoingSacrifice);
-  // NI rate on bonus: above the £50,270 threshold it's 2%, below it's 8% —
-  // bonus sits on top of salary, so if salary is already above threshold,
-  // all of the bonus falls at 2%.
-  // The rate on the first pound above salary; none past State Pension age.
-  const niRateOnBonus = marginalNiRate(m.salary + 1, { pastStatePensionAge: pastStatePensionAge(d) });
+  // NI on the bonus: worked out on the month it's paid in (tax.js
+  // niOnBonusMonthly), on top of that month's pay after salary sacrifice.
+  // Most of it is over the month's upper limit, at 2%. None past State
+  // Pension age. The rate is the bonus's average, for the % shown.
+  const niOpts = { pastStatePensionAge: pastStatePensionAge(d) };
+  const niMonthPay = (m.salary - (d.pensionType === "sacrifice" ? ongoingSacrifice : 0)) / 12;
+  const niOn = (amount, on = niMonthPay) => niOnBonusMonthly(on, amount, niOpts);
+  const niRateOnBonus = bonus > 0 ? niOn(bonus) / bonus : 0;
   // Student loan: the plan's rate (6% Postgraduate, 9% otherwise) on the part
   // of salary plus bonus above the threshold.
   const slThreshold = slRepaymentThreshold(d.studentLoan);
@@ -359,13 +364,13 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const cashPortionBonus = bonus - sacrificedAmt;
   const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus, m.scottish);
   const taxOnCash = bonusTaxDetail.tax;
-  const niOnCash = Math.round(cashPortionBonus * niRateOnBonus);
+  const niOnCash = Math.round(niOn(cashPortionBonus));
   const slOnCash = Math.round(slOn(cashPortionBonus));
   // From April 2029 only £2,000 a year of salary sacrifice is free of NI:
   // what's over it (after the regular sacrifice) still pays NI, for the
   // employee and the employer.
   const niFreeSacrifice = Math.min(sacrificedAmt, Math.max(0, salarySacrificeNiCap(m.taxYear) - ongoingSacrifice));
-  const niOnSacrificed = Math.round((sacrificedAmt - niFreeSacrifice) * niRateOnBonus);
+  const niOnSacrificed = Math.round(niOn(sacrificedAmt - niFreeSacrifice, niMonthPay + cashPortionBonus));
   const takeHomeCash = cashPortionBonus - taxOnCash - niOnCash - slOnCash;
   const totalDeducted = taxOnCash + niOnCash + slOnCash + niOnSacrificed;
   const totalReceived = sacrificedAmt + takeHomeCash - niOnSacrificed;

@@ -127,8 +127,9 @@ test("a top-up's saving lasts its tax year: from 6 April it's no longer counted 
   assert.equal(bankedFor(after, "taxTrap", april), 0);
   const g = gainedSoFar(after, april);
   assert.equal(g.perYear, 0);
-  // Counted from 8 October to 5 April, both days: 180 days of it.
-  assert.equal(g.total, Math.round(perYear * 180 / 365));
+  // Its tax is saved for the whole tax year, so it counts in full.
+  assert.equal(g.total, perYear);
+  assert.equal(gainedSoFar(after, new Date(2026, 9, 8)).total, perYear);
   // Last tax year's, seen now (8 Oct 2026): the trap's £ is back, and a
   // change made now counts from there, not from the £0 after the top-up.
   const lastYear = { ...after,

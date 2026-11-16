@@ -8,14 +8,14 @@ import { AlertTriangle, Check, ChevronRight, Bell, Info, Pencil, Gift, History, 
 import { useNavigate } from "react-router-dom";
 import {
   isPensionContributing,
-  calcAnnualAllowanceTaper, calcBonusSacrificePotential,
+  calcAnnualAllowanceTaper,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
   missedPensionRelief, calcTaxFreeCash, inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT, MONEY_PURCHASE_ANNUAL_ALLOWANCE,
   sacrificeNiRate, minimumPensionAge,
 } from "../../lib/pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
 import { taxYearFor } from "../../lib/taxYear.js";
-import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
+import { taxTrap, thisTaxYear, bonusPotentialThisYear } from "../../lib/taxTrap.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
@@ -164,7 +164,8 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   const cf = calcCarryForward(d, m, aa.approxAA, cfYears);
 
   const hasStatedBonus = (+d.bonusAmount||0) > 0;
-  const bonusSacrifice = calcBonusSacrificePotential(d, m);
+  // This tax year's figures, as the module's status and the bonus email.
+  const bonusSacrifice = bonusPotentialThisYear(d, m);
   // Done or set aside this tax year (opportunityChoices.js).
   const bonusChoice = choiceFor(d, CHOICE_IDS.bonus);
   // Short of the retirement income they'd like: the same 5% margin as the

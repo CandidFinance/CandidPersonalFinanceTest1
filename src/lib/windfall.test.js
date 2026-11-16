@@ -139,8 +139,9 @@ test("not working: earlier pay this tax year sets the band; estimated from the l
   assert.deepEqual(earnedEarlierThisYear(said, 2026, half), { pay: 30000, estimated: false, settlementTaxed: 20000 });
   // Last year's settlement doesn't count this year.
   assert.equal(earnedEarlierThisYear({ ...said, windfall: { ...said.windfall, taxYear: 2025 } }, 2026, half).settlementTaxed, 0);
-  // The band follows (£50,000 is still basic rate), but not the pay each month.
-  const m = calcMetrics({ ...said, cashTiers: [{ amount: "20000", rate: "4" }] }, MARKET);
+  // The band follows (£50,000 and £200 of interest is still basic rate), but
+  // not the pay each month.
+  const m = calcMetrics({ ...said, cashTiers: [{ amount: "20000", rate: "1" }] }, MARKET);
   assert.equal(m.taxBandLabel, "basic");
   assert.equal(m.monthlyTakeHome, 0);
   const higher = calcMetrics({ ...said, earnedThisTaxYear: "40000" }, MARKET);

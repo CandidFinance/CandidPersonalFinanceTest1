@@ -85,6 +85,15 @@ export function calcNI(earnings, { selfEmployed = false, pastStatePensionAge = f
   return main * Math.max(0, Math.min(e, NI_UPPER_EARNINGS_LIMIT) - NI_PRIMARY_THRESHOLD) + upper * Math.max(0, e - NI_UPPER_EARNINGS_LIMIT);
 }
 
+// Employee NI on a bonus: charged on the pay period it's paid in, so on
+// that month's pay with the thresholds a twelfth of the year's. Most of a
+// bonus is over the month's upper limit (£4,189) and pays 2%, whatever the
+// year's salary. Directors, on an annual basis, aren't asked about.
+export function niOnBonusMonthly(monthlyPay, bonus, opts = {}) {
+  const pay = Math.max(0, monthlyPay || 0), b = Math.max(0, bonus || 0);
+  return (calcNI((pay + b) * 12, opts) - calcNI(pay * 12, opts)) / 12;
+}
+
 // The NI rate on the last pound of `earnings` (what a pound of salary
 // sacrifice saves), on the same terms as calcNI.
 export function marginalNiRate(earnings, opts = {}) {
@@ -140,9 +149,11 @@ export function scottishRate(income) {
 // allowance taper counts the dividends too.
 // Scottish taxpayers: Scottish rates on the other income; dividends on UK
 // rates, in UK bands.
-export function calcIncomeAndDividendTax(nonDividendIncome, dividends, taxYear, scottish = false) {
+// `taperOnly`: income that counts towards the allowance taper but isn't
+// taxed here (savings interest, taxed on its own rates in the Cash module).
+export function calcIncomeAndDividendTax(nonDividendIncome, dividends, taxYear, scottish = false, taperOnly = 0) {
   const other = Math.max(0, nonDividendIncome || 0), div0 = Math.max(0, dividends || 0);
-  const total = other + div0;
+  const total = other + div0 + Math.max(0, taperOnly || 0);
   const pa = Math.max(0, PERSONAL_ALLOWANCE - Math.max(0, Math.min(PERSONAL_ALLOWANCE, (total - PA_TAPER_START) / 2)));
   const taxableOther = Math.max(0, other - pa);
   let tax = taxOnTaxable(taxableOther, scottish);

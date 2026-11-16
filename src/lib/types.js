@@ -286,6 +286,7 @@
  * @property {number} salary
  * @property {number} adjustedNetIncome
  * @property {number} nonSavingsIncome
+ * @property {number} savingsInterest
  * @property {string} taxBandLabel
  * @property {number} tr Marginal income tax rate on salary, as a fraction.
  * @property {number} savingsTr Tax rate on savings interest, as a fraction.

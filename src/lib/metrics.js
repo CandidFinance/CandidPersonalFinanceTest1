@@ -1,4 +1,4 @@
-import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
+import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, salarySacrificeNiCap, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { employerPct, unclaimedMatchPct } from "./employer.js";
 import { GROWTH_REAL_PCT, payFactor, PAY_LATER_GROWTH } from "./growth.js";
@@ -136,6 +136,22 @@ export function calcMetrics(d, marketRates = {}) {
     : 0;
   const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
   const cash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
+  // Interest on cash outside ISAs, at the rates they've given (none assumed:
+  // a guessed rate mustn't take anyone over £100,000). It's taxable income,
+  // so part of adjusted net income (the £100k taper, childcare and Child
+  // Benefit), though not pay. Premium Bonds prizes are tax-free.
+  // Cash ISA money they've told us about may be among their accounts, and
+  // its interest is tax-free, so it's taken off first (at the accounts'
+  // average stated rate), rather than risk a false £100k trap.
+  const statedRate = v => v !== "" && v != null && Number.isFinite(+v) ? +v : 0;
+  const statedCash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
+  const statedInterest = tiersTotal > 0
+    ? tiers.reduce((s, t) => s + (+t.amount||0) * statedRate(t.rate), 0) / 100
+    : (+d.cashSavings||0) * statedRate(d.savingsRate) / 100;
+  const cashIsaKnown = (+d.isaPrevCash||0) + (+d.isaThisYearCash||0);
+  const savingsInterest = statedCash > 0
+    ? Math.round(statedInterest * Math.max(0, statedCash - cashIsaKnown) / statedCash)
+    : 0;
   const totalLiquid = cash + bonds,
         runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
         bufferMonths = getBufferMonths(d),
@@ -209,10 +225,10 @@ export function calcMetrics(d, marketRates = {}) {
   // and so the tax on savings interest, but isn't pay coming in each month.
   const earlier = d.employmentStatus === "not_working" ? earnedEarlierThisYear(d, taxYearFor(d)) : { pay: 0, settlementTaxed: 0, estimated: false };
   const earlierIncome = earlier.pay + earlier.settlementTaxed;
-  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice + earlierIncome;
+  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice + earlierIncome + savingsInterest;
   // Income other than savings interest and dividends: what the starting rate
   // for savings is measured against (tax.js taxFreeInterest).
-  const nonSavingsIncome = adjustedNetIncome - dividendIncome;
+  const nonSavingsIncome = adjustedNetIncome - dividendIncome - savingsInterest;
   const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
   // Scottish taxpayers: their own rate on the top slice (tax.js scottishRate),
   // never under the 20% relief at source adds. The UK band (taxBandLabel)
@@ -318,10 +334,16 @@ export function calcMetrics(d, marketRates = {}) {
   // monthly figure.
   // Employee NI, or Class 4 when self-employed; none past State Pension age.
   const pastSpa = pastStatePensionAge(d);
-  const niAnnual = calcNI(salary, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: pastSpa });
-  const regularIncome = adjustedNetIncome - bonusIncome - earlierIncome;
-  // Dividends on their own rates, after the £500 allowance.
-  const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear, scottish);
+  // Salary sacrificed isn't paid, so pays no NI; from April 2029 the part
+  // over £2,000 a year does (taxTrap.js position does the same).
+  const sacrificed = d.pensionType === "sacrifice" ? pensionSacrifice : 0;
+  const niPay = salary - sacrificed + Math.max(0, sacrificed - salarySacrificeNiCap(taxYear));
+  const niAnnual = calcNI(niPay, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: pastSpa });
+  // Pay and the like: savings interest is income, but not take-home pay.
+  const regularIncome = adjustedNetIncome - bonusIncome - earlierIncome - savingsInterest;
+  // Dividends on their own rates, after the £500 allowance. The interest
+  // still counts towards the allowance taper.
+  const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear, scottish, savingsInterest);
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
@@ -344,7 +366,7 @@ export function calcMetrics(d, marketRates = {}) {
     projectedPot, years, annualYieldGap, savingsRate, loanBal, loanBalEstimated: !!slEstimate, tr, savingsTr, cashIsaHeadroom, taxYear,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
-    taxBandLabel, adjustedNetIncome, nonSavingsIncome, bufferMonths,
+    taxBandLabel, adjustedNetIncome, nonSavingsIncome, savingsInterest, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate, payGrowth,
     propertyEquity, propertyValue, ltv,
@@ -369,10 +391,12 @@ export function calcMetrics(d, marketRates = {}) {
 }
 
 // The days left in this tax year (to 5 April).
+// Whole days from today: 1 on 4 April, 0 on 5 April itself, 365 on 6 April.
 export function daysToTaxYearEnd(now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const taxEnd = new Date(now.getFullYear(), 3, 5);
-  if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
-  return Math.ceil((taxEnd - now) / (1000 * 60 * 60 * 24));
+  if (taxEnd < today) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
+  return Math.round((taxEnd - today) / (1000 * 60 * 60 * 24));
 }
 // How much of this year's ISA allowance there's money to fill before
 // 5 April: investments held outside an ISA, cash above the emergency fund,
