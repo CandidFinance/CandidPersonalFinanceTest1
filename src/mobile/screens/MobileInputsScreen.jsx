@@ -130,7 +130,9 @@ export default function MobileInputsScreen({ d, m, set, open, field = null, onSt
     <div className="inputs-slick" style={{"--pill-height":"37px"}}>
       <style>{SLICK_CSS}</style>
       <h1 style={{...TILE_KICKER,fontFamily:SANS,margin:"0 0 6px"}}>Your finances</h1>
-      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
+      {/* Right padding keeps the line clear of the Done button, which floats
+          in the top-right corner (MobileLayout headerRight). */}
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 20px",paddingRight:"72px"}}>Change anything here and your figures update straight away.</p>
       {emailFirst && <EmailField d={d} onEmailChange={onEmailChange} spotlight/>}
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>

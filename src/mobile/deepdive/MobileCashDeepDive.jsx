@@ -318,25 +318,30 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         ]}>
         {totalPot > 0 && opp ? (
           <>
-            {gain <= 50 && <TileRow first><span style={ROW.label}>Your savings are already on good rates.</span></TileRow>}
+            {/* Under £50 there's no "missing" row or reminder, but a small
+                gain is still said, with the optimal row: a pot emptied for a
+                purchase and filled again would miss more. */}
+            {gain < 1
+              ? <TileRow first><span style={ROW.label}>Your savings are already on good rates.</span></TileRow>
+              : gain <= 50 && <TileRow first><span style={ROW.label}>Moving to the top rates would add up to {fmt(gain)} a year.</span></TileRow>}
             <TileRow first={gain > 50}>
               {header("What you earn now", fmt(opp.currentKept + opp.bondsPrize))}
               {heldNow.length > 0 && subLine("now", heldNow.map(h => h.name).join(" + "))}
             </TileRow>
+            {/* The whole row leads on, as "See options" does: no chevron,
+                so its figures line up with the rows either side. */}
             {gain > 50 && (
-              <>
-                {/* The whole row leads on, as "See options" does: no chevron,
-                    so its figures line up with the rows either side. */}
-                <TileRow onClick={seeOptions || undefined} chevron={false}>
-                  {header("What you're missing", `+${fmt(gain)}`, SUCCESS)}
-                  {opp.lines.map(l => subLine(l.section, line({ name: optionName(l.option), amount: l.option.amount, ratePct: l.option.ratePct }), `+${fmt(l.option.gain)}`))}
-                </TileRow>
-                <TileRow>
-                  {header("Optimal earnings", fmt(optimalGross - optimalTax))}
-                  {optimal.map((x, i) => subLine(i, line(x), fmt(x.amount * x.ratePct / 100)))}
-                  {optimalTax >= 1 && subLine("tax", "Tax", `-${fmt(optimalTax)}`)}
-                </TileRow>
-              </>
+              <TileRow onClick={seeOptions || undefined} chevron={false}>
+                {header("What you're missing", `+${fmt(gain)}`, SUCCESS)}
+                {opp.lines.map(l => subLine(l.section, line({ name: optionName(l.option), amount: l.option.amount, ratePct: l.option.ratePct }), `+${fmt(l.option.gain)}`))}
+              </TileRow>
+            )}
+            {gain >= 1 && (
+              <TileRow>
+                {header("Optimal earnings", fmt(optimalGross - optimalTax))}
+                {optimal.map((x, i) => subLine(i, line(x), fmt(x.amount * x.ratePct / 100)))}
+                {optimalTax >= 1 && subLine("tax", "Tax", `-${fmt(optimalTax)}`)}
+              </TileRow>
             )}
             {gain > 50 && (
               <TileRow><ReminderPills reminder={reminder} action={seeOptions && { label: "Show me how", onClick: seeOptions }}/></TileRow>
@@ -386,9 +391,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             <TileRow>
               <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>Where your savings could sit ({fmt(keptAmount)} kept as cash)</div>
               <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — your average rate today</span><span style={TILE_FIGURE}>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(2)}% on Premium Bonds, blended</p>
               <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span style={TILE_FIGURE}>{fmt(optimisedTotal)}/yr</span></div>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(2)}% Premium Bonds, blended</p>
               <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?SUCCESS:TEXT}}>
                 <span>{optimisationGain>0?"You can earn":"Difference"}</span><span style={TILE_FIGURE}>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
               </div>

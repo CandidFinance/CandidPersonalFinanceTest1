@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, ChevronRight } from "lucide-react";
 import ProviderLogo from "./ProviderLogo.jsx";
-import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE, SANS, TILE_KICKER, TILE_FIGURE, TILE_LABEL_SIZE, TILE_NOTE } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, HAIRLINE, SANS, TILE_KICKER, TILE_FIGURE, TILE_LABEL_SIZE, TILE_NOTE } from "../design-tokens.js";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -23,10 +23,9 @@ export default function MobileProductListTile({ heading, subheading, products, d
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
   const name = p => <span style={{fontSize:TILE_LABEL_SIZE,fontWeight:600,color:TEXT}}>{p.name}</span>;
-  const badge = p => p.badge && <span style={{fontSize:"9px",fontWeight:700,color:GOLD_TEXT,background:"rgba(196,150,58,0.15)",padding:"2px 7px",borderRadius:"100px",letterSpacing:"0.03em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{p.badge}</span>;
   const rate = p => (
     <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-      <span style={{...TILE_FIGURE,color:G}}>{p.rate}</span>
+      <span style={{...TILE_FIGURE,color:G}}>{p.rate}{!figureOnName && p.rateNote && <span style={{fontSize:"12px",fontWeight:400,color:MUT}}> {p.rateNote}</span>}</span>
       <ExternalLink size={13} color={MUT}/>
     </div>
   );
@@ -55,12 +54,18 @@ export default function MobileProductListTile({ heading, subheading, products, d
               <div style={{display:"flex",alignItems:figureOnName ? "baseline" : "center",gap:"6px",flexWrap:figureOnName ? "nowrap" : "wrap"}}>
                 {figureOnName ? (
                   <>
-                    <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>{name(p)}{badge(p)}</span>
+                    <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>{name(p)}</span>
                     {rate(p)}
                   </>
-                ) : <>{name(p)}{badge(p)}</>}
+                ) : name(p)}
               </div>
-              <div style={{fontSize:"12px",color:MUT,marginTop:"1px"}}>{p.type}</div>
+              {/* A rate's note ("AER") sits under the rate, lined up with
+                  the figure rather than the link icon after it. */}
+              <div style={{display:"flex",justifyContent:"space-between",gap:"8px",fontSize:"12px",color:MUT,marginTop:"1px"}}>
+                <span>{p.type}</span>
+                {figureOnName && p.rateNote && <span style={{flexShrink:0,paddingRight:"19px"}}>{p.rateNote}</span>}
+                {/* 19px: the link icon (13px) and its gap (6px) after the rate. */}
+              </div>
             </div>
             </div>
             {!figureOnName && rate(p)}

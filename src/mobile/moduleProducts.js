@@ -4,6 +4,11 @@ import { isEasyAccess } from "../lib/savingsRates.js";
 // rate, so not a place worth looking.
 export const MIN_LISTED_RATE = 2.5;
 
+// One cash account row. Every rate to two decimal places, so a list never
+// mixes 4.5% with 4.85%; "AER" sits under it as a note. No "Highest rate"
+// badge: the list is sorted highest first, which says the same.
+const cashRow = r => ({ name: r.provider_name, type: r.account_type, rate: `${(+r.rate_aer).toFixed(2)}%`, rateNote: "AER", productUrl: r.product_url });
+
 // The provider lists on the Cash, Investments and Pension screens, shown by
 // MobileProductListTile.
 export function getModuleProducts(key, d, m, savingsRates) {
@@ -19,7 +24,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
         .filter(r => r.is_isa === false && isEasyAccess(r) && +r.rate_aer >= MIN_LISTED_RATE)
         .sort((a, b) => +b.rate_aer - +a.rate_aer)
         .slice(0, 4)
-        .map((r, i) => ({ name: r.provider_name, type: r.account_type, rate: `${r.rate_aer}% AER`, badge: i === 0 ? "Highest rate" : "", productUrl: r.product_url }));
+        .map(cashRow);
 
       if (savingsRates === null || savingsRates === undefined) {
         return { heading, nonIsaHeading, products: [], nonIsaProducts: [], disclaimer: "" };
@@ -41,13 +46,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
 
       return {
         heading, nonIsaHeading,
-        products: sorted.map((r, i) => ({
-          name: r.provider_name,
-          type: r.account_type,
-          rate: `${r.rate_aer}% AER`,
-          badge: i === 0 ? "Highest rate" : "",
-          productUrl: r.product_url,
-        })),
+        products: sorted.map(cashRow),
         nonIsaProducts: buildNonIsaProducts(),
         disclaimer: `Sorted by rate, highest first. Not a recommendation: Candid isn't paid by any provider. Rates correct as of ${dateLabel}; always confirm current rates directly with the provider before applying.`,
       };

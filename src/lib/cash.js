@@ -26,10 +26,11 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   // starting rate for savings (tax.js taxFreeInterest).
   const psaLimit = taxFreeInterest(m.nonSavingsIncome ?? m.adjustedNetIncome, m.taxBandLabel);
   // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-  let isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
-  let isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-  let nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
-  let nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+  let isaRateDecimal = Number.isFinite(+isaRatePct) && isaRatePct != null && isaRatePct !== "" ? +isaRatePct / 100 : 0.049;
+  // Two decimal places, as every other rate on the Cash page.
+  let isaRateDisplay = pctLabel(isaRateDecimal * 100);
+  let nonIsaRateDecimal = Number.isFinite(+nonIsaRatePct) && nonIsaRatePct != null && nonIsaRatePct !== "" ? +nonIsaRatePct / 100 : 0.045;
+  let nonIsaRateDisplay = pctLabel(nonIsaRateDecimal * 100);
   const rows = Array.isArray(rateRows) ? rateRows : null;
   const pbRow = premiumBondsRow(rows);
   const pbRate = pbRow ? +pbRow.rate_aer / 100 : PB_RATE;

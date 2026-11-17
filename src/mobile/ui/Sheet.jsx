@@ -1,6 +1,7 @@
 // The app's one bottom sheet (Account, Premium, and in time Assist and the net
 // worth row pages). It rises from the bottom, can be dragged down by its
-// handle to close, closes on Escape or a tap on the dimmed page, keeps
+// handle (or, on a touch screen, from anywhere while scrolled to the top) to
+// close, closes on Escape or a tap on the dimmed page, keeps
 // keyboard focus inside while open and hands it back after, stops the page
 // behind from scrolling, and hides the Assist button.
 //
@@ -15,7 +16,7 @@
 // onEscape:   what Escape does, if not closing (Account steps back a page).
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
+import { AnimatePresence, animate, motion, useDragControls, useMotionValue, useReducedMotion } from "framer-motion";
 import { ChevronLeft, X } from "lucide-react";
 import { CREAM, SANS, TILE_KICKER, RADIUS, Z } from "../../design-tokens.js";
 import useDialogFocus, { useHidesAssist } from "../useDialogFocus.js";
@@ -25,6 +26,71 @@ const BACKDROP = "rgba(10,20,15,0.45)";
 // Assist's thresholds: a pull past 90px, or a flick, closes it.
 const CLOSE_OFFSET = 90;
 const CLOSE_VELOCITY = 600;
+const SPRING = { type: "spring", damping: 34, stiffness: 340 };
+
+// On a touch screen the whole sheet pulls down, not only its handle: when
+// the content is scrolled to the top, a downward swipe anywhere moves the
+// sheet instead of scrolling (which on iOS bounced the content and left the
+// empty panel showing behind it). Upward swipes and swipes once scrolled
+// down scroll as normal.
+function usePullToClose(ref, y, onClose, off) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || off) return undefined;
+    let start = null;
+    let pulling = false;
+    let last = null;
+    const onStart = (e) => {
+      start = null;
+      pulling = false;
+      if (e.touches.length !== 1 || e.target.closest?.("[data-sheet-handle], input, textarea, select, [contenteditable]")) return;
+      // Inside an inner scroller that isn't at its top, the swipe scrolls it.
+      for (let n = e.target; n && n !== el; n = n.parentElement) if (n.scrollTop > 0) return;
+      const t = e.touches[0];
+      start = { x: t.clientX, y: t.clientY, top: el.scrollTop <= 0 };
+      last = { y: t.clientY, t: e.timeStamp, v: 0 };
+    };
+    const onMove = (e) => {
+      if (!start) return;
+      const t = e.touches[0];
+      const dy = t.clientY - start.y;
+      const dx = t.clientX - start.x;
+      if (!pulling) {
+        if (dy === 0 && dx === 0) return;
+        // Decided on the first move, so iOS never starts its own scroll.
+        if (!start.top || dy <= 0 || Math.abs(dx) > Math.abs(dy)) { start = null; return; }
+        pulling = true;
+      }
+      e.preventDefault();
+      const dt = e.timeStamp - last.t;
+      if (dt > 0) last = { y: t.clientY, t: e.timeStamp, v: ((t.clientY - last.y) / dt) * 1000 };
+      y.set(Math.max(0, dy));
+    };
+    const onEnd = (e) => {
+      if (pulling) {
+        // A flick counts only if the finger was still moving when it lifted.
+        const v = e.timeStamp - last.t > 100 ? 0 : last.v;
+        if (y.get() > CLOSE_OFFSET || v > CLOSE_VELOCITY) close.current();
+        // Back up either way: if the sheet does close, its exit takes over.
+        animate(y, 0, SPRING);
+      }
+      start = null;
+      pulling = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, [ref, y, off]);
+}
 
 // Stops the page behind scrolling while any sheet is open (counted, so two
 // stacked sheets don't unlock early).
@@ -51,6 +117,8 @@ function Panel({ onClose, onEscape, labelledBy, ariaLabel, background, padding, 
   const setRef = (n) => { ref.current = n; if (panelRef) panelRef.current = n; };
   const reduced = useReducedMotion() ?? false;
   const drag = useDragControls();
+  const y = useMotionValue(0);
+  usePullToClose(ref, y, onClose, reduced);
   useDialogFocus(ref, { onEscape: onEscape || onClose });
   useHidesAssist();
   useScrollLock();
@@ -79,9 +147,12 @@ function Panel({ onClose, onEscape, labelledBy, ariaLabel, background, padding, 
         initial={reduced ? { opacity: 0 } : { y: "100%" }}
         animate={reduced ? { opacity: 1 } : { y: 0 }}
         exit={reduced ? { opacity: 0 } : { y: "100%" }}
-        transition={reduced ? { duration: 0 } : { type: "spring", damping: 34, stiffness: 340 }}
+        transition={reduced ? { duration: 0 } : SPRING}
         style={{
-          position: "relative", width: "100%", maxWidth, maxHeight: "92vh", overflowY: "auto", overscrollBehavior: "contain",
+          y,
+          // "none", not "contain": no rubber-band bounce inside the sheet,
+          // which slid the content away from its own background.
+          position: "relative", width: "100%", maxWidth, maxHeight: "92vh", overflowY: "auto", overscrollBehavior: "none",
           background, borderRadius: `${RADIUS.sheet} ${RADIUS.sheet} 0 0`, outline: "none", fontFamily: SANS, boxSizing: "border-box",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -93,7 +164,7 @@ function Panel({ onClose, onEscape, labelledBy, ariaLabel, background, padding, 
             and close buttons stay tappable. */}
         <div aria-hidden="true"
           style={{ position: "sticky", top: 0, height: "22px", marginBottom: "-22px", display: "flex", justifyContent: "center", zIndex: 1, pointerEvents: "none" }}>
-          <div onPointerDown={(e) => drag.start(e)}
+          <div data-sheet-handle onPointerDown={(e) => drag.start(e)}
             style={{ width: "120px", height: "22px", display: "flex", justifyContent: "center", alignItems: "center", touchAction: "none", cursor: "grab", pointerEvents: "auto" }}>
             <span style={{ width: "36px", height: "5px", borderRadius: "3px", background: "rgba(22,47,36,0.18)" }} />
           </div>

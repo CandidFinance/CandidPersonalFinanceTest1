@@ -2820,15 +2820,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -2836,15 +2836,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -3484,7 +3484,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 2.12% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 2.12% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -5522,9 +5522,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 270,
     "currentPbInterest": 217,
@@ -8260,15 +8260,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -8276,15 +8276,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -8904,7 +8904,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 2.8% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 2.8% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -10684,9 +10684,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 336,
     "currentPbInterest": 0,
@@ -13477,15 +13477,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -13493,15 +13493,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -14121,7 +14121,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 2.35% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 2.35% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -15922,9 +15922,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 900,
     "currentPbInterest": 348,
@@ -17492,7 +17492,7 @@
     "isaRateDecimal": 0.047200000000000006,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 0,
     "currentPbInterest": 0,
@@ -17599,15 +17599,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -17615,15 +17615,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -18981,9 +18981,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 0,
     "currentPbInterest": 0,
@@ -21908,15 +21908,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -21924,15 +21924,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -22573,7 +22573,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 2.9% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 2.9% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -24470,9 +24470,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 1740,
     "currentPbInterest": 0,
@@ -27120,7 +27120,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 4500,
     "currentPbInterest": 0,
@@ -27213,15 +27213,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -27229,15 +27229,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -27825,7 +27825,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 3% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account.",
+      "title": "Your savings earn about 3% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account.",
       "body": "The FSCS protects £120,000 per person at each banking licence; £30,000 of yours is above that at one bank."
      },
      {
@@ -29692,9 +29692,9 @@
    "cash": {
     "psaLimit": 0,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 4500,
     "currentPbInterest": 0,
@@ -32474,15 +32474,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -32490,15 +32490,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -33105,7 +33105,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 1% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 1% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -34877,9 +34877,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -38209,7 +38209,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -38316,15 +38316,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -38332,15 +38332,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -41452,9 +41452,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -45165,7 +45165,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 105,
     "currentPbInterest": 0,
@@ -45272,15 +45272,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -45288,15 +45288,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -48797,9 +48797,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 105,
     "currentPbInterest": 0,
@@ -51711,7 +51711,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -51818,15 +51818,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -51834,15 +51834,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -54536,9 +54536,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -57365,15 +57365,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -57381,15 +57381,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -59843,9 +59843,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 3600,
     "currentPbInterest": 2175,
@@ -62615,15 +62615,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -62631,15 +62631,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -63259,7 +63259,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 2% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 2% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -65008,9 +65008,9 @@
    "cash": {
     "psaLimit": 1000,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 800,
     "currentPbInterest": 0,
@@ -67779,15 +67779,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -67795,15 +67795,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -68396,7 +68396,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 1.2% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 1.2% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -70171,9 +70171,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 264,
     "currentPbInterest": 0,
@@ -71712,7 +71712,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -71819,15 +71819,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -71835,15 +71835,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -73164,9 +73164,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -76354,15 +76354,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -76370,15 +76370,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -76971,7 +76971,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 4% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 4% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -79196,9 +79196,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 1800,
     "currentPbInterest": 0,
@@ -82847,15 +82847,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -82863,15 +82863,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -83518,7 +83518,7 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 3.1% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 3.1% on average. The highest rates today are 4.90% in a Cash ISA and 4.50% in a savings account."
      },
      {
       "label": "What you could do",
@@ -86150,9 +86150,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 2170,
     "currentPbInterest": 0,
@@ -88709,7 +88709,7 @@
     "isaRateDecimal": 0.0472,
     "isaRateDisplay": "4.72%",
     "nonIsaRateDecimal": 0.05,
-    "nonIsaRateDisplay": "5%",
+    "nonIsaRateDisplay": "5.00%",
     "PB_RATE": 0.036000000000000004,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
@@ -88816,15 +88816,15 @@
       {
        "name": "Chip",
        "type": "Easy access ISA",
-       "rate": "4.72% AER",
-       "badge": "Highest rate",
+       "rate": "4.72%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Plum",
        "type": "Easy access ISA",
-       "rate": "4.68% AER",
-       "badge": "",
+       "rate": "4.68%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -88832,15 +88832,15 @@
       {
        "name": "Cahoot",
        "type": "Easy access",
-       "rate": "5.00% AER",
-       "badge": "Highest rate",
+       "rate": "5.00%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       },
       {
        "name": "Chase",
        "type": "Easy access",
-       "rate": "4.50% AER",
-       "badge": "",
+       "rate": "4.50%",
+       "rateNote": "AER",
        "productUrl": "<undefined>"
       }
      ],
@@ -91179,9 +91179,9 @@
    "cash": {
     "psaLimit": 500,
     "isaRateDecimal": 0.049,
-    "isaRateDisplay": "4.9%",
+    "isaRateDisplay": "4.90%",
     "nonIsaRateDecimal": 0.045,
-    "nonIsaRateDisplay": "4.5%",
+    "nonIsaRateDisplay": "4.50%",
     "PB_RATE": 0.0435,
     "currentTaxableInterest": 250,
     "currentPbInterest": 0,
