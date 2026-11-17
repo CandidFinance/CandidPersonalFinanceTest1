@@ -31,7 +31,7 @@
 import { fmt } from "./format.js";
 import { PROPERTY_REGIONS, regionNation } from "./regions.js";
 import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE, NON_RESIDENT_SURCHARGE } from "./stampDuty.js";
-import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
+import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, lisaCountedAt, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
 import { affordableMaxPrice } from "./monthlyBudget.js";
 import { mortgageInputs, monthlyPayment, FIXED_PERIOD_OPTIONS, DEFAULT_MORTGAGE_TERM_YEARS, DEFAULT_MORTGAGE_RATE_PCT } from "./mortgage.js";
 import { DEFAULT_HORIZON_YEARS } from "./rentVsBuy.js";
@@ -117,6 +117,15 @@ export const READINESS_QUESTIONS = [
     showIf: ctx => sdlt(ctx) && !(ctx.d.propertyFirstTimeBuyer === "yes" && (!together(ctx) || ctx.d.partnerFirstTimeBuyer === "yes")),
   },
   {
+    // Keeping another home but replacing the one they live in: no surcharge
+    // (stampDuty.js). In ADDED_LATER (moduleStatus.js).
+    id:"replacingMain", field:"propertyReplacingMain", kind:"choice",
+    ask: ctx => together(ctx) ? "Are you selling the home you live in now to buy this one?" : "Are you selling your main home to buy this one?",
+    why: () => `Replacing the home you live in lifts the ${Math.round(ADDITIONAL_PROPERTY_SURCHARGE * 100)}% surcharge, even if you keep another.`,
+    options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }],
+    showIf: ctx => sdlt(ctx) && ctx.d.propertySoleProperty === "no" && !(ctx.d.propertyFirstTimeBuyer === "yes" && (!together(ctx) || ctx.d.partnerFirstTimeBuyer === "yes")),
+  },
+  {
     // The 2% non-resident surcharge (stampDuty.js); answers read by
     // borrowing.js nonUkResident.
     id:"ukResident", field:"propertyUkResident", kind:"choice",
@@ -145,8 +154,9 @@ export const READINESS_QUESTIONS = [
     prefill: ({ d, m }) => borrowingInputs(d, m).cashAvailable || null,
     note: ({ d, m }) => {
       const blank = d.propertyCashAvailable === "" || d.propertyCashAvailable == null;
-      return blank && suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses) > 0
-        ? `Your savings, less ${EMERGENCY_KEEP_BACK_MONTHS} months' spending kept back for emergencies.`
+      const lisa = lisaCountedAt(d, +d.propertyPrice || 0);
+      return blank && suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses) + lisa > 0
+        ? `Your savings, less ${EMERGENCY_KEEP_BACK_MONTHS} months' spending kept back for emergencies${lisa > 0 ? ", plus your Lifetime ISA" : ""}.`
         : null;
     },
   },

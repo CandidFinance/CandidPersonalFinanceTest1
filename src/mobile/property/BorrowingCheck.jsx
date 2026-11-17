@@ -8,7 +8,7 @@ import { G, MUT, TEXT, SANS, SC, WARNING, WHITE, CDARK, TILE_FIGURE } from "../.
 import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { affordableMaxPrice } from "../../lib/monthlyBudget.js";
-import { borrowingInputs, calcBorrowingCheck, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS, LISA_PRICE_CAP } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -93,8 +93,9 @@ function StampDutyBreakdown({ sd, style }) {
   if (sd.reliefApplies) notes.push("First-time buyer relief applied.");
   if (sd.reliefLostOverCap) notes.push("First-time buyer relief only covers homes of £500,000 or less, so standard rates apply.");
   if (sd.reliefNeedsAllBuyers) notes.push("First-time buyer relief needs both of you to be first-time buyers, so standard rates apply.");
-  if (sd.surcharge > 0) notes.push(`Includes the ${pct(sd.surcharge)} surcharge for buying a home while keeping another.`);
-  notes.push("Doesn't include the 2% surcharge for buyers not resident in the UK.");
+  if (sd.additionalSurcharge > 0) notes.push(`Includes the ${pct(sd.additionalSurcharge)} surcharge for buying a home while keeping another.`);
+  if (sd.replacingMainResidence) notes.push("No surcharge for keeping another home, as this one replaces the home you live in.");
+  if (sd.nonResidentSurcharge > 0) notes.push(`Includes the ${pct(sd.nonResidentSurcharge)} surcharge for buyers not resident in the UK.`);
   return (
     <div style={style}>
       {sd.breakdown.map(b => (
@@ -140,6 +141,8 @@ export function PurchaseInputs({ d, m, set }) {
   // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
   const manualStampDuty = sd && !sd.supported;
   const askFirstTime = firstTimeBuyerNeeded(d);
+  // A first-time buyer has no main home to replace (borrowing.js replacingMainHome).
+  const allFirstTime = d.propertyFirstTimeBuyer === "yes" && (!together || d.partnerFirstTimeBuyer === "yes");
   // The "?" for fields without a fuller explainer of their own: the reason
   // their walk-through question gives.
   const why = useWhyInfo({ d, m });
@@ -173,6 +176,19 @@ export function PurchaseInputs({ d, m, set }) {
           <PillCell>{toggle(d.propertySoleProperty || "yes", v => set("propertySoleProperty", v))}</PillCell>
         </div>
       </div>
+      {d.propertySoleProperty === "no" && !allFirstTime && (<>
+        <div style={{...columns,marginTop:"10px"}}>
+          <div style={column}/>
+          <div style={column}>
+            <div style={fieldLabel}>
+              Replacing main home?
+              {why.button("replacingMain")}
+            </div>
+            <PillCell>{toggle(d.propertyReplacingMain || "", v => set("propertyReplacingMain", v))}</PillCell>
+          </div>
+        </div>
+        {why.panel("replacingMain")}
+      </>)}
       {firstTimeInfoOpen && (
         <p style={{...explainer,marginTop:"8px"}}>
           Someone who has never owned a home, in the UK or anywhere else. In England and Northern Ireland, first-time buyers pay no stamp duty up to £300,000 and 5% on the part from £300,001 to £500,000, on homes of £500,000 or less.{together ? " Buying together, you both need to be first-time buyers to get this." : ""}
@@ -180,7 +196,7 @@ export function PurchaseInputs({ d, m, set }) {
       )}
       {soleInfoOpen && (
         <p style={{...explainer,marginTop:"8px"}}>
-          Whether this will be the only home {together ? "either of you owns" : "you own"}, in the UK or anywhere else. Keeping another home means stamp duty in England and Northern Ireland includes a 5% surcharge on the whole price.
+          Whether this will be the only home {together ? "either of you owns" : "you own"}, in the UK or anywhere else. Keeping another home means stamp duty in England and Northern Ireland includes a 5% surcharge on the whole price, unless this home replaces the one you live in.
         </p>
       )}
       </>)}
@@ -225,7 +241,7 @@ export function PurchaseInputs({ d, m, set }) {
       {why.panel("price")}
       {cashInfoOpen && (
         <p style={{...explainer,marginTop:"8px"}}>
-          Your cash savings, Premium Bonds and Cash ISAs ({fmt(cashPot)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
+          Your cash savings, Premium Bonds and Cash ISAs ({fmt(cashPot)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}.{input.lisaCounted > 0 ? <> Plus your Lifetime ISA ({fmt(input.lisaCounted)}), which can go towards a first home of {fmt(LISA_PRICE_CAP)} or less.</> : null} Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
         </p>
       )}
       {manualStampDuty && (

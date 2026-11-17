@@ -159,6 +159,8 @@ export function propertyRowFields(d, m, regionalRates, marketRates) {
     property_first_time_buyer: yesNo(d.propertyFirstTimeBuyer),
     partner_first_time_buyer: yesNo(d.partnerFirstTimeBuyer),
     property_sole_property: yesNo(d.propertySoleProperty),
+    // Needs supabase/hand-run/supabase_replacing_main_migration.sql run first.
+    property_replacing_main: yesNo(d.propertyReplacingMain),
     // The mortgage figures the calculation used (the user's or the defaults).
     property_mortgage_term_years: mi.termYears,
     property_mortgage_fixed_years: mi.fixedYears,

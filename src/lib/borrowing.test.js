@@ -223,6 +223,6 @@ test("max price: Scotland and Wales use the user's own tax figure; buying togeth
 });
 
 test("max price: nothing to buy with until cash covers the fees, and no figure without income", () => {
-  assert.deepEqual(calcMaxPrice({ cashAvailable: 1000, fees: 2500, incomes: [90000] }).price, 0);
-  assert.equal(calcMaxPrice({ cashAvailable: 30000, incomes: [] }), null);
+  assert.deepEqual(calcMaxPrice({ cashAt: () => 1000, fees: 2500, incomes: [90000] }).price, 0);
+  assert.equal(calcMaxPrice({ cashAt: () => 30000, incomes: [] }), null);
 });

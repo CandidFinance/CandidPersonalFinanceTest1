@@ -121,9 +121,11 @@ function stampDutyOf(d, detail) {
 // is no more than `multiple` times income and the deposit left after stamp
 // duty and fees is at least MIN_DEPOSIT_PCT of the price. `stampDutyAt`
 // gives the stamp duty at a price, worked out afresh as the price moves
-// (first-time buyer relief stops at £500,000, say). `cashAt`, when given,
-// gives the cash available at a price (a Lifetime ISA stops counting above
-// £450,000); it only falls as the price rises, so the search still holds.
+// (first-time buyer relief stops at £500,000, say). `cashAt` gives the cash
+// available at a price, also worked out afresh (a Lifetime ISA stops counting
+// above £450,000); it only falls as the price rises, so the search still
+// holds. There's no fixed cash figure, so one taken at a single price can't
+// be carried past the cap.
 //
 // Both limits only tighten as the price rises (stamp duty never falls as
 // the price goes up), so the highest price passing each is found by
@@ -145,11 +147,11 @@ function highestPassing(passes) {
   }
   return Math.floor(lo / PRICE_ROUND) * PRICE_ROUND;
 }
-export function calcMaxPrice({ cashAvailable = 0, cashAt = null, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE, budget = null }) {
+export function calcMaxPrice({ cashAt = () => 0, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE, budget = null }) {
   const income = incomes.reduce((s, x) => s + Math.max(0, +x || 0), 0);
   if (!(income > 0)) return null;
   const maxLoan = income * multiple;
-  const check = p => calcBorrowingCheck({ price: p, cashAvailable: cashAt ? cashAt(p) : cashAvailable, stampDuty: stampDutyAt(p), fees, incomes });
+  const check = p => calcBorrowingCheck({ price: p, cashAvailable: cashAt(p), stampDuty: stampDutyAt(p), fees, incomes });
   const byIncome = highestPassing(p => check(p).loanNeeded <= maxLoan);
   const byDeposit = highestPassing(p => p - check(p).loanNeeded >= p * MIN_DEPOSIT_PCT && check(p).upfrontShortfall === 0);
   const byBudget = budget ? highestPassing(p => budget.costAt(p, check(p).loanNeeded) <= budget.room) : Infinity;
