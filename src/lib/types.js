@@ -183,6 +183,7 @@
  * @property {string} propertyFirstTimeBuyer
  * @property {string} partnerFirstTimeBuyer
  * @property {string} propertySoleProperty
+ * @property {string} propertyReplacingMain
  * @property {string} [propertyUkResident]
  * @property {string} propertyMortgageTerm
  * @property {string} propertyFixedYears

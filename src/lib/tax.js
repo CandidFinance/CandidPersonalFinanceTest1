@@ -21,6 +21,9 @@ export const EMPLOYER_NI_RATE = 0.15;          // from April 2025
 export const PAST_STATE_PENSION_AGE = 67;
 // Capital Gains Tax: the yearly tax-free allowance.
 export const CGT_ANNUAL_ALLOWANCE = 3000;
+// Capital gains tax on shares and funds, from 30 Oct 2024: 18% within the
+// basic-rate band, 24% above it.
+export const CGT_RATES = { basic: 0.18, higher: 0.24 };
 // Dividends: the yearly tax-free allowance.
 export const DIVIDEND_ALLOWANCE = 500;
 // Starting rate for savings: up to £5,000 of interest at 0%, less £1 for every

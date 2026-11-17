@@ -30,6 +30,36 @@ export function suggestedCashAvailable(cashPot, monthlyExpenses) {
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 
+// A Lifetime ISA can go towards a first home of £450,000 or less without the
+// withdrawal charge. It's counted in the suggested cash available for a
+// first-time buyer at a price under the cap, on top of the emergency
+// keep-back (it isn't emergency money). Above the cap it's left out, so the
+// charge never enters a figure.
+export const LISA_PRICE_CAP = 450000;
+export function lisaBalance(d) {
+  return Math.max(0, (+d.isaPrevLISA || 0) + (+d.isaThisYearLISA || 0));
+}
+// The Lifetime ISA counted at a price: 0 unless cash available is the
+// suggestion (a typed-in figure is the user's own), they're a first-time
+// buyer and the price is within the cap. Only once it holds money from before
+// this tax year: a Lifetime ISA can't go towards a home without the charge
+// until 12 months after the first payment.
+export function lisaCountedAt(d, price) {
+  return !filled(d.propertyCashAvailable) && d.propertyFirstTimeBuyer === "yes" && price <= LISA_PRICE_CAP && +d.isaPrevLISA > 0 ? lisaBalance(d) : 0;
+}
+// Replacing the main home lifts the surcharge (stampDuty.js); a first-time
+// buyer has no main home to replace (buying together, both of them).
+export function replacingMainHome(d) {
+  const allFirstTime = d.propertyFirstTimeBuyer === "yes" && (d.propertyBuyingMode !== "together" || d.partnerFirstTimeBuyer === "yes");
+  return d.propertyReplacingMain === "yes" && !allFirstTime;
+}
+// Cash available at a price: the user's own figure, or the suggestion plus
+// any Lifetime ISA counted.
+function cashAvailableAt(d, m, price) {
+  return filled(d.propertyCashAvailable) ? +d.propertyCashAvailable
+    : suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses) + lisaCountedAt(d, price);
+}
+
 // Income a lender would look at for one buyer: salary plus other income.
 // Bonuses and dividends are left out, as lenders treat them case by case.
 export function lenderIncome(salary, otherIncome) {
@@ -54,7 +84,8 @@ export function borrowingInputs(d, m) {
   const stampDutyDetail = stampDutyDetailAt(d, price);
   return {
     price,
-    cashAvailable: filled(d.propertyCashAvailable) ? +d.propertyCashAvailable : suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses),
+    cashAvailable: cashAvailableAt(d, m, price),
+    lisaCounted: lisaCountedAt(d, price),
     stampDuty: stampDutyOf(d, stampDutyDetail),
     stampDutyDetail,
     fees: filled(d.propertyFees) ? +d.propertyFees : DEFAULT_PROPERTY_FEES,
@@ -78,6 +109,7 @@ function stampDutyDetailAt(d, price) {
     price, nation,
     firstTimeBuyers: together ? [d.propertyFirstTimeBuyer === "yes", d.partnerFirstTimeBuyer === "yes"] : [d.propertyFirstTimeBuyer === "yes"],
     additionalProperty: d.propertySoleProperty === "no",
+    replacingMainResidence: replacingMainHome(d),
     nonResident: nonUkResident(d),
   }) : null;
 }
@@ -89,7 +121,9 @@ function stampDutyOf(d, detail) {
 // is no more than `multiple` times income and the deposit left after stamp
 // duty and fees is at least MIN_DEPOSIT_PCT of the price. `stampDutyAt`
 // gives the stamp duty at a price, worked out afresh as the price moves
-// (first-time buyer relief stops at £500,000, say).
+// (first-time buyer relief stops at £500,000, say). `cashAt`, when given,
+// gives the cash available at a price (a Lifetime ISA stops counting above
+// £450,000); it only falls as the price rises, so the search still holds.
 //
 // Both limits only tighten as the price rises (stamp duty never falls as
 // the price goes up), so the highest price passing each is found by
@@ -111,11 +145,11 @@ function highestPassing(passes) {
   }
   return Math.floor(lo / PRICE_ROUND) * PRICE_ROUND;
 }
-export function calcMaxPrice({ cashAvailable = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE, budget = null }) {
+export function calcMaxPrice({ cashAvailable = 0, cashAt = null, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE, budget = null }) {
   const income = incomes.reduce((s, x) => s + Math.max(0, +x || 0), 0);
   if (!(income > 0)) return null;
   const maxLoan = income * multiple;
-  const check = p => calcBorrowingCheck({ price: p, cashAvailable, stampDuty: stampDutyAt(p), fees, incomes });
+  const check = p => calcBorrowingCheck({ price: p, cashAvailable: cashAt ? cashAt(p) : cashAvailable, stampDuty: stampDutyAt(p), fees, incomes });
   const byIncome = highestPassing(p => check(p).loanNeeded <= maxLoan);
   const byDeposit = highestPassing(p => p - check(p).loanNeeded >= p * MIN_DEPOSIT_PCT && check(p).upfrontShortfall === 0);
   const byBudget = budget ? highestPassing(p => budget.costAt(p, check(p).loanNeeded) <= budget.room) : Infinity;
@@ -131,8 +165,8 @@ export function calcMaxPrice({ cashAvailable = 0, fees = DEFAULT_PROPERTY_FEES, 
 // calcMaxPrice from Candid's saved inputs, as borrowingInputs. The screens
 // use affordableMaxPrice (monthlyBudget.js), which adds the budget limit.
 export function maxPriceFor(d, m, multiple = LENDER_INCOME_MULTIPLE, budget = null) {
-  const { cashAvailable, fees, incomes } = borrowingInputs(d, m);
-  return calcMaxPrice({ cashAvailable, fees, incomes, multiple, budget, stampDutyAt: p => stampDutyOf(d, stampDutyDetailAt(d, p)) });
+  const { fees, incomes } = borrowingInputs(d, m);
+  return calcMaxPrice({ cashAt: p => cashAvailableAt(d, m, p), fees, incomes, multiple, budget, stampDutyAt: p => stampDutyOf(d, stampDutyDetailAt(d, p)) });
 }
 
 // Geometry for the times-income bar, as percentages of its width. The scale

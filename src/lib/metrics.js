@@ -1,4 +1,4 @@
-import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, salarySacrificeNiCap, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
+import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, salarySacrificeNiCap, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE, CGT_RATES } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { employerPct, unclaimedMatchPct } from "./employer.js";
 import { GROWTH_REAL_PCT, payFactor, PAY_LATER_GROWTH } from "./growth.js";
@@ -252,7 +252,7 @@ export function calcMetrics(d, marketRates = {}) {
         realisedCgtGains = d.hasSoldAssetsOutsideWrapper === "yes" ? Math.max(0, +d.realisedCgtGains||0) : 0,
         remainingCgtAllowance = Math.max(0, CGT_ANNUAL_ALLOWANCE - realisedCgtGains),
         crystallisable = Math.min(gains, remainingCgtAllowance),
-        cgtRate = taxBandLabel !== "basic" ? 0.24 : 0.18,
+        cgtRate = taxBandLabel !== "basic" ? CGT_RATES.higher : CGT_RATES.basic,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
         // Blended, not flat: only isaHeadroom worth of CASH could actually go into an

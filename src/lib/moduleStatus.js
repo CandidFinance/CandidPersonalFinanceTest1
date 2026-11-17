@@ -518,7 +518,7 @@ const NOT_ANSWERS = ["loanBalance", "pgLoanBalance", "payday"];
 // taken before still matches: a "Yes" that only opens the figures below it
 // (by field), and the loan's rate asked again below the balance (by id).
 // The £100k trap's partner questions (asked once, from Kids & family) too.
-const ADDED_LATER = ["hasCashSavings", "hasSsIsa", "loanBalance.studentLoanRate", "partnerOver100k", "partnerIncome"];
+const ADDED_LATER = ["hasCashSavings", "hasSsIsa", "loanBalance.studentLoanRate", "partnerOver100k", "partnerIncome", "propertyReplacingMain"];
 const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(MODULE_GUIDES[key]?.questions || [])
   .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field) && !ADDED_LATER.includes(q.field) && !ADDED_LATER.includes(q.id))
   .map(q => q.field)).map(f => d[f] ?? null));

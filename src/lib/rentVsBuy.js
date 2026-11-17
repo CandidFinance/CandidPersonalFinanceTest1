@@ -31,7 +31,7 @@
 //   buyerWealth  = buying.ownMoneyIn + priceRise - sellingCosts
 //   renterWealth = renting.ownMoneyIn + earnings - tax
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
-import { calcIncomeTax, savingsTaxRates, dividendTaxRates, cashIsaLimit, calcNI, ISA_ALLOWANCE, DIVIDEND_ALLOWANCE, CGT_ANNUAL_ALLOWANCE, PSA_BY_BAND, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD } from "./tax.js";
+import { calcIncomeTax, savingsTaxRates, dividendTaxRates, cashIsaLimit, calcNI, ISA_ALLOWANCE, DIVIDEND_ALLOWANCE, CGT_ANNUAL_ALLOWANCE, CGT_RATES, PSA_BY_BAND, PERSONAL_ALLOWANCE, BASIC_RATE_BAND, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD } from "./tax.js";
 import { taxYearOf, taxYearFor } from "./taxYear.js";
 import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
 import { PB_RATE } from "./cash.js";
@@ -83,7 +83,20 @@ const UK_RENT_GROWTH_PCT = 3.8;
 // The allowances live in tax.js; re-exported for the files that read them here.
 export { ISA_ALLOWANCE, DIVIDEND_ALLOWANCE };
 export const CGT_ALLOWANCE = CGT_ANNUAL_ALLOWANCE;
-const CGT_RATE = { basic: 0.18, higher: 0.24, additional: 0.24 };
+// Capital gains tax on a gain above the allowance: the part that fits in the
+// person's unused basic-rate band at the basic rate, the rest at the higher
+// rate. `taxableIncome` is their income for the year before the Personal
+// Allowance (salary less pension contributions), and only the part above the
+// allowance uses the band; this year's interest or dividends (`income`) use
+// it first. A person with no `taxableIncome` is taxed at their band's
+// rate throughout.
+export function cgtOn(gain, p) {
+  if (!(gain > 0)) return 0;
+  if (p.taxableIncome == null) return gain * (p.taxBand === "basic" ? CGT_RATES.basic : CGT_RATES.higher);
+  const bandLeft = Math.max(0, BASIC_RATE_BAND - Math.max(0, p.taxableIncome - PERSONAL_ALLOWANCE) - Math.max(0, p.income));
+  const atBasic = Math.min(gain, bandLeft);
+  return atBasic * CGT_RATES.basic + (gain - atBasic) * CGT_RATES.higher;
+}
 // Cash interest outside an ISA: tax above the Personal Savings Allowance.
 // The rates for each year, and dividend rates, come from tax.js by tax year.
 const SAVINGS_ALLOWANCE = PSA_BY_BAND;
@@ -115,7 +128,7 @@ export function partnerSavingsEstimate({ salary = 0, otherIncome = 0, pensionPct
   const takeHome = Math.max(0, salary + otherIncome - pension - calcIncomeTax(taxable) - ni);
   const costs = 12 * yourMonthlyExpenses * (yourSalary > 0 ? salary / yourSalary : 1);
   const surplus = Math.max(0, takeHome - costs);
-  return { takeHome, costs, surplus, isaCapacity: Math.min(ISA_ALLOWANCE, surplus), taxBand: taxBandFor(taxable) };
+  return { takeHome, costs, surplus, isaCapacity: Math.min(ISA_ALLOWANCE, surplus), taxBand: taxBandFor(taxable), taxable };
 }
 
 // Buyer's costs in a given year (1-based), from that year's mortgage row.
@@ -150,7 +163,8 @@ export function buyerYearCosts(input, scheduleRow, year) {
 //   (the part paid as income: all of it for cash), alreadyInIsa (the part
 //   of the upfront sum already in Cash ISAs, so needing no new allowance),
 //   people: [{ who, isaHeadroom (this tax year), isaCapacity (a year, from
-//     income), share (of the money invested), taxBand }]
+//     income), share (of the money invested), taxBand, taxableIncome (for
+//     capital gains tax: cgtOn) }]
 export function calcRentVsBuy(input) {
   const years = Math.max(1, Math.min(MAX_HORIZON_YEARS, Math.round(input.horizonYears || DEFAULT_HORIZON_YEARS)));
   const schedule = mortgageSchedule({ ...input.mortgage, scenario: input.mortgageScenario || "moderate" });
@@ -241,9 +255,11 @@ export function calcRentVsBuy(input) {
     let taxPaid = 0, unrealisedTaxTotal = 0;
     for (const p of people) {
       const incomeTax = Math.max(0, p.income - incomeAllowance(p.taxBand)) * incomeTaxRate(p.taxBand, startTaxYear + year - 1);
-      const realisedTax = Math.max(0, p.realised - CGT_ALLOWANCE) * CGT_RATE[p.taxBand];
+      const realisedGain = Math.max(0, p.realised - CGT_ALLOWANCE);
+      const realisedTax = cgtOn(realisedGain, p);
       const allowanceLeft = Math.max(0, CGT_ALLOWANCE - p.realised);
-      const unrealisedTax = Math.max(0, p.gia - p.basis - allowanceLeft) * CGT_RATE[p.taxBand];
+      // Cashing in now: the gain sits on top of this year's realised gain.
+      const unrealisedTax = cgtOn(realisedGain + Math.max(0, p.gia - p.basis - allowanceLeft), p) - realisedTax;
       p.gia -= incomeTax + realisedTax;
       taxPaid += incomeTax + realisedTax;
       renterWealth += p.isa + p.gia - unrealisedTax;
@@ -397,6 +413,9 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
       : limitNow(d.age),
     surplus: Math.max(0, (m.monthlySurplus || 0) * 12),
     taxBand: m.taxBandLabel || "basic",
+    // Less interest on savings: most of it is on the cash the renter's pot
+    // comes from, whose interest the model counts itself (`income`).
+    taxableIncome: m.adjustedNetIncome != null ? m.adjustedNetIncome - (m.savingsInterest || 0) : null,
   }];
   let partnerEstimate = null;
   if (d.propertyBuyingMode === "together") {
@@ -421,6 +440,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
       isaHeadroom: Math.max(0, limitNow(null) - (+d.partnerIsaThisYear || 0)),
       surplus: partnerEstimate.surplus,
       taxBand: partnerEstimate.taxBand,
+      taxableIncome: partnerEstimate.taxable,
     });
   }
   const totalSurplus = people.reduce((s, p) => s + p.surplus, 0);
@@ -434,7 +454,9 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
     horizonYears: filled(d.propertyHorizonYears) && +d.propertyHorizonYears >= 1 ? Math.min(MAX_HORIZON_YEARS, Math.round(+d.propertyHorizonYears)) : DEFAULT_HORIZON_YEARS,
     price: b.price,
     upfront,
-    alreadyInIsa: cashPot > 0 ? Math.min(cashIsa, upfront * cashIsa / cashPot) : 0,
+    // A Lifetime ISA counted in the cash (borrowing.js lisaCountedAt) stays
+    // sheltered too.
+    alreadyInIsa: Math.min(upfront, b.lisaCounted + (cashPot > 0 ? Math.min(cashIsa, Math.max(0, upfront - b.lisaCounted) * cashIsa / cashPot) : 0)),
     mortgage: mortgageInputs(d, r.loanNeeded),
     mortgageScenario: scenario,
     housePriceGrowthPct,

@@ -1124,6 +1124,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 16400,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -4157,6 +4158,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 16400,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -6819,6 +6821,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 11600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -9477,6 +9480,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 11600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -11983,6 +11987,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 48200,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -14706,6 +14711,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 48200,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -17126,6 +17132,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 0,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -18734,6 +18741,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 0,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -20376,6 +20384,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 49500,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -23233,6 +23242,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 49500,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -25732,6 +25742,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 132000,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -28400,6 +28411,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 132000,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -30945,6 +30957,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 19600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -33657,6 +33670,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 19600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -36247,6 +36261,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -39617,6 +39632,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -42818,6 +42834,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 0,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -46569,6 +46586,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 0,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -50172,6 +50190,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -53124,6 +53143,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -55787,6 +55807,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 124600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -58544,6 +58565,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 124600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -61089,6 +61111,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 34600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -63791,6 +63814,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 34600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -66223,6 +66247,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 16600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -68924,6 +68949,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 16600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -71318,6 +71344,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -72897,6 +72924,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -74416,6 +74444,7 @@
     "b": {
      "price": 325000,
      "cashAvailable": 39600,
+     "lisaCounted": 0,
      "stampDuty": 1250,
      "stampDutyDetail": {
       "supported": true,
@@ -74438,7 +74467,10 @@
       "reliefLostOverCap": false,
       "reliefNeedsAllBuyers": false,
       "surcharge": 0,
-      "nonResident": false
+      "additionalSurcharge": 0,
+      "nonResidentSurcharge": 0,
+      "nonResident": false,
+      "replacingMainResidence": false
      },
      "fees": 2500,
      "incomes": [
@@ -77533,6 +77565,7 @@
     "b": {
      "price": 325000,
      "cashAvailable": 39600,
+     "lisaCounted": 0,
      "stampDuty": 1250,
      "stampDutyDetail": {
       "supported": true,
@@ -77555,7 +77588,10 @@
       "reliefLostOverCap": false,
       "reliefNeedsAllBuyers": false,
       "surcharge": 0,
-      "nonResident": false
+      "additionalSurcharge": 0,
+      "nonResidentSurcharge": 0,
+      "nonResident": false,
+      "replacingMainResidence": false
      },
      "fees": 2500,
      "incomes": [
@@ -80575,6 +80611,7 @@
     "b": {
      "price": 450000,
      "cashAvailable": 64600,
+     "lisaCounted": 0,
      "stampDuty": 12500,
      "stampDutyDetail": {
       "supported": true,
@@ -80603,7 +80640,10 @@
       "reliefLostOverCap": false,
       "reliefNeedsAllBuyers": true,
       "surcharge": 0,
-      "nonResident": false
+      "additionalSurcharge": 0,
+      "nonResidentSurcharge": 0,
+      "nonResident": false,
+      "replacingMainResidence": false
      },
      "fees": 2500,
      "incomes": [
@@ -84153,6 +84193,7 @@
     "b": {
      "price": 450000,
      "cashAvailable": 64600,
+     "lisaCounted": 0,
      "stampDuty": 12500,
      "stampDutyDetail": {
       "supported": true,
@@ -84181,7 +84222,10 @@
       "reliefLostOverCap": false,
       "reliefNeedsAllBuyers": true,
       "surcharge": 0,
-      "nonResident": false
+      "additionalSurcharge": 0,
+      "nonResidentSurcharge": 0,
+      "nonResident": false,
+      "replacingMainResidence": false
      },
      "fees": 2500,
      "incomes": [
@@ -87307,6 +87351,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,
@@ -89904,6 +89949,7 @@
     "b": {
      "price": 0,
      "cashAvailable": 4600,
+     "lisaCounted": 0,
      "stampDuty": 0,
      "stampDutyDetail": null,
      "fees": 2500,

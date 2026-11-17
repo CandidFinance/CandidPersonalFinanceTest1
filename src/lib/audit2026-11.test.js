@@ -338,3 +338,75 @@ test("Q10: retirement adequacy uses the NI-years State Pension, from State Pensi
   assert.equal(at67.beforeStatePension, false);
   assert.ok(early.net < at67.net);
 });
+
+// Property batch (17 Nov 2026): P1 to P3 and Q8.
+import { calcStampDuty } from "./stampDuty.js";
+import { borrowingInputs, maxPriceFor, LISA_PRICE_CAP } from "./borrowing.js";
+import { cgtOn } from "./rentVsBuy.js";
+import { READINESS_QUESTIONS } from "./propertyGuide.js";
+
+test("P1: no additional-property surcharge when the purchase replaces the main home", () => {
+  const sd = over => calcStampDuty({ price: 400000, nation: "england", firstTimeBuyers: [false], additionalProperty: true, ...over }).total;
+  assert.equal(sd({ replacingMainResidence: true }), 10000);
+  assert.equal(sd({}), 30000);
+  // From the saved answers.
+  const d = { salary: "60000", propertyRegion: "south_east", propertyFirstTimeBuyer: "no", propertySoleProperty: "no", propertyPrice: "400000" };
+  const m = calcMetrics(d);
+  assert.equal(borrowingInputs(d, m).stampDuty, 30000);
+  assert.equal(borrowingInputs({ ...d, propertyReplacingMain: "yes" }, m).stampDuty, 10000);
+  // A first-time buyer has no main home to replace.
+  assert.equal(borrowingInputs({ ...d, propertyFirstTimeBuyer: "yes", propertyReplacingMain: "yes" }, m).stampDuty, 30000);
+  // A sole property ignores the answer.
+  assert.equal(borrowingInputs({ ...d, propertySoleProperty: "yes", propertyReplacingMain: "yes" }, m).stampDuty, 10000);
+});
+
+test("Q7: the replacing-main-home question is asked only when keeping another home", () => {
+  const q = READINESS_QUESTIONS.find(x => x.id === "replacingMain");
+  const ctx = d => ({ d: { propertyRegion: "london", ...d }, m: {} });
+  assert.equal(q.showIf(ctx({ propertySoleProperty: "no" })), true);
+  assert.equal(q.showIf(ctx({ propertySoleProperty: "yes" })), false);
+  // Scotland: no SDLT, so not asked.
+  assert.equal(q.showIf(ctx({ propertySoleProperty: "no", propertyRegion: "scotland" })), false);
+});
+
+test("P3: the non-resident 2% starts at £40,000", () => {
+  const sd = price => calcStampDuty({ price, nation: "england", firstTimeBuyers: [false], nonResident: true }).total;
+  assert.equal(sd(39999), 0);
+  assert.equal(sd(40000), 800);
+});
+
+test("P2: rent vs buy taxes a gain at 18% only within the unused basic-rate band", () => {
+  // £45,000 taxable income: £5,270 of band left. Gain £55,417 less £3,000.
+  assert.equal(Math.round(cgtOn(52417, { taxableIncome: 45000, income: 0, taxBand: "basic" })), 12264);
+  // Interest or dividends this year use the band first.
+  assert.equal(Math.round(cgtOn(10000, { taxableIncome: 45000, income: 5270, taxBand: "basic" })), 2400);
+  // Wholly within the band: 18%.
+  assert.equal(Math.round(cgtOn(10000, { taxableIncome: 20000, income: 0, taxBand: "basic" })), 1800);
+  // Higher rate: 24%, as before.
+  assert.equal(Math.round(cgtOn(10000, { taxableIncome: 60000, income: 0, taxBand: "higher" })), 2400);
+  // Income under the Personal Allowance: the band is still £37,700.
+  assert.equal(Math.round(cgtOn(45000, { taxableIncome: 0, income: 0, taxBand: "basic" })), Math.round(37700 * 0.18 + 7300 * 0.24));
+  // No income known: the band's rate.
+  assert.equal(Math.round(cgtOn(10000, { taxBand: "basic" })), 1800);
+});
+
+test("Q8: a first-time buyer's Lifetime ISA counts towards the deposit under £450,000", () => {
+  const d = { salary: "45000", cashSavings: "30000", monthlyExpenses: "2000", propertyRegion: "east_midlands",
+    propertyFirstTimeBuyer: "yes", propertySoleProperty: "yes", isaPrevLISA: "10000", isaThisYearLISA: "2500", propertyPrice: "200000" };
+  const m = calcMetrics(d);
+  const without = borrowingInputs({ ...d, isaPrevLISA: "", isaThisYearLISA: "" }, m);
+  const withLisa = borrowingInputs(d, m);
+  assert.equal(withLisa.lisaCounted, 12500);
+  assert.equal(withLisa.cashAvailable - without.cashAvailable, 12500);
+  // Over the cap: not counted.
+  assert.equal(borrowingInputs({ ...d, propertyPrice: String(LISA_PRICE_CAP + 10000) }, m).lisaCounted, 0);
+  // Opened this tax year: not yet usable without the charge.
+  assert.equal(borrowingInputs({ ...d, isaPrevLISA: "", isaThisYearLISA: "4000" }, m).lisaCounted, 0);
+  // Not a first-time buyer, or cash typed in: not counted.
+  assert.equal(borrowingInputs({ ...d, propertyFirstTimeBuyer: "no" }, m).lisaCounted, 0);
+  assert.equal(borrowingInputs({ ...d, propertyCashAvailable: "20000" }, m).cashAvailable, 20000);
+  // The most they could pay rises.
+  const most = maxPriceFor(d, m).price, before = maxPriceFor({ ...d, isaPrevLISA: "", isaThisYearLISA: "" }, m).price;
+  assert.ok(most > before, `${most} should be above ${before}`);
+  assert.ok(most <= LISA_PRICE_CAP || maxPriceFor(d, m).deposit >= 0);
+});

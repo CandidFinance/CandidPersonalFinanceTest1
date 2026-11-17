@@ -147,7 +147,7 @@ const BLANK_DATA = {
   // duty is calculated from it in England/NI; propertyStampDuty is only the
   // user's own figure for Scotland and Wales. Blank mortgage fields use the
   // defaults in src/lib/mortgage.js.
-  propertyRegion:"", propertyFirstTimeBuyer:"", partnerFirstTimeBuyer:"", propertySoleProperty:"yes",
+  propertyRegion:"", propertyFirstTimeBuyer:"", partnerFirstTimeBuyer:"", propertySoleProperty:"yes", propertyReplacingMain:"",
   propertyMortgageTerm:"", propertyFixedYears:"", propertyMortgageRate:"", propertyRemortgageFee:"",
   // Rent vs buy (step 3). Blank assumptions use the defaults and regional
   // figures in src/lib/rentVsBuy.js.

@@ -22,7 +22,10 @@ export const FIRST_TIME_BUYER_MAX_PRICE = 500000;
 // The part of the price a first-time buyer pays no stamp duty on.
 export const FIRST_TIME_BUYER_NIL_BAND = FIRST_TIME_BUYER_BANDS[0][0];
 // Higher rates for additional dwellings: +5 points on every band, on
-// purchases of £40,000 or more.
+// purchases of £40,000 or more. They don't apply when the purchase replaces
+// the buyer's main residence, even if they keep another property (GOV.UK
+// "Stamp Duty Land Tax: buying an additional residential property"). The
+// non-resident 2% also starts at £40,000.
 export const ADDITIONAL_PROPERTY_SURCHARGE = 0.05;
 export const ADDITIONAL_PROPERTY_MIN_PRICE = 40000;
 
@@ -35,13 +38,16 @@ export function sdltApplies(nation) {
 
 // `firstTimeBuyers` has one entry per buyer; relief needs every buyer to be
 // a first-time buyer. `additionalProperty` is true when the buyer(s) will
-// own another home after this purchase.
-export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additionalProperty = false, nonResident = false }) {
+// own another home after this purchase; `replacingMainResidence` is true
+// when this home replaces the one they live in, which lifts the surcharge.
+export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additionalProperty = false, replacingMainResidence = false, nonResident = false }) {
   if (!sdltApplies(nation)) return { supported: false, nation };
   const allFirstTime = firstTimeBuyers.length > 0 && firstTimeBuyers.every(Boolean);
   const reliefApplies = allFirstTime && !additionalProperty && price <= FIRST_TIME_BUYER_MAX_PRICE;
-  const surcharge = (additionalProperty && price >= ADDITIONAL_PROPERTY_MIN_PRICE ? ADDITIONAL_PROPERTY_SURCHARGE : 0)
-    + (nonResident ? NON_RESIDENT_SURCHARGE : 0);
+  const overMin = price >= ADDITIONAL_PROPERTY_MIN_PRICE;
+  const additionalSurcharge = additionalProperty && !replacingMainResidence && overMin ? ADDITIONAL_PROPERTY_SURCHARGE : 0;
+  const nonResidentSurcharge = nonResident && overMin ? NON_RESIDENT_SURCHARGE : 0;
+  const surcharge = additionalSurcharge + nonResidentSurcharge;
   const bands = reliefApplies ? FIRST_TIME_BUYER_BANDS : STANDARD_BANDS;
 
   const breakdown = [];
@@ -62,6 +68,6 @@ export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additio
     reliefLostOverCap: allFirstTime && !additionalProperty && price > FIRST_TIME_BUYER_MAX_PRICE,
     // Joint buyers where only one is a first-time buyer get no relief.
     reliefNeedsAllBuyers: firstTimeBuyers.length > 1 && firstTimeBuyers.some(Boolean) && !allFirstTime,
-    surcharge, nonResident,
+    surcharge, additionalSurcharge, nonResidentSurcharge, nonResident, replacingMainResidence: additionalProperty && replacingMainResidence,
   };
 }
