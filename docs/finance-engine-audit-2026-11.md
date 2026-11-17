@@ -9,7 +9,8 @@ Follows `docs/finance-engine-audit.md` (8 Oct 2026) and the brief in `docs/figur
 - **Part 1, forecast, windfall, drawdown, Assist, emails and the public calculator pages: done** by a second background check. Its findings are F1 to F12 in section 2. It read its sources through a summarising fetch, did not open the Budget 2026 document, and did not build the public pages (findings there come from the page source).
 - **Part 1, not read in full:** `netWorthView.js`, `guesses.js`, `cashQuick.js`, `pensionQuick.js`, `studentLoanQuick.js`, `moduleReveal.js`, `reportRow.js`. Only the parts named below were checked.
 - **Fixed, batch 1 (tax trap and pension), 16 Nov 2026:** E1 to E11, E12 except the Postgraduate turning point, and F8's Sunday email salary sacrifice cap. Each has a test in `src/lib/audit2026-11.test.js`. Two screen changes from the batch (a payday question with pay to date, and the interest line on the trap page) wait for Harvey's check. Also fixed after review: a weekend payday moved into the month before, a payday on the 6th moved before 6 April, and Cash ISA money left out of the interest. Not fixed: dividends are still stacked below savings interest only for the allowance taper, not for the dividend bands (the interest is still left out of the bands, as before).
-- **Still open:** Property (P), forecast and windfall (F, with Q12), public pages and emails, and the Postgraduate edge in E12. One batch per session.
+- **Fixed, 17 Nov 2026:** E12's Postgraduate turning point now divides by the plan's own repayment rate (6%), with a test. The two batch 1 screen changes went live in 3e96896.
+- **Still open:** Property (P), forecast and windfall (F, with Q12), public pages and emails. One batch per session.
 - **Part 2 (screens): not started.** Section 3 is empty.
 
 **Method**

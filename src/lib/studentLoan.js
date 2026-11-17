@@ -210,8 +210,9 @@ export function calcStudentLoanScenario(d, m) {
   const belowThreshold = d.studentLoan !== "none" && annualRep === 0;
   const netAnnualChange = annualInterest - annualRep; // positive = balance GROWING
   const balanceGrowing = netAnnualChange > 0;
-  // Inflection point: salary at which repayments equal interest accrual
-  const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
+  // Inflection point: salary at which repayments equal interest accrual, at
+  // the plan's own repayment rate (6% for Postgraduate, 9% otherwise).
+  const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / repayRateOf(d.studentLoan));
   const salaryGapToInflection = Math.max(0, inflectionSalary - m.salary);
 
   // Pay rises at the user's expected rate (m.salaryGrowthRate, the same as

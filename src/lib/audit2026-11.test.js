@@ -148,3 +148,12 @@ test("E1: interest on Cash ISA money isn't counted", () => {
   assert.equal(calcMetrics(d).savingsInterest, 0);
   assert.equal(calcMetrics({ ...d, isaPrevCash: "10000" }).savingsInterest, 500);
 });
+
+test("E12: Postgraduate turning-point salary uses the 6% repayment rate", async () => {
+  const { calcStudentLoanScenario } = await import("./studentLoan.js");
+  const d = { salary: "30000", studentLoan: "postgrad", loanBalance: "12000" };
+  const m = calcMetrics(d);
+  const sl = calcStudentLoanScenario(d, m);
+  // £21,000 threshold + £12,000 × 6% interest ÷ 6% repayment = £33,000.
+  assert.equal(sl.inflectionSalary, 33000);
+});
