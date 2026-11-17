@@ -130,4 +130,4 @@ Family B, the statement (Highlighter version), now runs across every site page: 
 - The highlighter marks one word, two on The Problem: "minefield" in the headline and "costing" in the closing line.
 - Closing line on every page: "Find out what not optimising is costing you." It replaced "See what your finances could be doing"; "should" was rejected as reading like a verdict.
 - Rows in a ruled list keep their natural heights; equal heights only suited the old side-by-side cards.
-- Not restyled yet: the standalone .html pages (calculators, privacy, terms), which use `<candid-footer>` from `src/lib/sitePartials.js`.
+- The standalone .html pages (the 3 calculators, privacy, terms, 404) moved to this palette on 17 Nov 2026: SITE_BG, ink text, Georgia headings, mono labels, a light header. Their forms keep a white card. They still use the green `<candid-footer>` from `src/lib/sitePartials.js`.

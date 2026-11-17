@@ -25,58 +25,67 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- The site's "Statement" design (design/landing/BRIEF.md). This plain
+       page can't import src/design-tokens.js, so the colours hand-match it:
+       SITE_BG #fbfaf5, SITE_INK #1a1a17, SITE_MUTED #66665e, SITE_RULE
+       #e2e0d6, SITE_EDGE #8f8d84, G #162f24, CTA_BLUE #0071e3, ERROR_TEXT
+       #b3261e; type GEORGIA (headings, wordmark, £ totals) and MONO (labels).
+       If those change there, update here. -->
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'DM Sans', Arial, sans-serif; background: #faf7f0; color: #1a1a1a; }
-    h1 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 30px; line-height: 1.25; }
-    h2 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 20px; margin-top: 36px; margin-bottom: 10px; }
-    p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
-    a { color: #162F24; }
-    label { display:block; font-size: 12px; font-weight: 700; color: rgba(250,247,240,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
-    /* #0f2018 matches design-tokens.js's INPUT_BG_DARK — the recessed dark
-       background for a form field sitting on a G-green surface, also used by
-       DevTools.jsx. This page can't import that file (plain HTML); if
-       INPUT_BG_DARK changes there, update here and in the other 2 calculator
-       pages, which share this same rule. */
+    body { font-family: 'DM Sans', Arial, sans-serif; background: #fbfaf5; color: #1a1a17; }
+    h1 { font: 700 clamp(32px, 5.5vw, 48px)/1.08 Georgia, 'Times New Roman', serif; letter-spacing: -.02em; color: #1a1a17; text-wrap: balance; }
+    h2 { font: 700 clamp(22px, 2.6vw, 28px)/1.2 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; color: #1a1a17; margin-top: 56px; padding-top: 24px; border-top: 1px solid #1a1a17; margin-bottom: 14px; }
+    p { color: #66665e; font-size: 16px; line-height: 1.7; }
+    a { color: #1a1a17; font-weight: 600; text-decoration: underline; text-decoration-color: #e2e0d6; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+    a:hover { text-decoration-color: #1a1a17; }
+    .label { font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: #66665e; }
+    label { display:block; font: 500 11px/1.4 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #66665e; margin-bottom: 8px; }
     input, select {
-      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
-      background: #0f2018; color: #faf7f0; font-size: 16px; font-family: 'DM Sans', sans-serif; /* 16px+: iOS Safari zooms on focusing smaller fields */
+      width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #8f8d84;
+      background: #ffffff; color: #1a1a17; font-size: 16px; font-family: 'DM Sans', sans-serif; /* 16px+: iOS Safari zooms on focusing smaller fields */
     }
-    input:focus, select:focus { outline: 2px solid #C4963A; }
-    .field { margin-bottom: 16px; }
+    input:focus, select:focus { outline: 2px solid #1a1a17; outline-offset: 1px; }
+    .field { margin-bottom: 20px; }
+    .field .hint { font-size: 13px; line-height: 1.5; color: #66665e; margin-top: 8px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:0 20px; }
+    .small { font-size: 13px; line-height: 1.6; color: #66665e; }
     table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(22,47,36,0.12); }
-    th { color: #162F24; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
-    td { color: #4a4a4a; }
-    .statgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-top:16px; }
-    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
-    .stat .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
-    .highlight { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; background:rgba(196,150,58,0.08); border:1px solid rgba(196,150,58,0.28); border-radius:10px; padding:14px 16px; }
-    .highlight .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
-    .highlight .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
+    th, td { text-align: left; padding: 10px 10px 10px 0; border-bottom: 1px solid #e2e0d6; }
+    th { font: 500 11px/1.4 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #66665e; border-bottom-color: #1a1a17; }
+    td { color: #1a1a17; }
+    .headline { font: 700 24px/1.3 Georgia, 'Times New Roman', serif; color: #1a1a17; }
+    .headline.cost { color: #b3261e; }
+    .statgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-top:20px; padding-top:16px; border-top: 1px solid #e2e0d6; }
+    .stat .v { font: 700 20px/1.2 Georgia, 'Times New Roman', serif; color: #1a1a17; }
+    .stat .l { font-size:12px; color:#66665e; margin-top:4px; }
+    .cta { display:inline-block; margin-top:16px; background:#0071e3; color:#ffffff; border-radius:12px; padding:12px 22px; font-size:15px; font-weight:600; text-decoration:none; }
+    .cta:hover { color:#ffffff; background:#0062c4; }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    .highlight { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; padding:16px 0; border-top:1px solid #1a1a17; border-bottom:1px solid #1a1a17; }
+    .highlight .v { font: 700 20px/1.2 Georgia, 'Times New Roman', serif; color: #1a1a17; }
+    .highlight .l { font-size:12px; color:#66665e; margin-top:4px; }
   </style>
 </head>
 <body>
-  <!-- This standalone page can't import src/design-tokens.js, so this nav hand-matches
-       HEADER_BG_DARK (#162f24) + HEADER_WORDMARK_DARK (Playfair Display, 700, GOLD #c4963a).
-       If either changes there, update this markup (and privacy.html / terms.html / the
-       other 2 calculator pages, which share the same pattern) to match. -->
-  <nav style="background:#162F24;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-    <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#C4963A;">Candid.</span>
-    <span style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:500;">£100k Tax Trap Calculator</span>
-    <a href="/" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;">← Back to Candid</a>
+  <!-- Matches the site header (SiteHeader.jsx): SITE_BG, a hairline rule,
+       the Georgia wordmark in G. -->
+  <nav style="background:#fbfaf5;border-bottom:1px solid #e2e0d6;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <a href="/" style="font:700 28px/1 Georgia,'Times New Roman',serif;color:#162f24;text-decoration:none;">Candid.</a>
+    <a href="/" style="font-size:14px;font-weight:500;color:#66665e;text-decoration:none;">Back to Candid</a>
   </nav>
 
-  <div style="max-width:860px;margin:0 auto;padding:48px 24px 24px;">
+  <div style="max-width:860px;margin:0 auto;padding:56px 24px 24px;">
+    <div class="label" style="margin-bottom:16px;">Free calculator</div>
     <h1>The £100,000 tax trap &amp; childcare cliff: what crossing the line really costs</h1>
     <candid-last-updated date="2026-10-13"></candid-last-updated>
     <p style="margin-top:14px;">Between {{TAPER_START}} and {{TAPER_END}} of adjusted net income, you lose Personal Allowance at an effective {{TAPER_RATE}} marginal rate. If you have a child under 5, crossing {{TAPER_START}} at all can also wipe out Tax-Free Childcare and your 30 free hours — for the whole year, not just the fringe pound. Enter your numbers below for an instant, UK-specific answer.</p>
 
-    <!-- ── Calculator ─────────────────────────────────────────────────── -->
-    <div style="background:#162F24;border-radius:14px;padding:26px 24px;margin-top:28px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <!-- ── Calculator: a form, so it keeps a card (BRIEF.md) ─────────────────────────────────────────────────── -->
+    <div style="background:#ffffff;border:1px solid #e2e0d6;border-radius:16px;padding:28px 24px 24px;margin-top:32px;">
+      <div class="grid">
         <div class="field">
           <label for="salary">Gross annual salary</label>
           <input type="number" id="salary" value="95000" min="0" step="500"/>
@@ -108,22 +117,23 @@
     </div>
 
     <!-- ── Result ─────────────────────────────────────────────────────── -->
-    <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
+    <div id="result" style="border-top:1px solid #1a1a17;padding:24px 0 8px;margin-top:32px;"></div>
 
-    <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
+    <p class="small" style="margin-top:12px;">
       This is a simplified estimate for education purposes, not regulated financial advice. It assumes salary sacrifice (a personal pension/relief-at-source contribution gets the tax saving but not the National Insurance or student loan saving shown below), that your salary is above your student loan's repayment threshold (true for almost everyone in this income band), and it uses illustrative average childcare values — Tax-Free Childcare tops up to {{TAX_FREE_CHILDCARE}}/child/yr (children under 11), and the 30 hours offer in England is worth about {{THIRTY_HOURS_VALUE}}/child/yr at Coram's 2026 average nursery price, though the real figure varies by location, provider and hours actually used. Scotland's funded hours have no income limit, and Wales tests its offer on gross income. Candid Personal Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
-    <div id="bridge" style="display:none;background:#faf7f0;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
-      <div id="bridgeLabel" style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;"></div>
-      <p id="bridgeText" style="margin-top:0;"></p>
-      <a href="/app/start" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture →</a>
+    <div id="bridge" style="display:none;border-top:1px solid #e2e0d6;padding-top:24px;margin-top:28px;">
+      <div id="bridgeLabel" class="label" style="margin-bottom:12px;line-height:1.5;"></div>
+      <p id="bridgeText" style="margin-top:0;color:#1a1a17;"></p>
+      <a href="/app/start" class="cta">See your full picture</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->
     <h2>How the £100k taper actually works</h2>
     <p>The Personal Allowance is the first {{PERSONAL_ALLOWANCE}} you earn tax-free each year. Once your <strong>adjusted net income</strong> (broadly: salary plus bonus and other income, minus pension contributions) passes {{TAPER_START}}, that allowance is withdrawn at £1 for every £2 earned above it — so it's gone completely by {{TAPER_END}}.</p>
+    <div style="overflow-x:auto;">
     <table>
       <tr><th>Adjusted net income</th><th>Personal Allowance left</th><th>Effective marginal rate</th></tr>
       <tr><td>{{TAPER_START}}</td><td>{{PERSONAL_ALLOWANCE}} (full)</td><td>{{HIGHER_RATE}}</td></tr>
@@ -131,7 +141,8 @@
       <tr><td>£120,000</td><td>{{PA_LEFT_AT_120K}}</td><td>{{TAPER_RATE}}</td></tr>
       <tr><td>{{TAPER_END}}+</td><td>£0</td><td>{{ADDITIONAL_RATE}}</td></tr>
     </table>
-    <p style="font-size:12px;color:#8a8a8a;">Every extra £1 earned in the {{TAPER_START}}–{{TAPER_END}} band is taxed at {{HIGHER_RATE}}, and also strips away 50p of allowance that would otherwise have been tax-free — {{HIGHER_RATE}} of that 50p is a further {{TAPER_EXTRA_RATE}} effective tax. {{HIGHER_RATE}} + {{TAPER_EXTRA_RATE}} = {{TAPER_RATE}}. Above {{TAPER_END}} the allowance is already gone, so the rate drops back to the flat {{ADDITIONAL_RATE}} additional rate. Add {{NI_UPPER_RATE}} employee National Insurance, plus {{SL_REPAY_RATE_POSTGRAD}}–{{SL_REPAY_RATE_PLAN}} if you're still repaying a student loan, and the true marginal rate in this band is often {{TAPER_ALL_IN_MIN}}–{{TAPER_ALL_IN_MAX}}.</p>
+    </div>
+    <p class="small">Every extra £1 earned in the {{TAPER_START}}–{{TAPER_END}} band is taxed at {{HIGHER_RATE}}, and also strips away 50p of allowance that would otherwise have been tax-free — {{HIGHER_RATE}} of that 50p is a further {{TAPER_EXTRA_RATE}} effective tax. {{HIGHER_RATE}} + {{TAPER_EXTRA_RATE}} = {{TAPER_RATE}}. Above {{TAPER_END}} the allowance is already gone, so the rate drops back to the flat {{ADDITIONAL_RATE}} additional rate. Add {{NI_UPPER_RATE}} employee National Insurance, plus {{SL_REPAY_RATE_POSTGRAD}}–{{SL_REPAY_RATE_PLAN}} if you're still repaying a student loan, and the true marginal rate in this band is often {{TAPER_ALL_IN_MIN}}–{{TAPER_ALL_IN_MAX}}.</p>
 
     <h2>The childcare cliff: a spike that can exceed 100%</h2>
     <p>Tax-Free Childcare and the 30 free hours offer both use the same test: if either parent's adjusted net income goes even £1 over {{TAPER_START}}, the household loses the <em>entire</em> entitlement for the whole year — it isn't tapered like the Personal Allowance. For a family with a child under 5 using the full 30 hours, that single pound can cost several thousand pounds in support, on top of the {{TAPER_RATE}} tax rate on income in that band. That's what people mean by an effective marginal rate that "exceeds 100%" right at the threshold: the tax system takes {{TAPER_RATE}} of that last pound, and the childcare system takes thousands more.</p>
@@ -223,7 +234,7 @@
       saveCandidInputs(patch);
 
       if (salary <= 0) {
-        resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your salary above to see your result.</p>';
+        resultEl.innerHTML = '<p style="margin:0;">Enter your salary above to see your result.</p>';
         bridgeEl.style.display = 'none';
         return;
       }
@@ -238,7 +249,7 @@
       if (ani < TAPER_START) {
         var gap = TAPER_START - ani;
         html =
-          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">You\'re ' + fmt(gap) + ' below the ' + F.TAPER_START + ' threshold — no trap yet.</div>' +
+          '<div class="headline">You\'re ' + fmt(gap) + ' below the ' + F.TAPER_START + ' threshold — no trap yet.</div>' +
           '<p style="margin-top:12px;">Your adjusted net income (salary + bonus, minus pension contributions) is ' + fmt(ani) + '. Once it crosses ' + F.TAPER_START + ', you start losing Personal Allowance at an effective ' + F.TAPER_RATE + ' marginal rate — up to ' + F.TAPER_END + ', where it\'s gone completely.' +
           (kids > 0 ? ' With ' + kids + ' child' + (kids === 1 ? '' : 'ren') + ' under 5, crossing ' + F.TAPER_START + ' at all — even by £1 — would also wipe out Tax-Free Childcare and your 30 free hours for the whole year, worth roughly ' + fmt(childcareAtStake) + '/yr. That\'s the real danger zone: a bonus or pay rise can tip you over both cliffs without much warning.' : ' A bonus or pay rise can tip you over this without much warning.') +
           '</p>';
@@ -271,7 +282,7 @@
         var sacrificeExplain = ' Sacrificing ' + fmt(sacrificeNeeded) + ' into your pension would bring you back to exactly ' + F.TAPER_START + ', restoring your full Personal Allowance' + (kids > 0 ? ' and your full childcare entitlement' : '') + '.';
 
         html =
-          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">' + trapHeadline + '</div>' +
+          '<div class="headline cost">' + trapHeadline + '</div>' +
           '<p style="margin-top:12px;">' + bandExplain + childcareExplain + sacrificeExplain + '</p>' +
           '<div class="statgrid">' +
             '<div class="stat"><div class="v">' + fmt(sacrificeNeeded) + '</div><div class="l">Sacrifice needed</div></div>' +

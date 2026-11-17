@@ -178,11 +178,12 @@ export const LABEL_CAPS = { fontSize: "11px", fontWeight: 600, color: MUT, lette
 // picks its own font-size (they're different-height bars), so only
 // font-family/weight/colour are centralised here.
 //
-// The standalone HTML pages (privacy.html, terms.html, and the three
-// calculator pages) can't import this file — they're plain HTML, not
-// bundled. Their inline `<nav>` markup hand-matches HEADER_BG_DARK +
-// HEADER_WORDMARK_DARK's values; if either changes here, check those 5
-// files too.
+// The standalone HTML pages (privacy.html, terms.html, 404.html and the
+// three calculator pages) can't import this file — they're plain HTML, not
+// bundled. Since 17 Nov 2026 they hand-match the site's Statement palette
+// (SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE, CTA_BLUE) and its
+// light header (G wordmark in GEORGIA); if those change here, check those
+// 6 files too.
 export const HEADER_BG_DARK = G;
 export const HEADER_BG_LIGHT = CREAM;
 export const HEADER_WORDMARK_DARK  = { fontFamily: SERIF, fontWeight: 700, color: GOLD };
