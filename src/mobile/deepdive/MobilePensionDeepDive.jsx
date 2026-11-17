@@ -252,7 +252,7 @@ export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
             <>
               <TileRow first={!showChart} align>
                 <RowText label="Short of the income you'd like" figure={`${fmt(adequacy.gap)}/yr`}
-                  note={`About ${fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, against the ${fmt(adequacy.target)} you'd like, in today's money`}/>
+                  note={`About ${fmt(adequacy.net)} a year after tax, ${adequacy.source}, against the ${fmt(adequacy.target)} you'd like, in today's money`}/>
               </TileRow>
               {set && <TileRow align style={{paddingBottom:0}}><OpportunityChoice id={CHOICE_IDS.retirementGap} d={d} set={set}/></TileRow>}
             </>

@@ -186,7 +186,7 @@ function pensionSteps(d, m) {
   if (adequacy && adequacy.gap > adequacy.target * 0.05) {
     return [
       { label: ANSWER, figure: `${fmt(adequacy.gap)} a year`, tone: "cost", title: `short of the ${fmt(adequacy.target)} a year you'd like in retirement.` },
-      { label: WHY, title: `On your figures you'd have about ${fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, in today's money.` },
+      { label: WHY, title: `On your figures you'd have about ${fmt(adequacy.net)} a year after tax, ${adequacy.source}, in today's money.` },
       { label: ACTION, title: adequacy.extraPct ? `Paying in about ${adequacy.extraPct}% more of your salary would close it.` : "Paying in more, or retiring later, would close some of it.",
         body: "Each extra payment gets tax relief too. The Retirement age and contribution steppers on this screen show the effect." },
     ];
@@ -269,7 +269,7 @@ function finalSalarySteps(d, m) {
     { label: WHY, title: "There's no pot to grow or invest, so Candid doesn't project it like one.",
       body: income > 0 ? "Statements usually show it in today's money, before tax." : "Your scheme's latest annual statement shows what you've built up so far." },
     withBody({ label: ACTION, title: `Additional Voluntary Contributions, or buying added pension, add to it with tax relief at ${trPct}%.`, body: "Your scheme's website says what it offers." },
-      (() => { const a = retirementAdequacy(d, m); return a ? (a.gap > 0 ? `With a full State Pension that's about ${fmt(a.net)} a year after tax, ${fmt(a.gap)} short of the ${fmt(a.target)} you'd like.` : `With a full State Pension that's about ${fmt(a.net)} a year after tax, above the ${fmt(a.target)} you'd like.`) : null; })()),
+      (() => { const a = retirementAdequacy(d, m); return a ? (a.gap > 0 ? `About ${fmt(a.net)} a year after tax ${a.source}, ${fmt(a.gap)} short of the ${fmt(a.target)} you'd like.` : `About ${fmt(a.net)} a year after tax ${a.source}, above the ${fmt(a.target)} you'd like.`) : null; })()),
   ];
 }
 

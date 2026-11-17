@@ -6,7 +6,8 @@ import { taxYearFor } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { retirementAgeFor } from "./metrics.js";
 import { DRAWDOWN_TO_AGE } from "./drawdown.js";
-import { pensionReturnRatio } from "./pension.js";
+import { calcAnnualAllowanceRoom, reliefBandByBand, grossForNet } from "./pension.js";
+import { calcNI, taxFreeInterest, savingsTaxRates, dividendTaxRates, salarySacrificeNiCap, cashIsaLimit, ISA_ALLOWANCE, DIVIDEND_ALLOWANCE } from "./tax.js";
 
 // Static defaults — replace with live Moneyfacts API rates in future
 export const CASH_RATE_LOW     = 0.030; // below average, high-street loyal-customer rate
@@ -160,16 +161,134 @@ export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340, layout =
   };
 }
 
+// ── Tax on growth outside a wrapper ─────────────────────────────────────
+// Forecast lines grow net of tax (Harvey, 16 Nov 2026): interest above the
+// tax-free amount at the savings rates for each tax year (24/44/49% from
+// April 2027), and dividends above the £500 allowance at the dividend rates.
+// Shares outside an ISA are assumed to pay DIVIDEND_YIELD of their value a
+// year (part of the 6% growth); gains aren't taxed until sold, so not here.
+// Pension lines aren't taxed on the way out either: the screen says so.
+export const DIVIDEND_YIELD = 0.02;
+// `usedInterest`/`usedDividends`: what their existing savings and holdings
+// already earn, which uses the tax-free amounts first.
+export function growthTax(d, m, { usedInterest = m.savingsInterest || 0, usedDividends = +d.dividendIncome || 0 } = {}) {
+  const band = m.taxBandLabel || "basic";
+  const taxYear = m.taxYear || taxYearFor(d);
+  const freeInterest = Math.max(0, taxFreeInterest(m.nonSavingsIncome ?? m.salary ?? 0, band) - usedInterest);
+  const freeDividends = Math.max(0, DIVIDEND_ALLOWANCE - usedDividends);
+  return {
+    interest: (amount, y) => Math.max(0, amount - freeInterest) * savingsTaxRates(taxYear + y)[band],
+    dividends: (amount, y) => Math.max(0, amount - freeDividends) * dividendTaxRates(taxYear + y)[band],
+  };
+}
+
+// One place money goes, month by month: `lump` today and `monthly` (a
+// figure, or a function of the year, 0 = this one) at each month's end. Up
+// to `isaRoom(year)` a year goes into an ISA, growing tax-free at `ratePct`
+// a year; the rest (the overflow) is held outside one, growing at
+// `outRatePct` and taxed at each year's end (`kind` "cash": its interest;
+// "shares": its dividends) when `tax` (growthTax) is given. With no ISA
+// room and no tax, it's fvSingle(lump) + fvAnnuity(monthly). `split`:
+// returns { isa, out, total } instead of the total.
+export function growPot({ months, ratePct, outRatePct = ratePct, monthly = 0, lump = 0, isaRoom = () => Infinity, kind = "cash", tax = null, split = false }) {
+  const r = ratePct / 100 / 12, ro = outRatePct / 100 / 12;
+  const perMonth = typeof monthly === "function" ? monthly : () => monthly;
+  let isa = 0, out = 0, room = 0, income = 0;
+  const place = amt => { const toIsa = Math.min(amt, room); room -= toIsa; isa += toIsa; out += amt - toIsa; };
+  // The lump goes in today, so it's there at year 0 too.
+  room = Math.max(0, isaRoom(0));
+  if (lump > 0) place(lump);
+  for (let mth = 0; mth < months; mth++) {
+    const y = Math.floor(mth / 12);
+    if (mth % 12 === 0) { if (mth > 0) room = Math.max(0, isaRoom(y)); income = 0; }
+    isa *= 1 + r;
+    income += out * (kind === "cash" ? ro : DIVIDEND_YIELD / 12);
+    out *= 1 + ro;
+    place(Math.max(0, perMonth(y) || 0));
+    if (tax && (mth % 12 === 11 || mth === months - 1)) {
+      out -= kind === "cash" ? tax.interest(income, y) : tax.dividends(income, y);
+      income = 0;
+    }
+  }
+  return split ? { isa, out, total: isa + out } : isa + out;
+}
+
+// A debt, month by month for up to `months`: each month it charges interest
+// (`ratePct(year)`, % a year), then `due(month, balance after interest)` is
+// paid, `extra` more on top, and `lump` today. At `endsAt` (months; a
+// student loan's write-off) what's left is written off. Stops the month it
+// clears (`clearedAt`, months from now; 0 if the lump clears it today).
+// `paidFrom`: what's paid from month `countFrom` on.
+function debtScenario({ months, balance, ratePct, due, extra = 0, lump = 0, endsAt = Infinity, countFrom = Infinity }) {
+  let bal = Math.max(0, balance - lump), interestPaid = 0, clearedAt = bal <= 0 ? 0 : null, paidFrom = 0;
+  for (let mth = 0; mth < months && clearedAt === null; mth++) {
+    if (mth === endsAt) { bal = 0; break; }
+    const interest = bal * ratePct(Math.floor(mth / 12)) / 100 / 12;
+    bal += interest; interestPaid += interest;
+    const paid = Math.min(bal, due(mth, bal, interest) + extra);
+    bal -= paid;
+    if (mth >= countFrom) paidFrom += paid;
+    if (bal <= 0) clearedAt = mth + 1;
+  }
+  return { balance: bal, interestPaid, clearedAt, paidFrom };
+}
+
+// What overpaying a debt is worth: what you'd no longer owe (the money paid
+// in and the interest saved), up to the month it clears, then held there.
+// It can't be more than the balance and the interest it would have charged.
+function overpaid(run, extra, lump) {
+  const over = run(extra, lump, null);
+  const base = run(0, 0, over.clearedAt);
+  return { worth: Math.max(0, base.balance - over.balance), interestSaved: Math.max(0, base.interestPaid - over.interestPaid), clearedAt: over.clearedAt };
+}
+
+// Money paid into a pension, gross: what `net` of take-home a year puts in
+// once the tax relief (band by band: pension.js reliefBandByBand) and, for
+// salary sacrifice, the NI saved are added. Relief only up to the annual
+// allowance room. From April 2029 a sacrifice saves NI on only the first
+// £2,000 a year, after their own regular sacrifice (tax.js
+// salarySacrificeNiCap). Pay held at today's.
+function pensionGrossFor(d, m, sacrifice) {
+  const income = m.adjustedNetIncome || 0, scottish = !!m.scottish;
+  const room = calcAnnualAllowanceRoom(d, m).room;
+  const opts = { pastStatePensionAge: !!m.pastStatePensionAge };
+  const ongoing = sacrifice ? (m.salary || 0) * (+d.myContribution || 0) / 100 : 0;
+  const taxYear = m.taxYear || taxYearFor(d);
+  const cache = new Map();
+  return (net, y) => {
+    const cap = salarySacrificeNiCap(taxYear + y);
+    const niRoom = sacrifice ? Math.max(0, cap - ongoing) : 0;
+    const key = `${net}|${niRoom}`;
+    if (cache.has(key)) return cache.get(key);
+    const niPay = (m.salary || 0) - Math.min(ongoing, cap);
+    const saved = g => {
+      const tax = reliefBandByBand(income, Math.min(g, room), { scottish, atSource: !sacrifice });
+      const n = Math.min(g, niRoom);
+      return tax + (n > 0 ? calcNI(niPay, opts) - calcNI(Math.max(0, niPay - n), opts) : 0);
+    };
+    const gross = grossForNet(net, saved);
+    cache.set(key, gross);
+    return gross;
+  };
+}
+
 // Projects low/central/high values at `horizonYears` for each way the user's
 // monthly surplus could be put to work: mortgage overpayment, student loan
-// overpayment, Stocks & Shares ISA, cash savings, and pension salary sacrifice.
-// Returns { horizonYears, monthlySurplus, options }, where `options` only
-// includes entries applicable to this user (applicable: true).
-export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
-  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
-  const lump = +lumpSumOverride || 0;
+// overpayment, a Stocks & Shares ISA, a Cash ISA, and a pension. The same
+// money goes into each line, so each ISA line has the whole allowance.
+// For a debt, it's what you'd no longer owe, held once it's clear.
+// `overflow`: where money over the ISA allowance goes on both ISA lines,
+// "shares" (held outside an ISA) or "cash" (a savings account), taxed.
+// Returns { horizonYears, monthlySurplus, overflow, overAllowance, options },
+// where `options` only includes entries applicable to this user
+// (applicable: true), a debt's with `clearedAt` (months) and an ISA line's
+// with `split` ({ isa, out }, central £).
+export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverride = 0, { overflow = "shares" } = {}) {
+  const surplus = Math.max(0, surplusOverride != null ? +surplusOverride || 0 : m.monthlySurplus || 0);
+  const lump = Math.max(0, +lumpSumOverride || 0);
   const months = horizonYears * 12;
   const options = [];
+  const tax = growthTax(d, m);
 
   // ── 1. Mortgage overpayment ────────────────────────────────────────────
   const hasOverpayableMortgage = d.hasMortgage === "yes" && !d.ownsOutright && (+d.mortgageBalance||0) > 0;
@@ -177,23 +296,20 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
     const bal = +d.mortgageBalance||0;
     const pay = +d.monthlyMortgage||0;
     const baseRate = +d.mortgageRate||0;
-    const valueAtRate = (rate) => {
-      // Lump sum reduces opening balance immediately; monthly surplus added to regular payment
-      const openBal = Math.max(0, bal - lump);
-      const base = simulateAmortisation(bal, rate, pay, months);
-      const over = simulateAmortisation(openBal, rate, pay + surplus, months);
-      let value = base.totalInterest - over.totalInterest + lump;
-      if (over.monthsToClear !== null && over.monthsToClear < months) {
-        // Freed-up payment invested in cash savings for remaining months
-        value += fvAnnuity(pay + surplus, CASH_RATE_CENTRAL * 100, months - over.monthsToClear);
-      }
-      return value;
+    // With no payment entered (or one under the interest), at least today's
+    // interest is paid each month: an interest-only mortgage, not a growing
+    // one. A fixed payment, so overpaying still saves.
+    const atRate = rate => {
+      const due = () => Math.max(pay, bal * rate / 100 / 12);
+      return overpaid((extra, l, upTo) => debtScenario({ months: upTo ?? months, balance: bal, ratePct: () => rate, due, extra, lump: l }), surplus, lump);
     };
+    const central = atRate(baseRate);
     options.push({
       label: "Mortgage overpayment",
-      low: Math.round(valueAtRate(Math.max(0, baseRate - 0.5))),
-      central: Math.round(valueAtRate(baseRate)),
-      high: Math.round(valueAtRate(baseRate + 0.5)),
+      low: Math.round(atRate(Math.max(0, baseRate - 0.5)).worth),
+      central: Math.round(central.worth),
+      high: Math.round(atRate(baseRate + 0.5).worth),
+      clearedAt: central.clearedAt,
       applicable: true,
     });
   }
@@ -201,32 +317,41 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
   // ── 2. Student loan overpayment ────────────────────────────────────────
   if (m.loanBal > 0) {
     const { writeOffYr, threshold, repayRate, earnings, rate: baseSlRate } = studentLoanTerms(d, m);
-    // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
-    const simYears = Math.min(horizonYears, writeOffYr);
+    const growth = m.payGrowth ?? m.salaryGrowthRate;
     // Lump sum reduces opening balance for the overpayment scenario; baseline is unchanged
     const overBal = Math.max(0, m.loanBal - lump);
 
     // First check whether overpaying changes the write-off outcome at all
-    const baseWriteOff = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, 0);
-    const overWriteOff = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, surplus);
+    const baseWriteOff = simulateLoan(m.loanBal, earnings, growth, baseSlRate, threshold, repayRate, writeOffYr, 0);
+    const overWriteOff = simulateLoan(overBal, earnings, growth, baseSlRate, threshold, repayRate, writeOffYr, surplus);
     // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
     const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
 
-    let slCentral = 0, slLow = 0, slHigh = 0;
+    let slCentral = 0, slLow = 0, slHigh = 0, clearedAt = null;
     if (!writtenOffAnyway) {
-      // Benefit = cumulative interest saved vs baseline (not a compounding figure)
-      const base = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0);
-      const over = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus);
-      const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
-      // Low/high reflect salary growth uncertainty — not rate-sensitive
-      slCentral = Math.round(interestSaved);
-      slLow     = Math.round(interestSaved * 0.85); // slower salary growth → mandatory repayments stretch, less benefit
-      slHigh    = Math.round(interestSaved * 1.05); // marginal upside from faster clearance
+      // The repayment due each month: the plan's share of that year's pay
+      // over the threshold (pay rising as simulateLoan's).
+      const payIn = y => earnings * payFactor(growth, y);
+      const due = mth => { const y = Math.floor(mth / 12); return Math.max(0, (payIn(y) - threshold(y)) * repayRate) / 12; };
+      const loan = o => debtScenario({ balance: m.loanBal, ratePct: y => baseSlRate(y) * 100, due, endsAt: writeOffYr * 12, ...o });
+      const r = overpaid((extra, l, upTo) => loan({ months: upTo ?? months, extra, lump: l }), surplus, lump);
+      clearedAt = r.clearedAt;
+      // Left alone it would be written off: what overpaying saves is only
+      // the repayments that would still have been taken from then to the
+      // write-off, not the balance that would have been forgiven.
+      if (!baseWriteOff.cleared && r.clearedAt != null) {
+        r.worth = Math.min(r.worth, loan({ months: writeOffYr * 12, countFrom: r.clearedAt }).paidFrom);
+      }
+      // Low/high reflect salary growth uncertainty on the interest saved
+      slCentral = Math.round(r.worth);
+      slLow     = Math.max(0, Math.round(r.worth - r.interestSaved * 0.15)); // slower salary growth → mandatory repayments stretch, less benefit
+      slHigh    = Math.round(r.worth + r.interestSaved * 0.05); // marginal upside from faster clearance
     }
 
     options.push({
       label: "Student loan overpayment",
       low: slLow, central: slCentral, high: slHigh,
+      clearedAt,
       applicable: true,
       writtenOffAnyway,
       note: writtenOffAnyway
@@ -235,126 +360,107 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
     });
   }
 
-  // ── 3. Stocks & Shares ISA ──────────────────────────────────────────────
-  options.push({
-    label: "Stocks & Shares ISA",
-    low: Math.round(fvSingle(lump, 4, months) + fvAnnuity(surplus, 4, months)),
-    central: Math.round(fvSingle(lump, 6, months) + fvAnnuity(surplus, 6, months)),
-    high: Math.round(fvSingle(lump, 8, months) + fvAnnuity(surplus, 8, months)),
-    applicable: true,
-  });
-
-  // ── 4. Cash savings ───────────────────────────────────────────────────────
-  // Use hardcoded UK market defaults unless the user has supplied their own rate.
-  // d.cashRate and d.savingsRate are stored as percentages (e.g. 4.5 = 4.5%).
+  // ── 3 and 4. ISAs ────────────────────────────────────────────────────────
+  // Each fills the allowance first (what's left of this tax year's, then
+  // £20,000 a year); over it, the overflow goes where `overflow` says,
+  // taxed. Shares at 4/6/8%; cash at the user's own rate if given, else
+  // UK market defaults (d.cashRate and d.savingsRate are percentages).
   const userRatePct = +d.cashRate > 0 ? +d.cashRate : +d.savingsRate > 0 ? +d.savingsRate : 0;
-  // Convert to decimal for spread arithmetic, then back to % for fvAnnuity/fvSingle
   const cashCentralDec = userRatePct > 0 ? userRatePct / 100 : CASH_RATE_CENTRAL;
   const cashLowDec     = userRatePct > 0 ? cashCentralDec - 0.015 : CASH_RATE_LOW;
-  const cashHighDec    = Math.min(userRatePct > 0 ? cashCentralDec + 0.005 : CASH_RATE_CENTRAL + 0.005, CASH_RATE_HIGH);
-  options.push({
-    label: "Cash savings",
-    low: Math.round(fvSingle(lump, Math.max(0, cashLowDec * 100), months) + fvAnnuity(surplus, Math.max(0, cashLowDec * 100), months)),
-    central: Math.round(fvSingle(lump, cashCentralDec * 100, months) + fvAnnuity(surplus, cashCentralDec * 100, months)),
-    high: Math.round(fvSingle(lump, cashHighDec * 100, months) + fvAnnuity(surplus, cashHighDec * 100, months)),
-    applicable: true,
-  });
+  // Half a point over central, held to the best rate around unless their
+  // own rate is already above it (never under central).
+  const cashHighDec    = Math.max(cashCentralDec, Math.min(cashCentralDec + 0.005, CASH_RATE_HIGH));
+  const sharesRates = [4, GROWTH_NOMINAL_PCT, 8];
+  const cashRates = [cashLowDec, cashCentralDec, cashHighDec].map(r => Math.max(0, r * 100));
+  const outRates = overflow === "cash" ? cashRates : sharesRates;
+  const outKind = overflow === "cash" ? "cash" : "shares";
+  const isaLine = (label, isaRates, room) => {
+    const at = (i, split = false) => growPot({ months, ratePct: isaRates[i], outRatePct: outRates[i], monthly: surplus, lump, isaRoom: room, kind: outKind, tax, split });
+    const mid = at(1, true);
+    return { label, low: Math.round(at(0)), central: Math.round(mid.total), high: Math.round(at(2)),
+      split: { isa: Math.round(mid.isa), out: Math.round(mid.out) }, applicable: true };
+  };
+  options.push(isaLine("Stocks & Shares ISA", sharesRates, y => y === 0 ? (m.isaHeadroom ?? ISA_ALLOWANCE) : ISA_ALLOWANCE));
+  options.push(isaLine("Cash savings", cashRates, y => y === 0 ? (m.cashIsaHeadroom ?? cashIsaLimit()) : cashIsaLimit()));
 
-  // ── 5. Pension (salary sacrifice) ──────────────────────────────────────
-  if (d.pensionType === "sacrifice") {
-    // Tax + NI relief boosts every £1 of surplus into the pension immediately.
-    const ratio = pensionReturnRatio(d, m);
+  // ── 5 and 6. Pension ─────────────────────────────────────────────────────
+  // What the money becomes in the pension once relief is added, band by
+  // band (and the NI a salary sacrifice saves). The lump goes in this year,
+  // with this year's monthly amounts.
+  if (d.pensionType === "sacrifice" || d.pensionType === "relief") {
+    const sacrifice = d.pensionType === "sacrifice";
+    const grossFor = pensionGrossFor(d, m, sacrifice);
+    const yearNet = surplus * 12;
+    let firstGross, lumpGross;
+    if (sacrifice) {
+      // A one-off from savings can't be sacrificed from pay: it's a personal
+      // payment, with the provider's 20% and the rest band by band, on the
+      // income left after this year's sacrifice, and no NI saved.
+      const yearGross = grossFor(yearNet, 0);
+      const income = (m.adjustedNetIncome || 0) - yearGross;
+      const room = Math.max(0, calcAnnualAllowanceRoom(d, m).room - yearGross);
+      lumpGross = grossForNet(lump, g => reliefBandByBand(income, Math.min(g, room), { scottish: !!m.scottish, atSource: true }));
+      firstGross = yearGross + lumpGross;
+    } else {
+      firstGross = grossFor(yearNet + lump, 0);
+      lumpGross = yearNet + lump > 0 ? firstGross * lump / (yearNet + lump) : 0;
+    }
+    const monthlyGross = y => y === 0 ? (firstGross - lumpGross) / 12 : grossFor(yearNet, y) / 12;
+    const pension = rate => growPot({ months, ratePct: rate, monthly: monthlyGross, lump: lumpGross });
     options.push({
-      label: "Pension (salary sacrifice)",
-      low: Math.round(fvSingle(lump * ratio, 4, months) + fvAnnuity(surplus * ratio, 4, months)),
-      central: Math.round(fvSingle(lump * ratio, 6, months) + fvAnnuity(surplus * ratio, 6, months)),
-      high: Math.round(fvSingle(lump * ratio, 8, months) + fvAnnuity(surplus * ratio, 8, months)),
+      label: sacrifice ? "Pension (salary sacrifice)" : "Pension (relief at source)",
+      low: Math.round(pension(4)),
+      central: Math.round(pension(6)),
+      high: Math.round(pension(8)),
       applicable: true,
     });
   }
 
-  // ── 6. Pension (relief at source) ──────────────────────────────────────
-  if (d.pensionType === "relief") {
-    // HMRC adds 20% basic-rate relief automatically — every £1 you put in becomes £1.25 in the pension.
-    // Higher/additional rate taxpayers can claim further relief via self-assessment, but we model the
-    // conservative floor (basic rate top-up only) to avoid over-stating the benefit.
-    const effectiveLump = lump * 1.25;
-    const effectiveMonthly = surplus * 1.25;
-    options.push({
-      label: "Pension (relief at source)",
-      low: Math.round(fvSingle(effectiveLump, 4, months) + fvAnnuity(effectiveMonthly, 4, months)),
-      central: Math.round(fvSingle(effectiveLump, 6, months) + fvAnnuity(effectiveMonthly, 6, months)),
-      high: Math.round(fvSingle(effectiveLump, 8, months) + fvAnnuity(effectiveMonthly, 8, months)),
-      applicable: true,
-    });
-  }
-
-  return { horizonYears, monthlySurplus: surplus, options };
+  const overAllowance = options.some(o => o.split?.out > 0);
+  return { horizonYears, monthlySurplus: surplus, overflow, overAllowance, options };
 }
 
 // Returns the year-by-year CENTRAL trajectory (years 0..horizonYears) for
-// each applicable forecast option, for plotting on a line graph.
-// Student loan uses a dedicated cumulative-interest-saved model (rises then
-// flatlines once the overpayment scenario clears the loan — see note inline).
-// All other options use calcForecast evaluated at each year.
-export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
-  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
+// each applicable forecast option, for plotting on a line graph: calcForecast
+// at each year. A debt's line stops the year it clears (`termYear`).
+export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumOverride = 0, opts = {}) {
   const lump = +lumpSumOverride || 0;
   const years = Array.from({ length: horizonYears + 1 }, (_, i) => i);
-  const { options } = calcForecast(d, m, surplusOverride, horizonYears, lump);
-
-  const series = options.map(opt => {
-    if (opt.label === "Student loan overpayment") {
-      // All-zero if written off in both scenarios
-      if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
-
-      const { writeOffYr, threshold, repayRate, earnings, rate: baseSlRate } = studentLoanTerms(d, m);
-      const overBal = Math.max(0, m.loanBal - lump);
-      // Simulate both scenarios once, capturing yearly cumulative interest snapshots
-      const simYears = Math.min(horizonYears, writeOffYr);
-      const base = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0, true);
-      const over = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus, true);
-      // Flatline at the year the overpayment scenario clears: once cleared, the
-      // interest saving is fully realised and the curve stops growing.
-      const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
-      // termYear = the year where the series stops changing (loan cleared or written off)
-      const flatlineAt = Math.min(clearYear !== null ? clearYear : simYears, simYears);
-      const termYear = flatlineAt < horizonYears ? flatlineAt : null;
-      const termLabel = termYear !== null ? (clearYear !== null ? "Cleared" : "Written off") : null;
-      return {
-        label: opt.label,
-        termYear,
-        termLabel,
-        values: years.map(y => {
-          const capY = Math.min(y, clearYear !== null ? clearYear : simYears, simYears);
-          const baseInt = base.yearlyInterest[capY] ?? 0;
-          const overInt = over.yearlyInterest[capY] ?? 0;
-          return Math.max(0, Math.round(baseInt - overInt));
-        }),
-      };
-    }
-
-    // All other options: evaluate calcForecast at each year for the central value
+  const byYear = years.map(y => calcForecast(d, m, surplusOverride, y, lump, opts).options);
+  const series = byYear[horizonYears].map(opt => {
+    const termYear = opt.clearedAt != null ? Math.ceil(opt.clearedAt / 12) : null;
     return {
       label: opt.label,
-      values: years.map(y => calcForecast(d, m, surplusOverride, y, lump).options.find(o => o.label === opt.label)?.central ?? 0),
+      ...(termYear != null && termYear < horizonYears ? { termYear, termLabel: "Cleared" } : {}),
+      values: opt.writtenOffAnyway ? years.map(() => 0) : byYear.map(o => o.find(x => x.label === opt.label)?.central ?? 0),
     };
   });
-
   return { years, series };
 }
 
 // Assumption notes + rate ranges shown behind each forecast option's "?" —
-// single source of truth for both desktop's ForecastScreen table and the
-// mobile Forecast screen, so the two can't drift into different wording.
-export function buildForecastAssumptions(d, m) {
+// single source of truth for the Forecast screen. `overflow`: where money
+// over the ISA allowance goes (calcForecast).
+export function buildForecastAssumptions(d, m, overflow = "shares") {
   const slRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
+  const pct = dec => `${(dec * 100).toFixed(1)}%`;
+  const userRatePct = +d.cashRate > 0 ? +d.cashRate : +d.savingsRate > 0 ? +d.savingsRate : 0;
+  const cashCentral = userRatePct > 0 ? userRatePct / 100 : CASH_RATE_CENTRAL;
+  const cashLow = userRatePct > 0 ? Math.max(0, cashCentral - 0.015) : CASH_RATE_LOW;
+  const cashHigh = Math.max(cashCentral, Math.min(cashCentral + 0.005, CASH_RATE_HIGH));
+  const allowance = "the ISA allowance (what's left of this tax year's, then £20,000 a year)";
+  const growth = { low: "4%", central: `${GROWTH_NOMINAL_PCT}%`, high: "8%" };
+  const over = overflow === "cash"
+    ? "Over it, in a savings account: interest above your tax-free amount (after what your savings already earn) is taxed at your rate."
+    : `Over it, in shares held outside an ISA: dividends (${DIVIDEND_YIELD * 100}% a year of the growth) are taxed over the £500 allowance; tax on gains when sold isn't counted.`;
+  const notTaxedOut = "Income drawn from a pension is taxed, and that tax isn't taken off here.";
   return {
     "Mortgage overpayment": {
       lines: [
-        `Interest saved by overpaying at your current mortgage rate.`,
-        `If cleared early, freed-up payments earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
-        `Low / High shift the mortgage rate ±0.5%.`,
+        "The mortgage you'd no longer owe: the money paid in and the interest saved.",
+        "If it's cleared, the line stops there.",
+        "Low and high move the mortgage rate half a point either way.",
       ],
       rates: {
         low: `${Math.max(0, (+d.mortgageRate||0) - 0.5).toFixed(1)}%`,
@@ -364,50 +470,44 @@ export function buildForecastAssumptions(d, m) {
     },
     "Student loan overpayment": {
       lines: [
-        `Cumulative interest saved vs making no extra repayments.`,
-        `Interest rate: ${slRatePct}% p.a. (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default"}).`,
-        `Low / High reflect salary growth uncertainty — not a rate variation.`,
-        `Benefit is zero if the loan is written off regardless of overpayment.`,
+        "The loan you'd no longer owe: the money paid in and the interest saved. If it's cleared, the line stops there.",
+        `Interest rate: ${slRatePct}% a year (${+d.studentLoanRate > 0 ? "your entered rate" : "the plan's rate"}).`,
+        "Low and high reflect how fast your pay grows, not a different rate.",
+        "If the loan is written off whether you overpay or not, overpaying gains nothing.",
       ],
-      rates: {
-        low: `${slRatePct}%`,
-        central: `${slRatePct}%`,
-        high: `${slRatePct}%`,
-      },
+      rates: { low: `${slRatePct}%`, central: `${slRatePct}%`, high: `${slRatePct}%` },
     },
     "Stocks & Shares ISA": {
       lines: [
-        `An illustrative growth rate for shares, compounding monthly.`,
-        `Tax-free inside an ISA.`,
-        `Past performance is not a reliable guide to future returns.`,
+        "An illustrative growth rate for shares, compounding monthly.",
+        `Tax-free in an ISA up to ${allowance}.`,
+        over,
+        "Past performance is not a reliable guide to future returns.",
       ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+      rates: growth,
     },
     "Cash savings": {
       lines: [
-        `Easy-access savings account or Cash ISA.`,
-        `UK market defaults (Sep 2024). Your entered rate used as central if provided, with a ±1.5% spread.`,
+        `An easy-access Cash ISA, tax-free up to ${allowance}.`,
+        over,
+        userRatePct > 0 ? "Your own rate in the middle, 1.5 points lower and half a point higher either side." : "Typical UK easy-access rates.",
       ],
-      rates: {
-        low: `${(CASH_RATE_LOW*100).toFixed(1)}% p.a.`,
-        central: `${(CASH_RATE_CENTRAL*100).toFixed(1)}% p.a.`,
-        high: `${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
-      },
+      rates: { low: pct(cashLow), central: pct(cashCentral), high: pct(cashHigh) },
     },
     "Pension (salary sacrifice)": {
       lines: [
-        `Surplus paid before tax and NI — HMRC effectively tops it up immediately.`,
-        `Uplift reflects your marginal tax rate plus the employer NI saving passed through.`,
-        `Excludes employer contributions on the extra amount.`,
+        "Paid before income tax and National Insurance, so each £1 of take-home puts more in: the tax on each slice of your income at its own rate.",
+        "From April 2029 National Insurance is saved on only the first £2,000 a year sacrificed.",
+        `Excludes employer contributions on the extra amount. ${notTaxedOut}`,
       ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+      rates: growth,
     },
     "Pension (relief at source)": {
       lines: [
-        `Every £1 you contribute becomes £1.25 in the pension (20% HMRC basic-rate top-up).`,
-        `Higher-rate relief via self-assessment not modelled — conservative estimate.`,
+        "Your provider adds 20%; on income taxed above 20%, the rest is claimed through Self Assessment, slice by slice at its own rate.",
+        notTaxedOut,
       ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+      rates: growth,
     },
   };
 }
@@ -416,22 +516,24 @@ export function buildForecastAssumptions(d, m) {
 // liability breakdown calcMetrics uses for today's net worth (m.netWorth),
 // each component grown forward under assumptions already used elsewhere in
 // the app rather than new invented rates:
-//   - Cash: at the user's own effective savings rate, topped up monthly by
-//     ongoing surplus only until it reaches the emergency buffer target
-//     (m.emergencyBuffer — expenses × buffer months, already computed).
-//     Beyond that, surplus is assumed to flow into investments instead —
-//     matching the Cash module's own "move excess into your ISA" guidance,
-//     rather than assuming someone lets spare cash pile up indefinitely,
-//     which made this line balloon unrealistically over long horizons.
-//   - Investments (ISA + unwrapped): today's balance grown at 6% nominal —
-//     the same rate already used for the Investments deep dive's ISA growth
-//     illustration — plus any surplus swept in once the cash buffer is full.
+//   - Cash: at the user's own effective savings rate (a stated 0% stays
+//     0%), topped up monthly by ongoing surplus only until it reaches the
+//     emergency buffer target (m.emergencyBuffer — expenses × buffer
+//     months, already computed). Beyond that, surplus is assumed to flow
+//     into investments instead. Interest outside ISAs is taxed each year
+//     above the tax-free amount (growthTax).
+//   - Investments: ISAs and unwrapped holdings grown at 6% nominal. Surplus
+//     swept in goes into an ISA up to the allowance (what's left this tax
+//     year, then £20,000 a year), the rest unwrapped. Unwrapped holdings pay
+//     tax on their dividends (DIVIDEND_YIELD) above the £500 allowance.
 //   - Pension: potVal plus ongoing contributions grown at 6% a year until
-//     they stop working, then drawn down evenly to empty by 87.
+//     they stop working, then drawn down evenly to empty by 87. Not taxed
+//     on the way out.
 //   - Student loan: the same year-stepping interest/repayment model
 //     calcStudentLoanScenario uses, extended to expose every year's balance.
 //   - Personal loan / mortgage: amortised at their own entered rate and
-//     repayment — genuine loan maths, not an assumption.
+//     repayment; with no mortgage payment entered (or one under the
+//     interest), interest-only, so the balance holds rather than grows.
 //   - Property equity: property VALUE held flat (no house-price growth is
 //     assumed anywhere else in the app) — equity only grows as the mortgage
 //     balance is paid down; owned-outright property stays flat throughout.
@@ -445,10 +547,19 @@ export function buildForecastAssumptions(d, m) {
 export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = null) {
   // Pensions and investments both at 6% a year before inflation (growth.js).
   const PENSION_RATE = GROWTH_NOMINAL_PCT / 100, INVESTMENT_RATE = GROWTH_NOMINAL_PCT / 100;
-  const cashMonthlyRate = (m.effectiveSavingsRate || 3.5) / 100 / 12;
+  const cashRatePct = m.effectiveSavingsRate ?? 3.5;
+  const cashMonthlyRate = cashRatePct / 100 / 12;
   const investMonthlyRate = INVESTMENT_RATE / 12;
   const cashCapTarget = m.emergencyBuffer || 0;
   const monthlySurplus = Math.max(0, (surplusOverride != null ? +surplusOverride : m.monthlySurplus) || 0);
+
+  // Tax on today's own savings and holdings: the tax-free amounts are theirs
+  // to use. The share of the cash line whose interest is taxable: their cash
+  // less the Cash ISA money they've told us about, of everything in the line
+  // (m.totalLiquid, Premium Bonds included, whose prizes are tax-free).
+  const tax = growthTax(d, m, { usedInterest: 0, usedDividends: 0 });
+  const cashIsaMoney = (+d.isaPrevCash || 0) + (+d.isaThisYearCash || 0);
+  const taxableShare = (m.totalLiquid || 0) > 0 ? Math.min(1, Math.max(0, (m.cash || 0) - cashIsaMoney) / m.totalLiquid) : 1;
 
   const potVal = (+d.potValue||0) + (+d.potValue2||0);
   // The employer matches what the user pays, up to its cap (as calcMetrics).
@@ -456,7 +567,8 @@ export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = nul
 
   const isaUsedThisYear = isaUsedAcrossAll(d);
   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
-  let investBal = isaUsedThisYear + isaPrev + (+d.unwrappedValue||0);
+  let isaBal = isaUsedThisYear + isaPrev;
+  let giaBal = +d.unwrappedValue||0;
   let cashBal = m.totalLiquid || 0;
 
   // Written off when calcStudentLoanScenario says (from when repayments started).
@@ -468,11 +580,12 @@ export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = nul
   const plAnnualPmt = m.personalLoanAnnualRepayment || 0;
 
   const mortRate = (+d.mortgageRate||0) / 100;
-  const monthlyMortgagePmt = +d.monthlyMortgage||0;
-
   let loanBal = m.loanBal || 0;
   let plBal = d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0;
   let mortBal = d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0;
+  // At least today's interest each month: with no payment entered, an
+  // interest-only mortgage that holds its balance.
+  const monthlyMortgagePmt = Math.max(+d.monthlyMortgage||0, mortBal * mortRate / 12);
 
   // Working until they stop (metrics retirementAgeFor): until then, the
   // monthly surplus is saved and pension payments go in. After, both stop,
@@ -487,6 +600,9 @@ export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = nul
     const working = yr <= workYears;
     const surplusNow = working ? monthlySurplus : 0;
     if (yr > 0) {
+      // The tax year this projection year falls in (0 = this one), for the
+      // rates and the ISA allowance.
+      const y = yr - 1;
       if (working) pensionBal = pensionBal * (1 + PENSION_RATE) + pensionAnnualContrib;
       else {
         const yearsLeft = DRAWDOWN_TO_AGE - (age + yr - 1);
@@ -496,24 +612,32 @@ export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = nul
       loanBal = slPath[yr]?.bal ?? 0;
       if (plBal > 0) plBal = Math.max(0, plBal * (1 + plRate) - plAnnualPmt);
       const mortMonthlyRate = mortRate / 12;
+      let isaRoom = y === 0 ? (m.isaHeadroom ?? ISA_ALLOWANCE) : ISA_ALLOWANCE;
+      let cashInterest = 0, dividends = 0;
+      const invest = amt => { const toIsa = Math.min(amt, isaRoom); isaRoom -= toIsa; isaBal += toIsa; giaBal += amt - toIsa; };
       for (let mth = 0; mth < 12; mth++) {
         if (mortBal > 0) {
           mortBal += mortBal * mortMonthlyRate;
           mortBal = Math.max(0, mortBal - monthlyMortgagePmt);
         }
+        cashInterest += cashBal * cashMonthlyRate;
         cashBal *= (1 + cashMonthlyRate);
-        investBal *= (1 + investMonthlyRate);
+        dividends += giaBal * DIVIDEND_YIELD / 12;
+        isaBal *= (1 + investMonthlyRate);
+        giaBal *= (1 + investMonthlyRate);
         if (cashBal < cashCapTarget) {
           const toCash = Math.min(surplusNow, cashCapTarget - cashBal);
           cashBal += toCash;
-          investBal += surplusNow - toCash;
+          invest(surplusNow - toCash);
         } else {
-          investBal += surplusNow;
+          invest(surplusNow);
         }
       }
+      cashBal = Math.max(0, cashBal - tax.interest(cashInterest * taxableShare, y));
+      giaBal = Math.max(0, giaBal - tax.dividends(dividends, y));
     }
     const pension = pensionBal;
-    const cash = cashBal, investments = investBal;
+    const cash = cashBal, investments = isaBal + giaBal;
     const propertyEquity = d.hasMortgage === "yes" ? Math.max(0, (m.propertyValue||0) - mortBal)
       : d.ownsOutright ? (+d.outrightPropertyValue||0)
       : 0;

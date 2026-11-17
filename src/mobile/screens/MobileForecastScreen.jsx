@@ -12,6 +12,8 @@ import PillMoneyInput, { PILL_ANSWER_TEXT } from "../PillMoneyInput.jsx";
 import { PremiumSheetPortal } from "../Premium.jsx";
 import { premiumOpen as premiumFor } from "../../lib/unlock.js";
 import InfoButton from "../InfoButton.jsx";
+import { Segmented } from "../ui/index.js";
+import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { retirementAgeFor } from "../../lib/metrics.js";
 import { LIGHT } from "../CardStack.jsx";
 import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, SANS, CREAM, SR_ONLY, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, PILL_HEIGHT } from "../../design-tokens.js";
@@ -72,6 +74,9 @@ export default function MobileForecastScreen({ d, m }) {
   const [horizon, setHorizon] = useState(() => HORIZON_OPTIONS[0]?.value ?? 10);
   const [surplus, setSurplus] = useState(null);
   const [lumpSum, setLumpSum] = useState(null);
+  // Where money over the ISA allowance goes on both ISA lines: shares held
+  // outside an ISA, or a savings account.
+  const [overflow, setOverflow] = useState("shares");
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
   // Which of VIEWS is showing (ScreenBand.jsx).
@@ -102,8 +107,8 @@ export default function MobileForecastScreen({ d, m }) {
   const lump = lumpLocked ? 0 : lumpSum ?? 0;
   const estimate = Math.max(0, Math.round(m.monthlySurplus || 0));
   // Not rerun when only an open row changes.
-  const forecast = useMemo(() => calcForecast(d, m, monthly, horizon, lump), [d, m, monthly, horizon, lump]);
-  const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
+  const forecast = useMemo(() => calcForecast(d, m, monthly, horizon, lump, { overflow }), [d, m, monthly, horizon, lump, overflow]);
+  const assumptions = useMemo(() => buildForecastAssumptions(d, m, overflow), [d, m, overflow]);
   // The lines run on past the horizon to the screen's right edge, so a few
   // years more are worked out than the horizon: enough to cross the graph's
   // inset on any screen 260px or wider (not the measured width, so nothing
@@ -111,7 +116,7 @@ export default function MobileForecastScreen({ d, m }) {
   // the same either way (each year follows from the one before).
   const extraYears = Math.min(10, Math.ceil(horizon / 8) + 1);
   const trajectory = useMemo(() => calcNetWorthTrajectory(d, m, horizon + extraYears, monthly), [d, m, horizon, extraYears, monthly]);
-  const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon + extraYears, lump), [d, m, monthly, horizon, extraYears, lump]);
+  const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon + extraYears, lump, { overflow }), [d, m, monthly, horizon, extraYears, lump, overflow]);
   const netWorthRows = trajectory.slice(0, horizon + 1);
 
   return (
@@ -129,7 +134,7 @@ export default function MobileForecastScreen({ d, m }) {
         {/* The horizon sets both views, so it sits below them. */}
         <HorizonLine value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS}/>
         {view === 1 && (
-          <SurplusInputs surplus={surplus} estimate={estimate} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum}/>
+          <SurplusInputs surplus={surplus} estimate={estimate} takeHome={m.monthlyTakeHome} spendingKnown={!m.expensesUnknown} setSurplus={setSurplus} lumpLocked={lumpLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum}/>
         )}
       </ScreenBand>
       <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_lump_sum" onClose={() => setPremiumOpen(false)}/>
@@ -140,7 +145,7 @@ export default function MobileForecastScreen({ d, m }) {
             {shown === 0
               ? <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
                   showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/>
-              : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip} hidden={hiddenLines} onToggle={toggleLine} canHide={monthly > 0 || lump > 0}/>}
+              : <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip} hidden={hiddenLines} onToggle={toggleLine} canHide={monthly > 0 || lump > 0} overflow={overflow} setOverflow={setOverflow}/>}
           </section>
         )}</SheetGlass>
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0"}}>Estimates from your answers, not promises: growth isn't guaranteed.</p>
@@ -153,6 +158,29 @@ export default function MobileForecastScreen({ d, m }) {
           <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
         </div>
       </ScreenSheet>
+    </div>
+  );
+}
+
+// A Surplus line's name, short or in full. The cash line is a Cash ISA
+// (calcForecast: both ISA lines fill the allowance first).
+function lineName(label, short = true) {
+  if (label === "Cash savings") return "Cash ISA";
+  return short ? FORECAST_SHORT_LABEL[label] || label : label;
+}
+
+// An ISA line's mid estimate split in two, in its popover: what's in the
+// ISA and what's over the allowance, as a two-part bar and in words.
+function IsaSplit({ split, color, overflow }) {
+  const total = split.isa + split.out || 1;
+  const outName = overflow === "cash" ? "in a savings account" : "in shares outside an ISA";
+  return (
+    <div>
+      <div aria-hidden="true" style={{display:"flex",height:"6px",borderRadius:"3px",overflow:"hidden",background:"rgba(22,47,36,0.08)"}}>
+        <span style={{width:`${split.isa / total * 100}%`,background:color}}/>
+        <span style={{width:`${split.out / total * 100}%`,background:color,opacity:0.35}}/>
+      </div>
+      <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>Of the mid estimate, {fmt(split.isa)} is in the ISA and {fmt(split.out)} is over the allowance, {outName}.</p>
     </div>
   );
 }
@@ -337,9 +365,9 @@ function HorizonLine({ value, onChange, options }) {
 function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions, setShowNwAssumptions, openRow, setOpenRow }) {
   const r = netWorthRows[horizon];
   const rows = [
-    { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
-    { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
-    { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
+    { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate ?? 3.5).toFixed(1)}% a year), less tax on interest over your tax-free amount. Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
+    { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at ${GROWTH_NOMINAL_PCT}% a year before inflation — an illustrative long-term return, not guaranteed. Once your cash buffer is topped up, further monthly surplus goes into an ISA up to the allowance, the rest into investments outside one, whose dividends are taxed.` },
+    { label:"Pension", value:r.pension, assumption:`Your pot plus ongoing contributions, grown at ${GROWTH_NOMINAL_PCT}% a year — the same rate used for your projected pot elsewhere in the app. Income tax when it's drawn isn't taken off.` },
     ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
     ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
   ];
@@ -354,7 +382,7 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
             <TilePopover key="how" title="How it's worked out" onClose={() => setShowNwAssumptions(false)}>
               <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
                 {[`Cash grows at your own savings rate, and is assumed to never exceed your ${fmt(m.emergencyBuffer)} emergency fund target.`,
-                  "Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.",
+                  `Once that's topped up, further monthly surplus is invested (growing at ${GROWTH_NOMINAL_PCT}% a year) rather than held as cash: in an ISA up to the allowance, then outside one. Your pension grows at ${GROWTH_NOMINAL_PCT}% a year too.`,
                   "Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.",
                 ].map(line => <p key={line} style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
               </div>
@@ -517,7 +545,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
       </div>
       {!empty && (
         <p style={SR_ONLY}>
-          By {year0 + horizon}: {lines.map(l => `${FORECAST_SHORT_LABEL[l.label] || l.label} ${fmt(l.values[l.end])}${l.end < horizon ? ` (stops in ${year0 + l.end})` : ""}`).join(", ")}.
+          By {year0 + horizon}: {lines.map(l => `${lineName(l.label)} ${fmt(l.values[l.end])}${l.end < horizon ? ` (stops in ${year0 + l.end})` : ""}`).join(", ")}.
         </p>
       )}
       <div data-scrub={empty ? undefined : ""} tabIndex={empty ? undefined : 0} role={empty ? undefined : "group"}
@@ -533,7 +561,7 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
           </p>
         )}
         <div aria-live="polite" style={SR_ONLY}>
-          {at != null && reading.keys ? `${yearName(at)}: ${readout.map(r => `${FORECAST_SHORT_LABEL[r.label] || r.label} ${fmt(r.v)}`).join(", ") || "no line reaches this year"}` : ""}
+          {at != null && reading.keys ? `${yearName(at)}: ${readout.map(r => `${lineName(r.label)} ${fmt(r.v)}`).join(", ") || "no line reaches this year"}` : ""}
         </div>
         <svg width={W} height={f.H} viewBox={`0 0 ${W} ${f.H}`} style={{display:"block",overflow:"visible"}} aria-hidden="true">
           <defs>{lines.map((l, i) => <RunFade key={l.label} id={`${id}r${i}`} f={f} color={l.color}/>)}</defs>
@@ -579,7 +607,16 @@ function SurplusBand({ horizon, monthly, lump, lumpLocked, series, options, hidd
 // card hung below it). The one-off is a subscriber feature
 // (LockedLumpPill otherwise).
 const POP_CENTRED = { position:"fixed", inset:0, margin:"auto", height:"fit-content", width:"min(340px, calc(100vw - 40px))", transformOrigin:"center", padding:"18px 20px 20px" };
-function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lumpSum, setLumpSum }) {
+function SurplusInputs({ surplus, estimate, takeHome, spendingKnown, setSurplus, lumpLocked, onLocked, lumpSum, setLumpSum }) {
+  // A neutral note when the amount is more than their answers leave: over
+  // take-home pay, or over what's left after spending. Figures still run on
+  // what they typed (their spending may have changed).
+  const typed = +surplus || 0;
+  const afford = typed > 0 && takeHome > 0 && typed > takeHome
+    ? `That's more than your take-home pay of ${fmt(Math.round(takeHome))} a month.`
+    : typed > 0 && spendingKnown && typed > estimate
+      ? `That's more than the ${fmt(estimate)} a month your answers leave after spending.`
+      : null;
   const [why, setWhy] = useState(false);
   const info = (
     <InfoButton onClick={e => { e.preventDefault(); setWhy(w => !w); }} open={why}
@@ -591,6 +628,7 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
         <PillMoneyInput onDark label="Each month" labelExtra={info} value={surplus} onChange={setSurplus} placeholder={formatThousands(estimate)}/>
         {lumpLocked ? <LockedLumpPill onClick={onLocked}/> : <PillMoneyInput onDark label="One-off today" value={lumpSum} onChange={setLumpSum}/>}
       </div>
+      {afford && <p role="status" style={{fontSize:"12px",color:CREAM_SOFT,lineHeight:1.45,margin:"8px 0 0"}}>{afford}</p>}
       {/* Out on the page: the band is pinned on a phone (ScreenBand.jsx),
           which would hold the pop-out under the sheet. */}
       {createPortal(<AnimatePresence>
@@ -611,11 +649,21 @@ function SurplusInputs({ surplus, estimate, setSurplus, lumpLocked, onLocked, lu
 // estimate at the horizon, its ? popping out its assumptions. Tapping a
 // place's name takes its line off the graph or puts it back: its dot
 // hollow while it's off.
-function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip, hidden, onToggle, canHide }) {
+function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip, hidden, onToggle, canHide, overflow, setOverflow }) {
   const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
   const colHead = { fontSize:"11px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
+  const hasPension = forecast.options.some(o => o.label.startsWith("Pension"));
   return (
     <>
+      {/* Only once the amounts go over the ISA allowance: where the rest
+          goes on both ISA lines. */}
+      {forecast.overAllowance && (
+        <div style={{marginBottom:"14px"}}>
+          <div style={{...caps(t),marginBottom:"6px"}}>Over your ISA allowance</div>
+          <Segmented ariaLabel="Over the ISA allowance" size="compact" value={overflow} onChange={setOverflow}
+            options={[{ value: "shares", label: "Shares outside an ISA" }, { value: "cash", label: "Savings account" }]}/>
+        </div>
+      )}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
         <span style={caps(t)}>Estimate at {horizonLabel(horizon)}</span>
         <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
@@ -640,7 +688,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
                   style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0,minHeight:"44px",margin:"-12px 0",padding:0,background:"none",border:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                   <span style={{width:"8px",height:"8px",boxSizing:"border-box",borderRadius:"50%",background:shown ? color : "transparent",border:`1.5px solid ${color}`,display:"inline-block",flexShrink:0,transition:"background 0.15s"}}/>
                   <span style={{fontSize:"12px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    {FORECAST_SHORT_LABEL[o.label]||o.label}<span style={SR_ONLY}>, line on the graph</span>
+                    {lineName(o.label)}<span style={SR_ONLY}>, line on the graph</span>
                   </span>
                 </button>
                 {a && <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>}
@@ -654,9 +702,10 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
             {o.note && <div style={{fontSize:"11px",color:t.body,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>}
             <AnimatePresence>
               {isOpen && a && (
-                <TilePopover key="why" title={o.label} onClose={() => setOpenTip(null)}>
+                <TilePopover key="why" title={lineName(o.label, false)} onClose={() => setOpenTip(null)}>
                   <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
                     {a.lines.map((line,i) => <p key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:0}}>{line}</p>)}
+                    {o.split?.out > 0 && <IsaSplit split={o.split} color={color} overflow={overflow}/>}
                     <div style={{display:"flex",gap:"14px",fontSize:"12px",color:MUT}}>
                       <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
                       <span>Central <b style={{color:TEXT}}>{a.rates.central}</b></span>
@@ -669,6 +718,7 @@ function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, set
           </div>
         );
       })}
+      {hasPension && <p style={{fontSize:"12px",color:t.body,lineHeight:1.5,margin:"10px 0 0"}}>Pension lines don't take off the income tax due when the money is drawn.</p>}
     </>
   );
 }

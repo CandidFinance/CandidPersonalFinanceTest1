@@ -134,7 +134,9 @@ export function calcMetrics(d, marketRates = {}) {
   const tiersWeightedRate = tiersTotal > 0
     ? tiers.reduce((s, t) => s + (+t.amount||0) * (+t.rate||0), 0) / tiersTotal
     : 0;
-  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
+  // A rate they've stated stands, 0% included; 3.5% only when it's blank.
+  const savingsRateStated = d.savingsRate !== "" && d.savingsRate != null && Number.isFinite(+d.savingsRate);
+  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : savingsRateStated ? +d.savingsRate : 3.5;
   const cash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
   // Interest on cash outside ISAs, at the rates they've given (none assumed:
   // a guessed rate mustn't take anyone over £100,000). It's taxable income,

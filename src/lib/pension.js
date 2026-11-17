@@ -117,6 +117,24 @@ export function sacrificeNiRate(d, m) {
   if (ongoing >= salarySacrificeNiCap(m.taxYear)) return 0;
   return marginalNiRate(m.salary, { pastStatePensionAge: pastStatePensionAge(d) });
 }
+// Income tax relief on `gross` paid into a pension, band by band: the tax
+// on `income` less the tax on it without the payment, so a payment that
+// straddles 40% and 20% gets each rate on its own slice (and 60% on income
+// in the £100k trap). Paid in from take-home (relief at source), the
+// provider adds 20% whatever the band (`atSource`).
+export function reliefBandByBand(income, gross, { scottish = false, atSource = false } = {}) {
+  const g = Math.max(0, gross || 0), inc = Math.max(0, income || 0);
+  const banded = calcIncomeTax(inc, scottish) - calcIncomeTax(Math.max(0, inc - g), scottish);
+  return atSource ? Math.max(0.2 * g, banded) : banded;
+}
+// The gross that costs `net` of take-home, where `saved(gross)` is the tax
+// (and NI) the payment saves. `hi` bounds the search.
+export function grossForNet(net, saved, hi = Math.max(0, net) * 5 + 1) {
+  if (!(net > 0)) return 0;
+  let lo = 0;
+  for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (mid - saved(mid) < net) lo = mid; else hi = mid; }
+  return hi;
+}
 export function pensionReturnRatio(d, m) {
   const isSS = d.pensionType === "sacrifice";
   const niSaving = isSS ? sacrificeNiRate(d, m) : 0;

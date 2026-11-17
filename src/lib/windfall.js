@@ -25,7 +25,7 @@ import { fmt } from "./format.js";
 import { ISA_ALLOWANCE, cashIsaLimit, taxFreeInterest, calcIncomeTax, savingsTaxRates, HIGHER_RATE_THRESHOLD, NI_PRIMARY_THRESHOLD, NI_UPPER_EARNINGS_LIMIT, NI_MAIN_RATE, NI_RATE_ABOVE_UEL, REDUNDANCY_TAX_FREE } from "./tax.js";
 import { daysToTaxYearEnd } from "./metrics.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
-import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, PENSION_RELIEF_MAX_AGE } from "./pension.js";
+import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, reliefBandByBand, grossForNet, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, PENSION_RELIEF_MAX_AGE } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD } from "./tax.js";
 
@@ -100,8 +100,10 @@ export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0, scott
     net: Math.round(gross - (fromEarnings + fromExcess) - incomeTax - ni),
     incomeThisYear,
     // Pay that counts for personal pension relief this tax year: earnings,
-    // not the compensation.
-    relevantEarnings: baseIncome + earnings,
+    // and the compensation over the £30,000 that's taxed as pay (HMRC
+    // PTM044100: relevant earnings are what's chargeable as employment
+    // income). The tax-free part doesn't count.
+    relevantEarnings: baseIncome + earnings + (compensation - taxFree),
   };
 }
 export const settlementGross = parts => SETTLEMENT_PARTS.reduce((t, p) => t + Math.max(0, +parts?.[p.key] || 0), 0);
@@ -209,6 +211,10 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   const prevMy = +d.previousMyContribution || 0, prevEmp = Math.min(prevMy, +d.previousEmployerMatch || 0);
   const paidInByThem = d.hasPension === "yes" ? Math.round(earnedBefore * prevMy / 100) : 0;
   const paidInByEmployer = d.hasPension === "yes" ? Math.round(earnedBefore * prevEmp / 100) : 0;
+  // The annual allowance this year: tapered on a high income, £10,000 once
+  // an income has been drawn (calcAnnualAllowanceRoom's approxAA), before
+  // what's already gone in.
+  const allowance = calcAnnualAllowanceRoom(d, m).approxAA;
 
   // Pension, the year of a redundancy: anything up to this tax year's
   // earnings (pay before leaving, notice, bonus, holiday) can go in with
@@ -219,9 +225,9 @@ export function windfallOptions(d, m, w, marketRates = {}) {
     const reliefOn = gross => Math.max(0.2 * gross, calcIncomeTax(income, m.scottish) - calcIncomeTax(Math.max(0, income - gross), m.scottish));
     // Personal payments count against this year's earnings (a salary
     // sacrifice is the employer's, so it doesn't), and everything against
-    // the £60,000 annual allowance.
+    // the annual allowance.
     const theirs = d.pensionType === "sacrifice" ? 0 : paidInByThem;
-    const grossCap = Math.max(0, Math.min(redundancy.relevantEarnings - theirs, 60000 - paidInByThem - paidInByEmployer));
+    const grossCap = Math.max(0, Math.min(redundancy.relevantEarnings - theirs, allowance - paidInByThem - paidInByEmployer));
     const cashFor = gross => gross - reliefOn(gross);
     const grossFor = c => { let lo = 0, hi = grossCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (cashFor(mid) < c) lo = mid; else hi = mid; } return hi; };
     const cap = Math.floor(cashFor(grossCap));
@@ -236,7 +242,7 @@ export function windfallOptions(d, m, w, marketRates = {}) {
     // take-home given up.
     if (redundancy.taxed > 0 && !w.arrived) {
       const saved = g => { const t = settlementTax(w.parts, earnedBefore, g, m.scottish); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
-      const gCap = Math.max(0, Math.min(redundancy.taxed, 60000 - paidInByThem - paidInByEmployer));
+      const gCap = Math.max(0, Math.min(redundancy.taxed, allowance - paidInByThem - paidInByEmployer));
       const giveUp = g => g - saved(g);
       const gFor = c => { let lo = 0, hi = gCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (giveUp(mid) < c) lo = mid; else hi = mid; } return hi; };
       const eCap = Math.floor(giveUp(gCap));
@@ -258,17 +264,23 @@ export function windfallOptions(d, m, w, marketRates = {}) {
       ? NON_EARNER_PENSION_NET / 0.8
       : Math.max(0, Math.min(calcAnnualAllowanceRoom(d, m).room, earnings - (m.salary || 0) * (+d.myContribution || 0) / 100));
     const taperNeed = Math.max(0, Math.min((m.adjustedNetIncome || 0), ADDITIONAL_RATE_THRESHOLD) - PA_TAPER_START);
-    const cap = Math.floor(grossCap * (1 - tr));
+    // Relief band by band (pension.js reliefBandByBand): 20% added by the
+    // provider, more only on the slice of income taxed above 20% (60% in the
+    // £100k trap), so a large payment isn't all at the top rate.
+    const income = m.noEarnings ? 0 : (m.adjustedNetIncome || 0);
+    const saved = gross => reliefBandByBand(income, gross, { scottish: m.scottish, atSource: true });
+    const grossFor = c => Math.min(grossCap, grossForNet(c, saved, grossCap));
+    const cap = Math.floor(grossCap - saved(grossCap));
     if (cap > 0) {
       options.push({
         key: "pension", title: m.noEarnings ? "A personal pension" : "Your pension", cap, guaranteed: true,
         value: c => {
-          const gross = c / (1 - tr);
-          return { figure: Math.round(gross - c + Math.min(gross, taperNeed) * 0.2), per: "of tax relief added" };
+          const gross = grossFor(c);
+          return { figure: Math.round(gross - c), per: "of tax relief added" };
         },
         detail: m.noEarnings
           ? `Up to ${fmt(NON_EARNER_PENSION_NET)} a year, with 25% added, earnings or not.`
-          : taperNeed > 0 ? `Relief at ${Math.round(tr * 100)}%, plus your tax-free allowance won back on income over £100,000.` : `Relief at ${Math.round(tr * 100)}%${tr > 0.2 ? ", the part above 20% claimed through Self Assessment" : ""}.`,
+          : taperNeed > 0 ? `Relief at up to ${Math.round(tr * 100)}%, plus your tax-free allowance won back on income over £100,000.` : `Relief at ${tr > 0.2 ? `20%, and ${Math.round(tr * 100)}% on the part of your income taxed at that rate` : "20%"}${tr > 0.2 ? ", the part above 20% claimed through Self Assessment" : ""}.`,
         access: `Locked until ${pensionAccessAge(d)}.`,
       });
     }

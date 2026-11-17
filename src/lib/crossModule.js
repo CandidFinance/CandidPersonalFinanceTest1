@@ -13,7 +13,7 @@ import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT, PAY_FAST_YEARS, PAY
 import { CASH_RATE_LOW } from "./forecast.js";
 import { DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
 import { slEarnings, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
-import { PA_TAPER_START, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, STATE_PENSION_FULL } from "./tax.js";
+import { PA_TAPER_START, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, STATE_PENSION_FULL, STATE_PENSION_WEEKLY, STATE_PENSION_AGE } from "./tax.js";
 
 const round10 = n => Math.round(n / 10) * 10;
 
@@ -95,6 +95,17 @@ function topRate(income) {
   return income > ADDITIONAL_RATE_THRESHOLD ? 0.45 : income > HIGHER_RATE_THRESHOLD ? 0.4 : income > PERSONAL_ALLOWANCE ? 0.2 : 0;
 }
 
+// The State Pension they're on course for, a year in today's money, from
+// State Pension age: the full rate if their National Insurance years
+// aren't known, otherwise those years plus one for each year still worked
+// before State Pension age (35 for the full rate, none under 10).
+export function projectedStatePension(d, retireAge = retirementAgeFor(d)) {
+  if (!(+d.niYears > 0)) return STATE_PENSION_FULL;
+  const age = +d.age || 0;
+  const years = Math.min(35, +d.niYears + Math.max(0, Math.min(retireAge, STATE_PENSION_AGE) - age));
+  return years >= 10 ? Math.round(years / 35 * STATE_PENSION_WEEKLY * 52) : 0;
+}
+
 export function pensionOutlook(d, m) {
   const age = +d.age || 0;
   if (d.hasPension !== "yes" || d.pensionKind === "db" || inRetirement(d) || !age || !(m.salary > 0)) return null;
@@ -121,7 +132,11 @@ export function pensionOutlook(d, m) {
   const potToday = pot / inflate;
   const r = GROWTH_REAL_PCT / 100;
   const drawn = potToday * 0.75 * r / (1 - Math.pow(1 + r, -DEFAULT_DRAWDOWN_YEARS));
-  const retirementIncome = Math.round(drawn + STATE_PENSION_FULL);
+  // From State Pension age, with it; before, if they stop earlier, the
+  // pension alone.
+  const statePension = projectedStatePension(d, retireAge);
+  const retirementIncome = Math.round(drawn + statePension);
+  const incomeBeforeStatePension = retireAge < STATE_PENSION_AGE ? Math.round(drawn) : null;
   const laterRate = topRate(retirementIncome);
   const nowRate = m.tr || 0;
 
@@ -135,7 +150,7 @@ export function pensionOutlook(d, m) {
     const band = laterRate === 0.45 ? ADDITIONAL_RATE_THRESHOLD : HIGHER_RATE_THRESHOLD;
     flags.push({ key: "retirementRate", nowRate, laterRate, income: round10(retirementIncome), extraTax: round10((retirementIncome - band) * (laterRate - nowRate)) });
   }
-  return { retireAge, potAtRetirement: Math.round(pot), potToday: Math.round(potToday), retirementIncome, laterRate, flags,
+  return { retireAge, potAtRetirement: Math.round(pot), potToday: Math.round(potToday), retirementIncome, incomeBeforeStatePension, statePension, laterRate, flags,
     alreadyPastLsa: (+d.potValue || 0) + (+d.potValue2 || 0) >= LSA_INFLECTION_POT };
 }
 
@@ -185,22 +200,30 @@ export function loanAlternatives(m, years = LOAN_ALTERNATIVE_YEARS) {
 
 // ── Retirement: after-tax income in today's money, against what they'd
 // like to live on (retirementTarget). From the pension (drawn over the
-// default years, a quarter tax-free taken first) and a full State Pension;
-// for a final salary scheme, what its statement says it'll pay, plus any
-// old pots. Null without a target or a projection.
+// default years, a quarter tax-free taken first) and the State Pension
+// their National Insurance years point to (projectedStatePension); for a
+// final salary scheme, what its statement says it'll pay, plus any old
+// pots. Retiring before State Pension age, it's the years before it starts
+// that are measured, the tighter ones (`beforeStatePension`). Null without
+// a target or a projection.
 export function retirementAdequacy(d, m) {
   const target = +d.retirementTarget || 0;
   if (!target) return null;
+  const scottish = d.scottishTaxpayer === "yes";
+  const retireAge = retirementAgeFor(d);
+  const beforeStatePension = retireAge < STATE_PENSION_AGE && !inRetirement(d);
+  const statePension = projectedStatePension(d, retireAge);
+  const grossOf = o => beforeStatePension ? o.incomeBeforeStatePension : o.retirementIncome;
   let gross;
   if (d.pensionKind === "db") {
     if (!(+d.dbPensionIncome > 0)) return null;
-    gross = +d.dbPensionIncome + STATE_PENSION_FULL;
+    gross = +d.dbPensionIncome + (beforeStatePension ? 0 : statePension);
   } else {
     const o = pensionOutlook(d, m);
     if (!o) return null;
-    gross = o.retirementIncome;
+    gross = grossOf(o);
   }
-  const net = Math.round(gross - calcIncomeTax(gross, d.scottishTaxpayer === "yes"));
+  const net = Math.round(gross - calcIncomeTax(gross, scottish));
   // How much more of their salary paid in would close a gap (whole points,
   // up to 30): their own payments, with the employer's share unchanged.
   let extraPct = null;
@@ -208,8 +231,12 @@ export function retirementAdequacy(d, m) {
     const my = +d.myContribution || 0;
     for (let x = 1; x <= 30; x++) {
       const o = pensionOutlook({ ...d, myContribution: String(my + x), employerContributionType: "fixed", employerMatch: String(employerPct(d, my)) }, m);
-      if (o && Math.round(o.retirementIncome - calcIncomeTax(o.retirementIncome, d.scottishTaxpayer === "yes")) >= target) { extraPct = x; break; }
+      if (o && Math.round(grossOf(o) - calcIncomeTax(grossOf(o), scottish)) >= target) { extraPct = x; break; }
     }
   }
-  return { target, net, gap: Math.max(0, target - net), extraPct };
+  // Where the income comes from, in words for the screens.
+  const source = beforeStatePension
+    ? `from your pension, before your State Pension starts at ${STATE_PENSION_AGE}`
+    : statePension >= STATE_PENSION_FULL ? "from your pension and a full State Pension" : "from your pension and your State Pension";
+  return { target, net, gap: Math.max(0, target - net), extraPct, beforeStatePension, statePension, source };
 }
