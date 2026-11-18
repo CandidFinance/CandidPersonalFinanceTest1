@@ -37,6 +37,9 @@ export const PROFILES = {
   familyNone: { ...rich, kidsStatus: "no" },
   familyPlanning: { ...rich, kidsStatus: "planning", kidsCount: "", kidsPreschool: "", kidsSchool: "", salary: "104000" },
   familyPartnerPays: { ...rich, salary: "70000", kidsCount: "2", partnerOver100k: "yes", partnerIncome: "112000" },
+  // £100k trap with a partner over £100k: childcare already stopped, so not
+  // counted in the trap (unticked rows, total = the allowance tax alone).
+  trapPartnerOver: { ...rich, partnerOver100k: "yes" },
   // £100k trap on pay to date: ahead of their salary, so the module, its card
   // and Home work from the salary it implies (taxTrap.js thisTaxYear). From
   // 6 April 2027 it reads as last year's and the module is on their answers.

@@ -14,7 +14,7 @@ import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx
 import MobileInvestmentsDeepDive from "../deepdive/MobileInvestmentsDeepDive.jsx";
 import MobilePensionDeepDive from "../deepdive/MobilePensionDeepDive.jsx";
 import MobileKidsDeepDive from "../deepdive/MobileKidsDeepDive.jsx";
-import MobileTaxTrapDeepDive from "../deepdive/MobileTaxTrapDeepDive.jsx";
+import MobileTaxTrapDeepDive, { TaxTrapBand } from "../deepdive/MobileTaxTrapDeepDive.jsx";
 
 // Shell for every mobile module deep-dive page: shared header (icon/title/
 // status), the module-specific content in the middle, and a shared footer
@@ -38,11 +38,17 @@ const CONTENT_BY_KEY = {
   kids: MobileKidsDeepDive,
   taxTrap: MobileTaxTrapDeepDive,
 };
+// The modules whose top is on the dark band (ModuleBand.jsx); the rest keep
+// the header with the icon, title and status dot until they move over.
+const BAND_BY_KEY = {
+  cash: CashBand,
+  taxTrap: TaxTrapBand,
+};
 
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
 // the module has one; its "Explain this" link sits beside the module's name.
 // `lead`: notes above the content (the email offer, the quick-start lines);
-// on Cash, at the top of the sheet so the band stays at the top of the page.
+// on a band page, at the top of the sheet so the band stays at the top.
 export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal, onShowExplainer, onOpenAssist, onEditInputs, lead = null }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
@@ -101,35 +107,43 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           {backLabel || "Back to Modules"}
         </button>
       </div>
-      <GuidanceFooter moduleKey={moduleKey} limits={moduleKey === "cash" ? null : moduleLimits(moduleKey, d, m)}/>
+      {/* No "Not included yet" line on a band page (Cash first, then the
+          £100k tax trap: Harvey, 18 Nov 2026). */}
+      <GuidanceFooter moduleKey={moduleKey} limits={BAND_BY_KEY[moduleKey] ? null : moduleLimits(moduleKey, d, m)}/>
     </>
   );
 
-  // Cash: its top on the dark band, the rest on the pale sheet that scrolls
-  // up over it, as each tab's landing page (ScreenBand.jsx). The band takes
-  // the place of the header here.
-  if (moduleKey === "cash") {
+  // A band module: its top on the dark band, the rest on the pale sheet that
+  // scrolls up over it, as each tab's landing page (ScreenBand.jsx). The
+  // band takes the place of the header here.
+  const Band = BAND_BY_KEY[moduleKey];
+  if (Band) {
     // Red only for "Action needed" (a £ saving at stake: statusLabel.js).
-    // "Worth a look" shows just its reason, cut short to fit the band on a
-    // phone, in orange: worth a look, but no money lost. Monthly costs not
-    // added is a gap in the answers, not a worry, so it stays cream, as do
-    // "Find out" and "On track".
-    const cashMm = { ...statuses[moduleKey], status, elsewhere, onTrack };
-    const cashLabel = statusLabel(cashMm);
-    const worry = cashLabel === "Worth a look" && BAND_REASONS[cashMm.reason];
-    const cashStatus = worry || (cashLabel === "Find out" && cashMm.reason === COSTS_MISSING ? "Costs not added" : statusLine(cashMm));
+    // Cash's "Worth a look" shows just its reason, cut short to fit the band
+    // on a phone, in orange: worth a look, but no money lost; so does the
+    // tax trap within £5,000 of it. Monthly costs not added is a gap in the
+    // answers, not a worry, so it stays cream, as do "Find out" and "On
+    // track".
+    const mm = { ...statuses[moduleKey], status, elsewhere, onTrack };
+    const label = statusLabel(mm);
+    const worry = label === "Worth a look" && BAND_REASONS[mm.reason];
+    const bandStatus = worry || (label === "Find out" && mm.reason === COSTS_MISSING ? "Costs not added" : statusLine(mm));
+    // The module's own warning where it has one (the tax trap's red or
+    // amber, as on its Modules card), so the two can't disagree.
+    const warn = statuses[moduleKey]?.warn;
+    const tone = warn === "red" || label === "Action needed" ? "alert" : warn === "amber" || worry ? "warn" : null;
     return (
       <div>
         {introShown && <GuidanceIntro key={moduleKey}/>}
         <ScreenBand tone="dark">
-          <h1 style={SR_ONLY}>{meta?.title || "Cash"}</h1>
-          <CashBand d={d} m={m} savingsRates={savingsRates} onOpenAssist={onOpenAssist} onShowReveal={onShowReveal} onEditInputs={onEditInputs}
-            status={cashStatus} statusTone={cashLabel === "Action needed" ? "alert" : worry ? "warn" : null}/>
+          <h1 style={SR_ONLY}>{meta?.title || moduleKey}</h1>
+          <Band d={d} m={m} savingsRates={savingsRates} onOpenAssist={onOpenAssist} onShowReveal={onShowReveal} onEditInputs={onEditInputs}
+            status={bandStatus} statusTone={tone}/>
         </ScreenBand>
         <ScreenSheet slick>
           {lead}
           {set && <BankConfirm d={d} set={set} moduleKey={moduleKey} title={meta?.title || moduleKey} amount={statuses[moduleKey]?.amount || 0}/>}
-          <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onOpenAssist={onOpenAssist} onEditInputs={onEditInputs}/>
+          <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain} onOpenAssist={onOpenAssist} onEditInputs={onEditInputs}/>
           {footer}
         </ScreenSheet>
       </div>

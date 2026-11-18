@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, Check, TriangleAlert, X, CircleHelp } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, Check, TriangleAlert, X, CircleHelp, Info, Pencil } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { closingTile } from "../SinceLastVisit.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { fmt } from "../../lib/format.js";
-import { taxTrap, trapInView, thisTaxYear, topUpsThisYear, topUpLimit, monthlyPlan, monthlyPay, pastAllowance, rateCurve, lostTo, pensionPath, position, paydayOf, bonusMonthOf, TRAP_START, TRAP_END, TRAP_GROSS, TRAP_EDGE } from "../../lib/taxTrap.js";
+import { taxTrap, trapInView, thisTaxYear, topUpsThisYear, topUpLimit, monthlyPlan, monthlyPay, pastAllowance, rateCurve, lostTo, pensionPath, position, paydayOf, bonusMonthOf, TRAP_START, TRAP_END, TRAP_GROSS } from "../../lib/taxTrap.js";
 import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
@@ -19,7 +19,9 @@ import { hasAccess, PLANS } from "../../lib/entitlement.js";
 import { oneOffSacrificeDraft, pensionIncreaseDraft } from "../emailDrafts.js";
 import MobileReminderAction from "../MobileReminderAction.jsx";
 import { PayToDateLinks, shortDate } from "../PaydayCheck.jsx";
-import OpportunityTile from "./OpportunityTile.jsx";
+import ModuleBand from "../ModuleBand.jsx";
+import MobileTile, { TileRow, RowText, ROW, TilePopover, anchor } from "../MobileTile.jsx";
+import InfoButton from "../InfoButton.jsx";
 import { PlanPicker, CTA_WASH } from "./SubscribeButtons.jsx";
 import CardStack from "../CardStack.jsx";
 import useDialogFocus from "../useDialogFocus.js";
@@ -27,10 +29,10 @@ import { Button, IconButton, Switch, Segmented, Chip } from "../ui";
 
 // £100k tax trap (taxTrap.js), in the order the answer runs:
 //  1. What the trap costs them a year: the tax on the allowance lost and
-//     the childcare their income stops, in a red alert (amber within
-//     £5,000 under it, as the module's card on Modules). Money, so it's the
-//     module's £ on Home too. Under £100k: how far, what £1 over would do,
-//     and when they'd pass it.
+//     the childcare their income stops, on the dark band (TaxTrapBand), the
+//     status beside it red (amber within £5,000 under it, as the module's
+//     card on Modules). Money, so it's the module's £ on Home too. Under
+//     £100k: how far, what £1 over would do, and when they'd pass it.
 //  2. What it costs them, as a checklist: the allowance, and the childcare
 //     support (ticked with children, a warning when planning them, greyed
 //     without), asking whether a partner is over £100k if it isn't known.
@@ -69,10 +71,36 @@ function Cell({ label, text, tone = "plain", wide = false }) {
   );
 }
 
-export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
+// The page's top, on the dark band (ModuleBand): the module's name and
+// status, then what the trap costs a year (over £100k) or the room left
+// under it, and a line on what that is. Same figures as the page below
+// (thisTaxYear, taxTrap), so the band's £ is the costs tile's total.
+export function TaxTrapBand({ d: answers, m: metrics, status, statusTone, onShowReveal, onEditInputs }) {
+  const { d, m, y } = useMemo(() => thisTaxYear(answers, metrics), [answers, metrics]);
+  const t = taxTrap(d, m);
+  const band = { title: `${K} tax trap`, status, statusTone, onShowReveal, onEditInputs };
+  if (!t || !trapInView(d, m.adjustedNetIncome)) {
+    return <ModuleBand {...band} line={t ? `Your income is ${fmt(t.ani)}, not near ${K}.` : `This works from your salary, which isn't in yet.${onEditInputs ? " Add it with the sliders button at the top." : ""}`}/>;
+  }
+  const kids = t.childcareLost > 0;
+  const bonusTo = Math.round(t.ani + m.salary * 0.2);
+  const ahead = t.crossing ? `At your expected pay growth, you'd pass it in ${t.crossing}/${String(t.crossing + 1).slice(2)}.`
+    : !(+d.bonusAmount > 0) ? `A 20% bonus would take you to ${fmt(bonusTo)}.` : null;
+  // What the £ is, short enough for one line on a phone; the rate is the
+  // tile's below. The income it all rests on goes in the note.
+  const line = t.over
+    ? (kids ? "Extra tax and childcare support lost" : "Extra tax on the allowance you've lost")
+    : `Room under ${K}, where the tax trap starts.${ahead ? ` ${ahead}` : ""}`;
+  return (
+    <ModuleBand {...band} figure={fmt(t.over ? t.amount : t.headroom)} suffix={t.over ? "a year" : "to spare"} line={line}
+      note={y.tracked ? `This tax year, from your pay to date on ${shortDate(y.asOf)}` : null}/>
+  );
+}
+
+export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set, onEditInputs }) {
   // Once pay to date is in, the whole module is on the salary it implies;
   // recording and undoing stay on their own answers.
-  const { d, m, y } = useMemo(() => thisTaxYear(answers, metrics), [answers, metrics]);
+  const { d, m } = useMemo(() => thisTaxYear(answers, metrics), [answers, metrics]);
   const t = taxTrap(d, m);
   const [showOptions, setShowOptions] = useState(false);
   const [costsOpen, setCostsOpen] = useState(true);
@@ -97,32 +125,15 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
   if (!t || !trapInView(d, m.adjustedNetIncome)) {
     return (
       <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6}}>
-        {t ? `Your income is ${fmt(t.ani)}, not near ${K}, so nothing here applies yet.` : "This works from your salary, which isn't in yet."} From {fmt(TRAP_GROSS)} of pay before pension, or heading over {K} in the next few years, this module works out what it would cost you.
+        {t ? "Nothing here applies yet." : null} From {fmt(TRAP_GROSS)} of pay before pension, or heading over {K} in the next few years, this module works out what it would cost you.
       </p>
     );
   }
   const kidsFigure = t.over ? t.childcareLost : t.childcareAtRisk;
-  const support = t.nation === "england" || !t.nation ? "Tax-Free Childcare and funded hours" : "Tax-Free Childcare";
-  // Under £100k: the year they'd pass it, or else what a 20% bonus would do.
-  const bonusTo = Math.round(t.ani + m.salary * 0.2);
-  const ahead = t.crossing ? `At your expected pay growth, you'd pass it in ${t.crossing}/${String(t.crossing + 1).slice(2)}`
-    : !(+d.bonusAmount > 0) ? `A 20% bonus would take you to ${fmt(bonusTo)}` : null;
 
-  // Red over £100k, amber within £5,000 under it (moduleStatus.js has the
-  // same, for the module's card), titled with their marginal rate there.
-  const alert = t.amount > 0 ? { tone: "red", title: t.aboveTaper ? "Your Personal Allowance is gone" : `You're in the ${pct(t.rate.rate)} tax trap` }
-    : !t.over && t.headroom <= TRAP_EDGE ? { tone: "amber", title: `Within ${fmt(TRAP_EDGE)} of the ${pct(t.trapRate)} tax trap` } : null;
-
+  // 1. The answer is on the band above the page (TaxTrapBand).
   return (
     <div>
-      {/* 1. The answer. */}
-      <OpportunityTile stacked alert={alert} over={t.over ? `What the ${K} trap costs you` : `You're under ${K}`}
-        figures={[{ value: t.over ? fmt(t.amount) : fmt(t.headroom), suffix: t.over ? " a year" : " to spare" }]}
-        chips={t.over
-          ? [`${fmt(t.allowance.tax)} extra tax${t.childcareLost > 0 ? "" : " on the allowance you've lost"}`, t.childcareLost > 0 && `+ ${fmt(t.childcareLost)} of ${support}`]
-          : [`£1 over: a ${pct(t.trapRate)} marginal rate`, ahead, t.childcareAtRisk > 0 && `${fmt(t.childcareAtRisk)} of ${support} would stop`]}
-        note={y.tracked ? `This tax year, from your pay to date on ${shortDate(y.asOf)}` : "From your answers"}/>
-
       {/* Pay to date, for subscribers: the answer above works from it. */}
       {hasAccess() && answers.employmentStatus === "employed" && <PayToDateLinks d={answers} set={set}/>}
 
@@ -143,7 +154,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
 
       {/* 2. What it costs them, then (over £100k) the way to their options;
           once they're open, it minimises to its title. */}
-      <Costs d={d} t={t} set={set} options={t.options.length > 0 && !showOptions ? () => { setShowOptions(true); setCostsOpen(false); } : null}
+      <Costs d={d} m={m} t={t} set={set} onEditInputs={onEditInputs} options={t.options.length > 0 && !showOptions ? () => { setShowOptions(true); setCostsOpen(false); } : null}
         open={costsOpen} onToggle={showOptions ? () => setCostsOpen(o => !o) : null}/>
 
       {/* Keeping on top of it through the year comes with a subscription:
@@ -190,7 +201,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
       </AnimatePresence>
 
       {/* 5. Why. */}
-      <RateTile d={d} m={m} t={t}/>
+      <RateTile d={d} m={m} t={t} onEditInputs={onEditInputs}/>
     </div>
   );
 }
@@ -731,10 +742,13 @@ function TopUps({ d, m, ups, onRemove }) {
 
 // Their marginal tax rate, and the chart of it at every income. Where they
 // touch or point is shown in its parts; until then, where they are.
-function RateTile({ d, m, t }) {
+// Why: their marginal rate, on the chart. Its "…" menu has why the trap's
+// rate is what it is, as a bubble (TilePopover), and the way to their figures.
+function RateTile({ d, m, t, onEditInputs }) {
   const [ref, width] = useElementWidth(300);
   const points = rateCurve(d, m);
   const [at, setAt] = useState(null);
+  const [why, setWhy] = useState(false);
   const you = points.reduce((best, p) => Math.abs(p.income - t.ani) < Math.abs(best.income - t.ani) ? p : best, points[0]);
   // Where they are, as it is (not the chart's plain-salary figure).
   const shown = at || { ...t.rate, income: t.ani };
@@ -751,21 +765,35 @@ function RateTile({ d, m, t }) {
       <span style={{...pill,background:G,color:WHITE}}>Total <b>{pct(shown.rate)}</b></span>
     </div>
   );
+  const inTrap = t.over && !t.aboveTaper;
+  const extras = [t.rate.ni > 0 && "National Insurance", t.rate.sl > 0 && "student loan"].filter(Boolean).join(" and ");
+  const whyText = `Between ${K} and ${fmt(TRAP_END)}, each £1 more of pay takes 50p off your tax-free allowance, and that 50p is taxed as well.`
+    + (inTrap ? ` So the tax on the £1 is ${pct(t.rate.tax)}, not ${pct(t.rate.tax / 1.5)}.` : " So the tax on each £1 there is half as much again as usual.")
+    + (inTrap && extras ? ` ${extras[0].toUpperCase()}${extras.slice(1)} come on top.` : "");
   return (
-    <section style={tile}>
-      <h2 style={tileTitle}>Marginal tax rate by income</h2>
-      <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"4px"}}>
-        <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G,lineHeight:1.1}}>{pct(t.rate.rate)}</span>
-        <span style={{fontSize:"12px",color:TEXT,lineHeight:1.4}}>
-          {t.over ? `yours: ${pence(t.rate.rate)} of every extra £1 you earn goes in ${lostTo(t.rate)}.` : `yours now. Past ${K} it's ${pct(t.trapRate)}.`}
-        </span>
-      </div>
-      <div ref={ref} style={{display:"flex",flexDirection:side ? "row" : "column",gap:"12px",marginTop:"12px"}}>
-        <RateChart points={points} you={you} at={at} onAt={setAt} width={chartWidth}/>
-        <div style={{flex:1}}>{pills}</div>
-      </div>
-      <div style={{fontSize:"12px",color:MUT,marginTop:"8px"}}>The trap, {K} to {fmt(TRAP_END)}, in red. Touch the chart to see the rate at any income.</div>
-    </section>
+    <MobileTile title="Each extra £1 you earn"
+      menu={[
+        { icon: Info, label: why ? "Hide the explanation" : inTrap ? "Why it's this high" : "How the trap works", onClick: () => setWhy(w => !w) },
+        onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs },
+      ]}>
+      <TileRow first>
+        <RowText label={t.over ? `${pence(t.rate.rate)} of it goes in ${lostTo(t.rate)}` : `${pence(t.rate.rate)} of it goes in ${lostTo(t.rate)} now. Past ${K}, it would be ${pence(t.trapRate)}`}/>
+      </TileRow>
+      <TileRow>
+        <div ref={ref} style={{display:"flex",flexDirection:side ? "row" : "column",gap:"12px"}}>
+          <RateChart points={points} you={you} at={at} onAt={setAt} width={chartWidth}/>
+          <div style={{flex:1}}>{pills}</div>
+        </div>
+        <div style={{...ROW.note,marginTop:"8px"}}>The trap, {K} to {fmt(TRAP_END)}, in red. Touch the chart to see the rate at any income.</div>
+      </TileRow>
+      <AnimatePresence>
+        {why && (
+          <TilePopover key="why" title={inTrap ? `Why it's ${pct(t.rate.rate)}` : `Why the trap's rate is ${pct(t.trapRate)}`} onClose={() => setWhy(false)} style={{top:"44px"}}>
+            <p style={{...ROW.text,margin:0}}>{whyText}</p>
+          </TilePopover>
+        )}
+      </AnimatePresence>
+    </MobileTile>
   );
 }
 
@@ -775,17 +803,26 @@ function RateTile({ d, m, t }) {
 // income is £1 over, each on their own: with children in view and a
 // partner's not known, it asks. Over £100k, "See my options" (`options`)
 // opens the ways back; then it minimises (`open`, `onToggle`) to its title
-// and what's ticked, so the options lead.
-function Costs({ d, t, set, options, open = true, onToggle }) {
+// and what's ticked, so the options lead. Its "…" menu has how it's worked
+// out, as a bubble (TilePopover), and the way to their figures.
+function Costs({ d, m, t, set, options, open = true, onToggle, onEditInputs }) {
+  const [how, setHow] = useState(false);
+  // Which row's "?" bubble is open: "income" or "hours".
+  const [info, setInfo] = useState(null);
+  const toggleInfo = k => setInfo(i => i === k ? null : k);
   const cc = t.childcare;
   const parent = !!cc && !cc.planning;
   const england = !t.nation || t.nation === "england";
   const showHours = england && (parent ? cc.preschool > 0 : true);
   const lostRate = t.allowance.lost ? Math.round(t.allowance.tax / t.allowance.lost * 100) : 40;
-  const kids = !cc ? "off" : cc.planning ? "warn" : "on";
+  // Ticked only where their own income is what stops it, so the ticked rows
+  // add up to the total: a partner over £100k (or no earnings) stops it
+  // whatever they do, and the trap doesn't count it (taxTrap.js).
+  const kids = !cc ? "off" : cc.planning ? "warn" : cc.state === "partner" || cc.state === "notWorking" ? "off" : "on";
   const kidsLine = !cc ? (kidsSituation(d) === "no" ? "Only for children under 12" : "For parents of children under 12")
     : cc.planning ? `Would stop once your child arrives, if either of you is over ${K}`
     : cc.state === "partner" ? `Already stopped: your partner's income is over ${K}`
+    : cc.state === "notWorking" ? "Needs you to be in work, so it isn't counted"
     : t.over ? `Stopped: your income is over ${K}` : `Stops if either parent goes over ${K}`;
   const askPartner = !!cc && !d.partnerOver100k && !!set;
   const nationNote = t.nation === "scotland" ? "Scotland's funded hours have no income limit, so they aren't affected."
@@ -794,63 +831,133 @@ function Costs({ d, t, set, options, open = true, onToggle }) {
   const title = t.over ? "What it costs you" : `What passing ${K} would cost you`;
   // Minimised: what's ticked, in a line.
   const ticked = ["Tax-free allowance", kids === "on" && showHours && "30 funded hours", kids === "on" && "Tax-Free Childcare"].filter(Boolean).join(", ");
+  const howText = `Over ${K}, your tax-free allowance shrinks by £1 for every £2 more, until it's gone at ${fmt(TRAP_END)}.`
+    + (t.over ? ` You've lost ${fmt(t.allowance.lost)} of it, taxed at ${lostRate}%: ${fmt(t.allowance.tax)} a year.` : "")
+    + (england ? ` Funded hours and Tax-Free Childcare stop if either parent's income is over ${K}.` : ` Tax-Free Childcare stops if either parent's income is over ${K}.`)
+    + (parent ? " The childcare figures are what that support is worth to you a year, for your children's ages." : "");
   return (
-    <section style={tile}>
-      {onToggle ? (
-        <h2 style={{margin:0,fontSize:"inherit",fontWeight:"inherit"}}><button type="button" onClick={onToggle} aria-expanded={open}
-          style={{width:"100%",display:"flex",alignItems:"flex-start",gap:"10px",background:"none",border:"none",padding:0,textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
-          <span style={{flex:1}}>
-            <span style={{...tileTitle,display:"block"}}>{title}</span>
-            {!open && <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ticked}</span>}
-          </span>
-          <ChevronDown size={18} color={MUT} aria-label={open ? "Minimise" : "Expand"} style={{flexShrink:0,marginTop:"1px",transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-        </button></h2>
-      ) : <h2 style={tileTitle}>{title}</h2>}
-      {open && <>
-      <CheckRow state="on" topic="Tax-free allowance" line={t.over ? `${fmt(t.allowance.lost)} of your ${fmt(PERSONAL_ALLOWANCE)} lost` : `50p lost for every £1 over ${K}`}
-        value={t.over ? fmt(t.allowance.tax) : `${lostRate / 2}p per £1`}/>
-      {showHours && <CheckRow state={kids} topic="30 funded hours" line={kidsLine} value={fmt(parent ? cc.hours : FUNDED_HOURS_VALUE)}/>}
-      <CheckRow state={kids} topic="Tax-Free Childcare" line={kidsLine} value={fmt(parent ? cc.tfc : TFC_CAP_PER_CHILD)}/>
-      {nationNote && kids !== "off" && <p style={note}>{nationNote}</p>}
-      {askPartner && (
-        <div style={{marginTop:"12px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px"}}>
-          <div style={{fontSize:"12px",fontWeight:700,color:TEXT}}>Is your partner's income over £100,000?</div>
-          <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Either parent over £100,000 stops this childcare support for both of you.</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
-            {[["no", "No"], ["yes", "Yes"], ["single", "I don't have a partner"]].map(([v, label]) => (
-              <Chip key={v} onClick={() => answer(v)}>{label}</Chip>
-            ))}
-          </div>
-        </div>
-      )}
-      {!t.over && (
-        <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"12px 0 0"}}>A rise or bonus that would take you over can go into your pension by salary sacrifice instead.</p>
-      )}
-      {options && (
-        // Blue: it opens the Plan ahead paywall.
-        <Button variant="blue" fullWidth onClick={options} style={{marginTop:"14px"}}>See my options</Button>
-      )}
+    <MobileTile title={title}
+      menu={[
+        onToggle && { icon: open ? ChevronUp : ChevronDown, label: open ? "Minimise" : "Show the costs", onClick: onToggle },
+        { icon: Info, label: how ? "Hide the explanation" : "How this is worked out", onClick: () => setHow(h => !h) },
+        onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs },
+      ]}>
+      {!open ? (
+        <TileRow first onClick={onToggle} expanded={false}>
+          <div style={{...ROW.note,marginTop:0}}>{ticked}</div>
+        </TileRow>
+      ) : <>
+        {t.over && <IncomeRow d={d} m={m} t={t} open={info === "income"} onToggle={() => toggleInfo("income")}/>}
+        <CheckRow first={!t.over} state="on" topic="Tax-free allowance" line={t.over ? `${fmt(t.allowance.lost)} of your ${fmt(PERSONAL_ALLOWANCE)} lost` : `50p lost for every £1 over ${K}`}
+          value={t.over ? fmt(t.allowance.tax) : `${lostRate / 2}p per £1`}/>
+        {showHours && <CheckRow state={kids} topic="30 funded hours" line={kidsLine} value={fmt(parent ? cc.hours : FUNDED_HOURS_VALUE)}
+          tool={<span style={{display:"inline-flex",margin:"-4px 0"}}><InfoButton onClick={() => toggleInfo("hours")} open={info === "hours"}/></span>}
+          pop={info === "hours" && (
+            <TilePopover key="hours" title="30 funded hours" onClose={() => setInfo(null)}>
+              <p style={{...ROW.text,margin:0}}>
+                In England, working parents of children from 9 months old until they start school get up to 30 hours a week of free childcare, for 38 weeks a year, at a nursery or childminder that offers it. It stops if either parent's income is over {K}. Candid counts it at about {fmt(FUNDED_HOURS_VALUE)} a year for each child who gets it.
+              </p>
+            </TilePopover>
+          )}/>}
+        <CheckRow state={kids} topic="Tax-Free Childcare" line={kidsLine} value={fmt(parent ? cc.tfc : TFC_CAP_PER_CHILD)}/>
+        {/* The band's £, as the rows add up to it. */}
+        {t.over && <TileRow><RowText label={<span style={{fontWeight:700}}>In all, a year</span>} figure={fmt(t.amount)} figureStyle={{color:CRITICAL}} figureOnLabel/></TileRow>}
+        {nationNote && kids !== "off" && <TileRow><p style={ROW.text}>{nationNote}</p></TileRow>}
+        {askPartner && (
+          <TileRow>
+            <div style={{fontSize:"12px",fontWeight:700,color:TEXT}}>Is your partner's income over £100,000?</div>
+            <div style={ROW.note}>Either parent over £100,000 stops this childcare support for both of you.</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
+              {[["no", "No"], ["yes", "Yes"], ["single", "I don't have a partner"]].map(([v, label]) => (
+                <Chip key={v} onClick={() => answer(v)}>{label}</Chip>
+              ))}
+            </div>
+          </TileRow>
+        )}
+        {!t.over && (
+          <TileRow><p style={{...ROW.text,color:TEXT}}>A rise or bonus that would take you over can go into your pension by salary sacrifice instead.</p></TileRow>
+        )}
+        {options && (
+          // Blue: it opens the Plan ahead paywall.
+          <div style={{padding:"6px 16px 16px 0"}}><Button variant="blue" fullWidth onClick={options}>See my options</Button></div>
+        )}
       </>}
-    </section>
+      <AnimatePresence>
+        {how && (
+          <TilePopover key="how" title="How this is worked out" onClose={() => setHow(false)} style={{top:"44px"}}>
+            <p style={{...ROW.text,margin:0}}>{howText}</p>
+          </TilePopover>
+        )}
+      </AnimatePresence>
+    </MobileTile>
+  );
+}
+
+// Over £100k: how far over, its £ and its "?" opening the sum behind it,
+// HMRC's adjusted net income: pay, bonus and other income, less what goes
+// into a pension, then less £100k. Each part from the same answers as the
+// engine (metrics.js), anything else (state pension, pay earlier in the
+// year) as one line, so the lines always add up to the income used.
+function IncomeRow({ d, m, t, open, onToggle }) {
+  const pension = Math.round(+d.salary * (+d.myContribution || 0) / 100) + Math.round(m.topUpRelief || 0);
+  const parts = [
+    ["Salary", Math.round(+d.salary || 0)],
+    ["Bonus", Math.round(+d.bonusAmount || 0)],
+    ["Other income", Math.round((+d.otherIncome || 0) + (+d.dividendIncome || 0))],
+    ["Savings interest", Math.round(m.savingsInterest || 0)],
+  ];
+  const known = parts.reduce((a, [, v]) => a + v, 0) - pension;
+  const rest = t.ani - known;
+  // Each line rounded on its own can drift a pound or two from the total:
+  // that goes on the salary line. Anything more is income of another kind.
+  if (Math.abs(rest) > 2) parts.push(["Other income this tax year", rest]);
+  else parts[0][1] += rest;
+  const line = (label, value, strong = false, sign = "") => (
+    <div key={label} style={{display:"flex",justifyContent:"space-between",gap:"12px",fontSize:"12px",lineHeight:1.6,color:TEXT,fontWeight:strong ? 700 : 400}}>
+      <span>{label}</span><span style={{whiteSpace:"nowrap"}}>{sign}{fmt(Math.abs(value))}</span>
+    </div>
+  );
+  const over = t.ani - TRAP_START;
+  const button = <button type="button" onClick={onToggle} aria-expanded={open} style={{background:"none",border:"none",padding:0,font:"inherit",color:"inherit",cursor:"pointer",textDecoration:"underline dotted",textUnderlineOffset:"3px"}}>{fmt(over)}</button>;
+  return (
+    <TileRow first style={anchor}>
+      <RowText label={`Your income over ${K}`} figure={button} figureOnLabel
+        tool={<span style={{display:"inline-flex",margin:"-4px 0"}}><InfoButton onClick={onToggle} open={open}/></span>}/>
+      <AnimatePresence>
+        {open && (
+          <TilePopover key="income" title="How your income is worked out" onClose={onToggle}>
+            <p style={{...ROW.text,margin:"0 0 8px"}}>The income the {K} limit is tested on. HMRC calls it adjusted net income: what you earn, less what goes into your pension.</p>
+            {parts.filter(([, v]) => v !== 0).map(([label, v]) => line(label, v, false, v < 0 ? "− " : ""))}
+            {pension > 0 && line("Paid into your pension", pension, false, "− ")}
+            <div style={{borderTop:"1px solid rgba(22,47,36,0.12)",margin:"4px 0"}}/>
+            {line("Your income", t.ani, true)}
+            {line(`Less ${K}`, TRAP_START, false, "− ")}
+            {line(`Over ${K}`, over, true)}
+          </TilePopover>
+        )}
+      </AnimatePresence>
+    </TileRow>
   );
 }
 
 // One cost as a checklist row: ticked where it applies to them, a warning
-// where it would (a child on the way), an empty box where not. Its £ is
-// grey unless it applies now (no children yet), its name too where not.
-function CheckRow({ state, topic, line, value }) {
-  const box = { width:"18px", height:"18px", borderRadius:"5px", flexShrink:0, display:"inline-flex", alignItems:"center", justifyContent:"center" };
+// where it would (a child on the way), an empty box where not. Its £ is on
+// the topic's line, grey unless it applies now, its name too where not.
+function CheckRow({ first = false, state, topic, line, value, tool, pop }) {
+  const box = { width:"18px", height:"18px", borderRadius:"5px", flexShrink:0, display:"inline-flex", alignItems:"center", justifyContent:"center", marginTop:"1px" };
   return (
-    <div style={{display:"flex",alignItems:"center",gap:"10px",borderTop:"1px solid rgba(22,47,36,0.08)",marginTop:"10px",paddingTop:"10px"}}>
-      {state === "on" ? <span role="img" aria-label="Applies to you" style={{...box,background:G}}><Check size={12} strokeWidth={3.2} color={WHITE}/></span>
-        : state === "warn" ? <TriangleAlert size={18} strokeWidth={2.2} color={WARNING_TEXT} role="img" aria-label="Would apply" style={{flexShrink:0}}/>
-        : <span role="img" aria-label="Doesn't apply" style={{...box,border:"1.5px solid rgba(22,47,36,0.3)"}}/>}
-      <span style={{flex:1,minWidth:0}}>
-        <span style={{display:"block",fontSize:"12px",fontWeight:700,color:state === "off" ? MUT : TEXT}}>{topic}</span>
-        <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>{line}</span>
-      </span>
-      <span style={{fontFamily:SANS,fontSize:"13px",fontWeight:700,color:state === "on" ? G : MUT,whiteSpace:"nowrap"}}>{value}</span>
-    </div>
+    <TileRow first={first} style={pop !== undefined ? anchor : undefined}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:"10px"}}>
+        {state === "on" ? <span role="img" aria-label="Applies to you" style={{...box,background:G}}><Check size={12} strokeWidth={3.2} color={WHITE}/></span>
+          : state === "warn" ? <TriangleAlert size={18} strokeWidth={2.2} color={WARNING_TEXT} role="img" aria-label="Would apply" style={{flexShrink:0}}/>
+          : <span role="img" aria-label="Doesn't apply" style={{...box,border:"1.5px solid rgba(22,47,36,0.3)"}}/>}
+        <div style={{flex:1,minWidth:0}}>
+          <RowText label={<span style={{color:state === "off" ? MUT : TEXT}}>{topic}</span>} note={line} figure={value} tool={tool}
+            figureStyle={state === "on" ? { color:G } : { color:MUT, fontWeight:400 }} figureOnLabel/>
+        </div>
+      </div>
+      {pop !== undefined && <AnimatePresence>{pop || null}</AnimatePresence>}
+    </TileRow>
   );
 }
 

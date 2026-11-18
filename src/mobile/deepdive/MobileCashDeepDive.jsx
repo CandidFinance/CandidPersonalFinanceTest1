@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Bell, Info, Pencil, EyeOff, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Bell, Info, Pencil, EyeOff } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { cashOpportunity, accountName, assistItems, cashSources, savingsTax } from "../../lib/assist.js";
 import { fmt } from "../../lib/format.js";
@@ -14,9 +14,8 @@ import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { useReminder, ReminderPills } from "../MobileReminderAction.jsx";
-import { MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, CREAM, SERIF, SANS, RADIUS_PILL, ALERT_ON_DARK, WARN_ON_DARK, NEON_GREEN, STRIPE_ON_LIGHT } from "../../design-tokens.js";
-import { CREAM_SOFT } from "../ScreenBand.jsx";
-import { Button } from "../ui";
+import { MUT, TEXT, SUCCESS, CRITICAL, NOTICE_LABEL, TILE_FIGURE, TILE_LABEL_SIZE, NEON_GREEN, STRIPE_ON_LIGHT } from "../../design-tokens.js";
+import ModuleBand from "../ModuleBand.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Three tiles (MobileTile, rows on the
@@ -65,44 +64,21 @@ function useCashFigures(d, m, savingsRates, onOpenAssist) {
   return { calc, products, opp, gain, hasIsaList, hasSavingsList, seeOptions };
 }
 
-// The page's top, on the dark band (ScreenBand, in MobileModuleDeepDive):
-// "Cash · Opportunity" with the module's status in glass beside it (in
-// ALERT_ON_DARK when it needs action) and the spanner to the inputs, then
-// the yearly loss to low rates, large, and "Explain this" (the answer step
-// by step). The title and figure stay as the sheet comes up
-// (`data-band-keep`). `data-tour="figure"`: lit up by the Cash tour
-// (CashTour.jsx).
-const GLASS_PILL = { display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:RADIUS_PILL, background:"rgba(255,255,255,0.10)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.16)", fontSize:"11px", fontWeight:700, whiteSpace:"nowrap" };
+// The page's top, on the dark band (ModuleBand): "Cash · Opportunity" and
+// its status, the yearly loss to low rates, and "Explain this".
+// `data-tour="figure"`: lit up by the Cash tour (CashTour.jsx).
 export function CashBand({ d, m, savingsRates, onOpenAssist, status, statusTone = null, onShowReveal, onEditInputs }) {
   const { calc, opp, gain } = useCashFigures(d, m, savingsRates, onOpenAssist);
   const shown = gain > 50 ? gain : 0;
   // The tour's first stop only when there's a loss to show (CashTour.jsx
   // leaves it out otherwise).
   return (
-    <section aria-label="Cash opportunity" data-tour={shown > 0 ? "figure" : undefined}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",minHeight:"28px"}}>
-        <div data-band-keep="title" style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:CREAM_SOFT,whiteSpace:"nowrap"}}>Cash · Opportunity</div>
-        {status && <span style={{...GLASS_PILL,color:statusTone === "alert" ? ALERT_ON_DARK : statusTone === "warn" ? WARN_ON_DARK : CREAM}}>{status}</span>}
-        {onEditInputs && (
-          <button type="button" onClick={onEditInputs} aria-label="Edit your finances" className="tap44" style={{marginLeft:"auto",background:"none",border:"none",padding:"4px",marginRight:"-4px",cursor:"pointer",color:CREAM,display:"flex"}}>
-            <SlidersHorizontal size={20} strokeWidth={2.2} aria-hidden="true"/>
-          </button>
-        )}
-      </div>
-      <div data-band-keep="figure" style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:CREAM,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
-        {fmt(shown)}<span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,marginLeft:"5px",letterSpacing:0}}>a year</span>
-      </div>
-      <div style={{fontSize:"13px",color:CREAM_SOFT,lineHeight:1.45,marginTop:"6px"}}>
-        {shown > 0 ? (opp ? "Lost to low rates, after tax" : "Lost to low rates")
-          : calc.totalPot > 0 ? "Your savings are already on good rates."
-          : "Add your savings in your details to see what they could earn."}
-      </div>
-      {onShowReveal && (
-        <Button variant="secondary" onClick={onShowReveal} style={{marginTop:"16px",border:"none",paddingRight:"12px"}}>
-          Explain this<ChevronRight size={17} strokeWidth={2.5} aria-hidden="true" style={{marginLeft:"-4px"}}/>
-        </Button>
-      )}
-    </section>
+    <ModuleBand title="Cash · Opportunity" label="Cash opportunity" tour={shown > 0 ? "figure" : undefined}
+      status={status} statusTone={statusTone} onEditInputs={onEditInputs} onShowReveal={onShowReveal}
+      figure={fmt(shown)} suffix="a year"
+      line={shown > 0 ? (opp ? "Lost to low rates, after tax" : "Lost to low rates")
+        : calc.totalPot > 0 ? "Your savings are already on good rates."
+        : "Add your savings in your details to see what they could earn."}/>
   );
 }
 
