@@ -155,6 +155,14 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const fundAnimate = fundToggled && !reduceMotion;
   const fundFade = fundAnimate ? { initial: { opacity: 0 }, animate: { opacity: 1, transition: { ...fundMove, delay: 0.12 } } } : {};
   const setFundMin = v => { setFundToggled(true); set("emergencyFundMin", v); };
+  // Opened from Student loan's "Spare cash above your buffer" (#cash-fund):
+  // the emergency fund in view, as the user left it (open or minimised).
+  useEffect(() => {
+    if (window.location.hash !== "#cash-fund") return;
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const t = setTimeout(() => document.getElementById("cash-fund")?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" }), 300);
+    return () => clearTimeout(t);
+  }, []);
   // A tap anywhere on the tile but its controls, menu, pop-out and their
   // backdrops (aria-hidden) minimises it.
   const onFundTap = e => { if (!e.target.closest("button, a, [role=menu], [role=dialog], [aria-hidden=true]")) setFundMin(true); };
@@ -234,6 +242,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
           tap on them opens it again. `data-tour`: lit up by the Cash tour
           (CashTour.jsx), as are the tiles either side. */}
       {!fundHidden && (
+        <div id="cash-fund" style={{scrollMarginTop:"80px"}}>
         <LayoutGroup>
           {fundMin && runwayChunks.length > 0 ? (
             // No data-tour: the Cash tour skips its fund stop (which talks
@@ -287,6 +296,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             </MobileTile>
           )}
         </LayoutGroup>
+        </div>
       )}
 
       <MobileTile data-tour="working" title="Savings this year"

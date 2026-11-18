@@ -402,6 +402,7 @@
  * @property {boolean} [belowThreshold] Student loan only: earnings are under the repayment threshold.
  * @property {boolean} [amountIsLumpSum] Kids only: the amount is a one-off, not a year's.
  * @property {boolean} [amountOnly] Student loan only: its status comes from the £ alone (isOnTrack).
+ * @property {boolean} [amberOnly] Student loan only: "Worth a look" at most, never "Action needed" (statusLabel.js).
  * @property {string|null} [reason] Cash only: why it needs action when under £50 a year is left.
  */
 

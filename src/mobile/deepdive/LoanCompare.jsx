@@ -21,7 +21,8 @@ import { G, WHITE, TEXT, SUCCESS, GOLD_TEXT } from "../../design-tokens.js";
 // yet known is a row to tap, which asks for it here (its rate and what's
 // owed). With a repayment plan on the chart (`plan`, its run from
 // loanPlan.js runPlan), subscribers switch between it and the lump sum: the
-// plan's payments, each valued from the year it's paid.
+// plan's payments, each valued from the year it's paid. `how`: the page's
+// [menu item, pop-out] for its explanation (useHow).
 
 const ROWS = {
   loan:         { title: "Paying it into the loan", note: (r, c) => c.cleared ? "Repayments you no longer make, kept in savings." : "Repayments you no longer make, kept in savings. Most of it would otherwise have been written off." },
@@ -40,11 +41,13 @@ const SURE = {
 // Until a lump sum is picked above: £5,000, or the balance if it's less.
 const STAND_IN = 5000;
 
-export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, menu = [] }) {
+export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, menu = [], how = null }) {
   const lump = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
   const [asking, setAsking] = useState(false);
   const [opened, setOpened] = useState(() => new Set());
   const [mode, setMode] = useState("plan");
+  // Minimised from its title row, as the tiles above it; open to start.
+  const [shown, setShown] = useState(true);
   const usePlan = open && plan && planEvents(plan.run).length > 0 && mode === "plan";
   const c = loanComparison(d, m, sl, usePlan ? planEvents(plan.run) : lump);
   if (!c) return null;
@@ -87,7 +90,10 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
   );
 
   return (
-    <MobileTile id="sl-compare" title={`Where ${usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most`} subtitle={subtitle} menu={menu}>
+    <MobileTile id="sl-compare" title={`Where ${usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most`} subtitle={shown ? subtitle : null} menu={[how?.[0], ...menu]}
+      open={shown} onToggle={() => setShown(s => !s)}>
+      {how?.[1]}
+      {shown && <>
       {open && plan && planEvents(plan.run).length > 0 && (
         <TileRow>
           <PillSlider compact label="Compare a lump sum or a plan" value={usePlan ? "plan" : "lump"} onChange={setMode} options={[{ value:"lump", label:"Lump sum" }, { value:"plan", label:plan.name }]}/>
@@ -144,6 +150,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
       <TileRow>
         <div style={{...ROW.note,marginTop:0}}>Before inflation. Not including anything an employer adds to a pension. Guidance, not advice.</div>
       </TileRow>
+      </>}
     </MobileTile>
   );
 }

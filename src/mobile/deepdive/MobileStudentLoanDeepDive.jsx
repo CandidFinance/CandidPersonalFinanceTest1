@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, Children, cloneElement } from "react";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, ChevronRight, Check, CircleAlert, Clock, Pencil, Wrench, ChartLine, AlertTriangle } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
+import { ExternalLink, Check, CircleAlert, Pencil, Wrench, ChartLine, AlertTriangle, Info, ChevronUp, ChevronDown } from "lucide-react";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { premiumOpen } from "../../lib/unlock.js";
+import { ON_TRACK_FLOOR } from "../../lib/moduleStatus.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import LoanCompare from "./LoanCompare.jsx";
 import ScenarioModelling from "./ScenarioModelling.jsx";
@@ -22,8 +23,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { AnimatePresence } from "framer-motion";
 import MobileTile, { TileRow, ROW, RowText, withIcon, Nested, TilePopover, anchor } from "../MobileTile.jsx";
 import InfoButton from "../InfoButton.jsx";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT, SANS } from "../../design-tokens.js";
-import OpportunityTile from "./OpportunityTile.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT, SANS } from "../../design-tokens.js";
+import ModuleBand from "../ModuleBand.jsx";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
 const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
@@ -38,6 +39,72 @@ function buildOverpayOptions(loanBal) {
   const round = [1000, 5000, 10000, 20000].filter(x => x < bal * 0.9);
   return [...round, bal];
 }
+// The page's top, on the dark band (ModuleBand): what not paying it off
+// early loses a year, the same sum the Modules card shows (moduleStatus.js
+// s.studentLoan: the main loan's yearly gain, the Postgraduate loan's, and
+// a lump sum's gain spread over the years to clearing), then what that comes
+// to in all. Before the verdict (savings and pension in), only what it waits
+// on; with nothing to gain, £0 and why.
+export function StudentLoanBand({ d, m, status, statusTone, onShowReveal, onEditInputs }) {
+  const band = { title: "Student loan", status, statusTone, onShowReveal, onEditInputs };
+  if (d.studentLoan === "none" || !(m.loanBal > 0)) return <ModuleBand {...band} line="No student loan on record."/>;
+  const sl = calcStudentLoanScenario(d, m);
+  if (sl.belowThreshold) {
+    return <ModuleBand {...band} line={m.noEarnings ? "Nothing is repaid while you're not earning." : "You earn below the repayment threshold, so nothing comes off your pay."}/>;
+  }
+  if (!loanVerdictReady(d)) {
+    const missing = [!loanSavingsIn(d) && "savings", hasEmployerMatch(d) && !loanPensionChecked(d) && "pension"].filter(Boolean);
+    return <ModuleBand {...band} line={`Whether paying it off early comes out ahead depends on your ${missing.join(" and your ")}, which ${missing.length > 1 ? "aren't" : "isn't"} in yet.`}/>;
+  }
+  const pg = pgScenario(d, m);
+  const lump = bestLumpSum(m, sl, m.surplusCash || 0);
+  const main = sl.worthOverpaying ? sl.overpayAnnualBenefit : 0;
+  const pgGain = pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0;
+  const lumpYearly = lump ? Math.round(lump.saving / Math.max(1, lump.clearYr)) : 0;
+  const total = main + pgGain + lumpYearly;
+  if (!(total > 0)) {
+    const why = !sl.willClear
+      ? `It's expected to be written off in April ${sl.writeOffTaxYear}. Overpaying would mostly go on debt that's written off anyway.`
+      : sl.effectiveBenefit > 0
+        ? `The loan's ${sl.lifeRatePct}% average rate is only just above savings at ${sl.cashRate}%, so the interest saved and the savings interest given up come out level.`
+        : `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`;
+    return <ModuleBand {...band} figure={fmt(0)} suffix="a year" line="No gain from paying it off early, on your figures." note={why}/>;
+  }
+  const line = main > 0 ? "Lost to loan interest above what savings pay"
+    : lump ? `Lost to interest by not paying ${k(lump.amount)} off now`
+    : "Lost to Postgraduate loan interest above what savings pay";
+  const inAll = main > 0 ? `${fmt(sl.overpayTotalBenefit)} lost in all by April ${clearedBy(sl)}, more if your savings interest is taxed.`
+    : lump ? `${fmt(lump.saving)} in all, in today's money after savings interest, cleared in ${lump.clearYr === 1 ? "a year" : `${lump.clearYr} years`}.`
+    : "From your Postgraduate loan alone.";
+  const pgPart = pgGain > 0 && pgGain < total ? ` Includes ${fmt(pgGain)} a year on your Postgraduate loan.` : "";
+  // Under the Modules card's floor (statusLabel.js "On track"), no £ as the
+  // headline either, but the in-all £ the tile below adds up to.
+  if (total < ON_TRACK_FLOOR) {
+    return <ModuleBand {...band} line="Little in it either way: paying it off early comes out under £50 a year ahead of savings." note={`${inAll}${pgPart}`}/>;
+  }
+  return <ModuleBand {...band} figure={fmt(total)} suffix="a year" line={line} note={`${inAll}${pgPart}`}/>;
+}
+
+// The April a loan that clears is cleared by (as ClearOrWriteOff says it).
+const clearedBy = sl => sl.writeOffTaxYear - sl.writeOffYr + sl.clearYr;
+
+// A tile's explanation, from its "…" menu: the item, and the pop-out it
+// opens over the tile (Cash's "How this is worked out").
+function useHow(title, body) {
+  const [open, setOpen] = useState(false);
+  const item = body && { icon: Info, label: open ? "Hide the explanation" : "How this is worked out", onClick: () => setOpen(o => !o) };
+  const pop = (
+    <AnimatePresence>
+      {open && body && (
+        <TilePopover key="how" title={title} onClose={() => setOpen(false)} style={{top:"44px"}}>
+          <p style={{...ROW.text,margin:0}}>{body}</p>
+        </TilePopover>
+      )}
+    </AnimatePresence>
+  );
+  return [item, pop];
+}
+
 // Full mobile version of desktop's Student Loan deep dive (ModuleDeepDive,
 // moduleKey==="studentLoan" — CandidApp.jsx), as MobileTiles (rows on the
 // tile, never a tile inside one), after Pension: the Opportunity tile and
@@ -60,7 +127,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const [manualBalanceInput, setManualBalanceInput] = useState(null);
   // The return chart opens under its What ifs row: measured once it's open.
   const [chartWrapRef, chartWidth] = useElementWidth(300, [whatIf === "return"]);
-  const [balanceChartRef, balanceChartWidth] = useElementWidth(300);
+  // Model your loan and Build repayment plans start minimised (Harvey, 18
+  // Nov 2026): large, and only for anyone who wants to model it.
+  const [balanceOpen, setBalanceOpen] = useState(false);
+  const [balanceChartRef, balanceChartWidth] = useElementWidth(300, [balanceOpen]);
   // The lump sum being modelled (LumpSum, in What ifs): none until one's
   // picked, so the chart starts as it is.
   const [overpayAmt, setOverpayAmt] = useState(0);
@@ -73,9 +143,12 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const [planFlash, setPlanFlash] = useState(0);
   // The overpay-or-leave answer, once it's in, for the value measures.
   useDecisionLog(d, set, m.loanBal > 0 ? studentLoanDecision(d, m) : null);
+  // Where it does most: its explanation, from its menu.
+  const compareHow = useHow("How this is worked out",
+    "The same money in each place, valued on the date your loan would end. Paying it into the loan is worth the repayments you'd no longer make, kept in savings. Figures resting on assumed growth can come out higher or lower.");
 
   if (d.studentLoan === "none" || m.loanBal <= 0) {
-    return <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>No student loan on record.</p>;
+    return null; // The band says so (StudentLoanBand).
   }
 
   const sl = calcStudentLoanScenario(d, m);
@@ -110,42 +183,23 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const showLump = overpayOptions.length > 0 && !sl.belowThreshold;
 
   const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
-  const smooth = () => (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
-  const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: smooth(), block: "start" });
   const showPlan = () => {
+    setBalanceOpen(true);
     const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    balanceChartRef.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    setTimeout(() => balanceChartRef.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" }), 50);
     setPlanFlash(n => n + 1);
   };
-  // The Opportunity tile's lump sum, picked under the chart.
-  const seeLump = () => { setOverpayAmt(lump.amount); scrollTo("sl-balance"); };
-  // Where overpaying is weighed against saving, when that tile is shown.
-  const toOverpaying = verdict && sl.willClear ? () => scrollTo("sl-overpaying") : null;
-
+  // 1. The answer is on the band above the page (StudentLoanBand); under
+  // it, what it waits on, or whether the money to pay it off is spare.
   return (
     <div>
-      {!verdict && <LockedOpportunity d={d}/>}
-      {worthOverpaying && (
-        <>
-          <OpportunityTile style={{marginBottom:"12px"}}
-            figures={[{ value: `${fmt(sl.overpayAnnualBenefit)}/yr`, label: `Lost to interest above savings rates, ${fmt(sl.overpayTotalBenefit)} over the loan's life` }]}
-            chips={[`~${k(sl.interestAvoided)} interest avoided`, `~${k(sl.savingsForgone)} savings interest forgone`]}
-            action={{ label: "See how", onClick: toOverpaying || (() => scrollTo("sl-balance")) }}/>
-          <SpareCheck d={d} m={m} sl={sl} amount={cost.balance} menu={[editItem]}/>
-        </>
-      )}
-      {verdict && !worthOverpaying && !lump && !sl.belowThreshold && <NoGain sl={sl} onSeeWhy={toOverpaying}/>}
-      {lump && (
-        <>
-          <OpportunityTile style={{marginBottom:"12px"}}
-            figures={[{ value: fmt(lump.saving), label: `Lost to interest by not paying ${k(lump.amount)} off now, in today's money` }]}
-            chips={[`Cleared in ${lump.clearYr} years, net of savings interest`]}
-            action={showLump ? { label: "See how", onClick: seeLump } : undefined}/>
-          <SpareCheck d={d} m={m} sl={sl} amount={lump.amount} menu={[editItem]}/>
-        </>
-      )}
+      {!verdict && !sl.belowThreshold && <NeedsDetails d={d} menu={[editItem]}/>}
+      {/* The sum behind the band's £, straight under it. */}
+      {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash} menu={[editItem]}/>}
+      {worthOverpaying && <SpareCheck d={d} m={m} sl={sl} amount={cost.balance} menu={[editItem]}/>}
+      {lump && <SpareCheck d={d} m={m} sl={sl} amount={lump.amount} menu={[editItem]}/>}
 
-      <BalanceTile d={d} m={m} sl={sl} set={set} savingsRates={savingsRates} menu={[editItem]} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt}
+      <BalanceTile open={balanceOpen} onToggle={() => setBalanceOpen(o => !o)} d={d} m={m} sl={sl} set={set} savingsRates={savingsRates} menu={[editItem]} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt}
         overpayOptions={overpayOptions} showLump={showLump} tip={tip} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying}
         planRun={planRun} planName={shownPlan?.name} planFlash={planFlash} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}
         editingBalance={editingBalance} setEditingBalance={setEditingBalance} manualBalanceInput={manualBalanceInput} setManualBalanceInput={setManualBalanceInput}
@@ -157,10 +211,9 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
       {pg && <PostgradLoan pg={pg} sl={sl} menu={[editItem]}/>}
 
       {!sl.belowThreshold && (compareOpen
-        ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null} menu={[editItem]}/>
-        : verdict && pensionChecked && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]}/>)}
+        ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null} menu={[editItem]} how={compareHow}/>
+        : verdict && pensionChecked && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]} how={compareHow}/>)}
 
-      {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash} menu={[editItem]}/>}
     </div>
   );
 }
@@ -171,7 +224,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 // figures behind it, a row each on one line, the two the user can correct
 // (the balance, and when repayments started, which sets the write-off) with
 // a spanner that pops their input out from the row (TilePopover).
-function BalanceTile({ d, m, sl, set, savingsRates, menu, overpayAmt, setOverpayAmt, overpayOptions, showLump, tip, selectedScenario, baseProjection, worthOverpaying, planRun, planName, planFlash, balanceChartRef, balanceChartWidth, editingBalance, setEditingBalance, manualBalanceInput, setManualBalanceInput, editingStart, setEditingStart, startInput, setStartInput }) {
+function BalanceTile({ open, onToggle, d, m, sl, set, savingsRates, menu, overpayAmt, setOverpayAmt, overpayOptions, showLump, tip, selectedScenario, baseProjection, worthOverpaying, planRun, planName, planFlash, balanceChartRef, balanceChartWidth, editingBalance, setEditingBalance, manualBalanceInput, setManualBalanceInput, editingStart, setEditingStart, startInput, setStartInput }) {
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment, that's almost certainly the
@@ -201,11 +254,18 @@ function BalanceTile({ d, m, sl, set, savingsRates, menu, overpayAmt, setOverpay
   const resetStart = () => { if (set) set("slFirstDueYear", ""); closeStart(); };
   const pill = { flex:1, borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit" };
   const growth = set ? growthRowOf(d, m) : null;
+  const [howItem, howPop] = useHow("How this is worked out",
+    `Year by year: interest is added at the loan's rate, and ${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}% of your pay over ${fmt(sl.threshold)} comes off, with your salary growing as set below. Whatever is left in April ${sl.writeOffTaxYear} is written off, and you don't repay it.`);
   return (
-    <MobileTile id="sl-balance" title="Your balance"
-      // From the menu: once the menu has closed and handed focus back, so
-      // the pop-out keeps it.
-      menu={[set && { icon: Wrench, label: "Update your balance", onClick: () => setTimeout(openBalanceEditor, 200) }, ...menu]}>
+    <MobileTile id="sl-balance" title="Model your loan" open={open} onToggle={onToggle}
+      // From the menu: once the menu has closed and handed focus back (and
+      // the tile has opened), so the pop-out keeps it.
+      menu={[collapseItem(open, onToggle, "Show the model"),
+        set && { icon: Wrench, label: "Update your balance", onClick: () => { if (!open) onToggle(); setTimeout(openBalanceEditor, 250); } }, howItem, ...menu]}>
+      {howPop}
+      {!open ? (
+        <Collapsed onOpen={onToggle}>{sl.willClear ? `Cleared by April ${clearedBy(sl)}` : `Written off April ${sl.writeOffTaxYear}`}. Your balance year by year, with your salary growth and a lump sum.</Collapsed>
+      ) : <>
       <TileRow first><ClearOrWriteOff sl={sl}/></TileRow>
 
       <TileRow>
@@ -263,7 +323,19 @@ function BalanceTile({ d, m, sl, set, savingsRates, menu, overpayAmt, setOverpay
           )}
         </AnimatePresence>
       </TileRow>
+      </>}
     </MobileTile>
+  );
+}
+
+// A minimisable tile's menu item, and its one row while minimised (as the
+// £100k tax trap's costs tile): a tap on it opens the tile.
+const collapseItem = (open, onToggle, showLabel) => ({ icon: open ? ChevronUp : ChevronDown, label: open ? "Minimise" : showLabel, onClick: onToggle });
+function Collapsed({ onOpen, children }) {
+  return (
+    <TileRow first onClick={onOpen} expanded={false}>
+      <div style={{...ROW.note,marginTop:0}}>{children}</div>
+    </TileRow>
   );
 }
 
@@ -284,9 +356,15 @@ function Spanner({ label, open, onClick }) {
 // overpaid against the pension.
 function WhatIfs({ d, m, sl, set, menu, whatIf, toggleWhatIf, subscriber, planRun, showPlan, curve, chartWrapRef }) {
   const plans = set && !sl.belowThreshold;
+  const [howItem, howPop] = useHow("How this is worked out",
+    "Each calculator works from your balance, pay and pension as they are in Candid. A repayment plan you make shows on the balance chart above, as its own line.");
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen(o => !o);
   if (!plans && !curve) return null;
   return (
-    <MobileTile id="sl-whatifs" title="What ifs" subtitle="Calculators, worked out on your figures" menu={menu}>
+    <MobileTile id="sl-whatifs" title="Build repayment plans" open={open} onToggle={toggle} subtitle={open ? "Calculators, worked out on your figures" : null} menu={[collapseItem(open, toggle, "Show the calculators"), howItem, ...menu]}>
+      {howPop}
+      {!open ? <Collapsed onOpen={toggle}>{[plans && "Repayment plans", curve && "overpaying against your pension"].filter(Boolean).join(", and ").replace(/^o/, "O")}, worked out on your figures.</Collapsed> : <>
       {plans && (
         <ScenarioModelling expanded={whatIf === "plans"} onToggle={() => toggleWhatIf("plans")} d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>
       )}
@@ -298,6 +376,7 @@ function WhatIfs({ d, m, sl, set, menu, whatIf, toggleWhatIf, subscriber, planRu
           {whatIf === "return" && <Nested><ReturnChart sl={sl} curve={curve} chartWrapRef={chartWrapRef}/></Nested>}
         </>
       )}
+      </>}
     </MobileTile>
   );
 }
@@ -369,8 +448,7 @@ function PayGrowth({ d, m, set }) {
 // where repayments overtake the interest), the write-off, and what paying
 // early does.
 function ClearOrWriteOff({ sl }) {
-  const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
-  const figure = sl.willClear ? `Cleared by April ${taxYear + sl.clearYr}` : `Written off April ${sl.writeOffTaxYear}`;
+  const figure = sl.willClear ? `Cleared by April ${clearedBy(sl)}` : `Written off April ${sl.writeOffTaxYear}`;
   const [lead, turning] = sl.balanceFallingNow
     ? ["Falling", "repayments outpace interest"]
     : sl.turningTaxYear
@@ -431,16 +509,17 @@ function LoanStats({ sl, balanceLabel, balance, balanceId, balanceTool = null, b
 
 // A Postgraduate loan alongside the main one (studentLoan.js pgScenario):
 // repaid at the same time, with its own interest and write-off date.
+// Its last row: both loans' repayments this year together, the main loan's
+// (Your balance) plus this one's (the row above it).
 function PostgradLoan({ pg, sl, menu }) {
+  const [howItem, howPop] = useHow("How this is worked out",
+    `Repaid at the same time as your main loan: 6% of pay over ${fmt(SL_REPAYMENT_THRESHOLDS.postgrad)}, on top of 9% over ${fmt(sl.threshold)}. It has its own interest rate and write-off date.`);
   return (
-    <MobileTile title="Postgraduate loan" menu={menu}>
+    <MobileTile title="Postgraduate loan" menu={[howItem, ...menu]}>
+      {howPop}
       <TileRow first><ClearOrWriteOff sl={pg}/></TileRow>
       <LoanStats sl={pg} balanceLabel="Current balance" balance={pg.balancePath[0]?.bal ?? 0}/>
-      <TileRow>
-        <p style={{...ROW.note,marginTop:0}}>
-          Repaid at the same time as your main loan: 6% of pay over {fmt(SL_REPAYMENT_THRESHOLDS.postgrad)}, on top of 9% over {fmt(sl.threshold)}. Together, about {fmt(sl.annualRep + pg.annualRep)} a year comes off your pay now.
-        </p>
-      </TileRow>
+      <TileRow><RowText inline label={<span style={{fontWeight:700}}>Both loans this year</span>} note={`${fmt(sl.annualRep)} + ${fmt(pg.annualRep)}`} figure={`${fmt(Math.round(sl.annualRep) + Math.round(pg.annualRep))}/yr`}/></TileRow>
     </MobileTile>
   );
 }
@@ -509,60 +588,25 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
   );
 }
 
-// Until Cash and Pension are answered, the answer here is only
-// part of it: whether the money's spare, and whether paying the loan off
-// beats saving or the pension, depend on them. The way in to each (behind
-// the paywall for anyone whose free answer was this one).
-// Before their savings are in: the Opportunity tile, its answer blurred (a
-// stand-in figure, not theirs) under the ask for them, which goes to Cash &
-// savings' short route (moduleGuide.js briefQuestions) and back.
-function LockedOpportunity({ d }) {
+// Until Cash and Pension are answered, whether paying it off early comes out
+// ahead can't be said (the band says so): whether the money's spare, and
+// whether paying the loan off beats saving or the pension, depend on them.
+// A row each, leading to Cash & savings' short route (moduleGuide.js
+// briefQuestions) or Pension's and back; a tick once it's in.
+function NeedsDetails({ d, menu }) {
   const navigate = useNavigate();
-  // Each detail: a link until it's added, then a tick.
-  // On the tile's dark fill: light text, and dark glass for the panel.
-  const row = { width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"none", border:"none", borderTop:"1px solid rgba(255,255,255,0.12)", padding:"11px 0", fontFamily:"inherit" };
-  const step = (done, to, label) => done ? (
-    <div style={row}>
-      <span style={{fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_BODY}}>{label}</span>
-      <Check size={17} color={OPPORTUNITY_TILE_BODY} strokeWidth={3}/>
-    </div>
-  ) : (
-    <button type="button" onClick={() => navigate(to)} style={{...row,cursor:"pointer"}}>
-      <span style={{fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}>Add {label}</span>
-      <ChevronRight size={17} color={OPPORTUNITY_TILE_FIGURE}/>
-    </button>
-  );
-  const line = w => <div style={{height:"9px",width:w,borderRadius:"5px",background:OPPORTUNITY_TILE_BODY,opacity:0.35,marginTop:"8px"}}/>;
+  const [howItem, howPop] = useHow("How this is worked out",
+    "Paying the loan off early comes out ahead only if it saves more interest than the money would earn in savings, and doesn't cost you an employer's pension match. Your savings and pension are what that's checked against.");
+  const step = (done, to, label) => done
+    ? <TileRow key={label} align><RowText inline label={label} figure={<Check size={17} color={SUCCESS} strokeWidth={3} role="img" aria-label="Added"/>}/></TileRow>
+    : <TileRow key={label} onClick={() => navigate(to)}><RowText inline label={`Add ${label.toLowerCase()}`}/></TileRow>;
   return (
-    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"20px",marginBottom:"16px"}}>
-      <div style={{fontSize:"11px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
-      <div style={{position:"relative"}}>
-        <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(4px)",userSelect:"none",pointerEvents:"none"}}>
-          <div style={{fontFamily:SERIF,fontSize:"44px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1}}>£0,000</div>
-          {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
-        </div>
-        <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 1px 12px rgba(0,0,0,0.12)",borderRadius:"12px",padding:"14px 16px 4px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"12px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}><Clock size={14} color={OPPORTUNITY_TILE_FIGURE}/>Is paying it off early worth it?</div>
-          <p style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
-            A few more details show the full trade-offs of paying off early.
-          </p>
-          {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash")}
-          {hasEmployerMatch(d) && step(loanPensionChecked(d), "/app/module/pension?from=studentLoan", "Pension")}
-        </div>
-      </div>
-    </div>
+    <MobileTile title="Is paying it off early worth it?" subtitle="A few more details show the full trade-offs." menu={[howItem, ...menu]}>
+      {howPop}
+      {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Your savings")}
+      {hasEmployerMatch(d) && step(loanPensionChecked(d), "/app/module/pension?from=studentLoan", "Your pension")}
+    </MobileTile>
   );
-}
-
-// The verdict when paying it off early doesn't come out ahead: still the
-// Opportunity tile, so the answer sits where it was asked for. `onSeeWhy`:
-// to the Overpaying tile, which weighs it against saving.
-function NoGain({ sl, onSeeWhy }) {
-  const why = !sl.willClear
-    ? `It's expected to be written off in April ${sl.writeOffTaxYear}, so overpaying would mostly shrink what's written off, not what you pay.`
-    : `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`;
-  return <OpportunityTile figures={[{ value: "No gain", label: "from paying it off early, on your figures" }]} note={why}
-    action={onSeeWhy ? { label: "See why", onClick: onSeeWhy } : undefined}/>;
 }
 
 // Whether the money to pay it off is spare: how the cash buffer, this year's
@@ -596,23 +640,38 @@ function SpareCheck({ d, m, sl, amount, menu }) {
   }
   // A pension's assumed growth beating the loan: flagged, with its caveats.
   const caveat = pensionCaveat(sl);
-  if (caveat) items.push({ topic: "Pension growth", ok: false, text: `${sl.pensionGrowthPct}% a year, not guaranteed; locked until 57`, long: caveat });
-  // A row each, as Pension's alert rows: the icon in line with the topic,
-  // what it shows under it; a row with more to add leads to Pension.
+  if (caveat) items.push({ topic: "Pension growth", ok: false, text: `${sl.pensionGrowthPct}% a year, not guaranteed`, long: caveat });
+  const [howItem, howPop] = useHow("How this is worked out",
+    `What paying ${k(amount)} off now would leave: the cash you'd still hold against ${m.bufferMonths} months of spending, any of this year's ISA allowance unused, and whether your employer's pension match is all claimed.`);
+  // Which row's explanation is open.
+  const [open, setOpen] = useState(null);
+  // A row each: the icon in line with the topic, and what it shows where a
+  // row's £ goes, in a note's type. A tap opens what it means or, with more
+  // to add, leads to Pension.
   const icon = it => it.ok === true
     ? <Check size={18} color={SUCCESS} strokeWidth={3} role="img" aria-label="Fine" style={{flexShrink:0}}/>
     : <CircleAlert size={18} color={it.ok === "critical" ? CRITICAL : it.ok === false ? GOLD_TEXT : MUT} role="img" aria-label={it.ok === "critical" ? "Critical" : it.ok === false ? "Worth a look" : "Not known"} style={{flexShrink:0}}/>;
   return (
-    <MobileTile title="Is the money spare?" subtitle={`Paying it off uses ${k(amount)}`} menu={menu}>
-      {/* Short lines on a phone; the full point on a desktop, where there's room. */}
-      <style>{`.spare-long { display: none; } @media (min-width: 1000px) { .spare-short { display: none; } .spare-long { display: inline; } }`}</style>
+    <MobileTile title="Is the money spare?" subtitle={`Paying it off uses ${k(amount)}`} menu={[howItem, ...menu]}>
+      {howPop}
       {items.map(it => (
-        <TileRow key={it.topic} align={!it.add} onClick={it.add ? () => navigate(loanPensionChecked(d) ? "/app/module/pension" : "/app/module/pension?from=studentLoan") : undefined}>
-          <div style={{...ROW.label,fontWeight:600,display:"flex",alignItems:"center",gap:"8px"}}>{icon(it)}{it.topic}</div>
-          <div style={{...ROW.note,marginLeft:"26px"}}>
-            <span className="spare-short">{it.text}</span><span className="spare-long">{it.long}</span>
-          </div>
-        </TileRow>
+        <div key={it.topic} style={anchor}>
+          <TileRow onClick={it.add ? () => navigate(loanPensionChecked(d) ? "/app/module/pension" : "/app/module/pension?from=studentLoan") : () => setOpen(o => o === it.topic ? null : it.topic)}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              {icon(it)}
+              <div style={{flex:1,minWidth:0}}>
+                <RowText label={it.topic} figure={it.text} figureStyle={{...ROW.note,fontWeight:400,marginTop:0,whiteSpace:"normal",textAlign:"right",maxWidth:"55%"}}/>
+              </div>
+            </div>
+          </TileRow>
+          <AnimatePresence>
+            {open === it.topic && (
+              <TilePopover key={it.topic} title={it.topic} onClose={() => setOpen(null)}>
+                <p style={{...ROW.text,margin:0}}>{it.long}</p>
+              </TilePopover>
+            )}
+          </AnimatePresence>
+        </div>
       ))}
     </MobileTile>
   );
@@ -740,53 +799,75 @@ function BalanceChart({ sl, width, alt = null, altLabel = null, plan = null, pla
   );
 }
 
-// The overpaying tile: whether overpaying beats saving or the pension, and
-// by how much: the answer, then the rates behind it, a row each.
+// The overpaying tile, straight under the band, in three groups: where
+// paying it off comes out ahead, the sum behind the band's "lost in all"
+// (the loan interest that would be paid, less what the money would earn in
+// savings meanwhile: studentLoan.js overpayTotalBenefit), its total in bold;
+// the loan itself; and what else bears on it. Only the total's £ is bold.
+// Against savings only: the pension, in £ with tax relief, is Where it does
+// most's (Harvey, 18 Nov 2026), so the two can't disagree. The gap between
+// the rates says which is higher, not what to do.
 function OverpayingTile({ sl, worthOverpaying, m, surplusCash, menu }) {
+  const navigate = useNavigate();
+  const [howItem, howPop] = useHow("How this is worked out",
+    `The loan's ${sl.lifeRatePct}% is its average rate over its life. Loan interest is what you'd pay from now until it's cleared; savings interest is what the same money would earn meanwhile at the best savings rate, before tax.`);
   if (!sl.willClear) return null;
   const headline = worthOverpaying
-    ? `${fmt(sl.overpayTotalBenefit)} ahead in all: the loan's ${sl.lifeRatePct}% beats ${sl.beatsPension ? "savings and your pension" : `the best savings rate (${sl.cashRate}%)`}.`
+    ? `The loan's ${sl.lifeRatePct}% beats the best savings rate (${sl.cashRate}%).`
     : sl.effectiveBenefit === 0
       ? `The highest savings rate (${sl.cashRate}%) matches your loan's ${sl.lifeRatePct}% average rate, so overpaying doesn't come out ahead.`
       : `The highest savings rate (${sl.cashRate}%) beats your loan's ${sl.lifeRatePct}% average rate.`;
-  const savingsColor = sl.effectiveBenefit > 0 ? SUCCESS : sl.effectiveBenefit === 0 ? MUT : CRITICAL;
-  // Which comes out ahead, and by how much: words, so not a serif figure.
-  const verdictText = { fontFamily:"inherit", fontSize:"14px", fontWeight:700 };
+  const plain = { fontWeight:400 };
+  const gap = sl.effectiveBenefit;
+  // To Cash's emergency fund, with the way back here (?back=).
+  const toBuffer = () => navigate("/app/module/cash?back=studentLoan#cash-fund");
+  const bufferLink = <button type="button" onClick={toBuffer} className="tap44" style={{background:"none",border:"none",padding:0,font:"inherit",color:"inherit",textDecoration:"underline",textUnderlineOffset:"2px",cursor:"pointer"}}>{m.bufferMonths} months of spending</button>;
   return (
-    <MobileTile id="sl-overpaying" title="Overpaying" subtitle={<span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>{headline}</span>} menu={menu}>
-      {sl.balanceGrowing && (
-        <TileRow>
-          <div style={{...ROW.label,fontWeight:600,color:CRITICAL,display:"flex",alignItems:"center",gap:"8px"}}>
-            <AlertTriangle size={18} color={CRITICAL} aria-hidden="true" style={{flexShrink:0}}/>Why your balance is growing
-          </div>
-          <div style={{...ROW.note,marginLeft:"26px"}}>
-            Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. {sl.turningTaxYear
-              ? `With your pay rising as expected, they overtake it from April ${sl.turningTaxYear}, and your balance starts falling.`
-              : "On these figures they don't overtake it before the loan is written off."}
-          </div>
-        </TileRow>
+    <MobileTile id="sl-overpaying" title="Overpaying" subtitle={headline} menu={[howItem, ...menu]}>
+      {howPop}
+      {worthOverpaying && (
+        <RowGroup>
+          <TileRow><RowText label="Loan interest you'd pay" figure={fmt(sl.interestAvoided)} figureStyle={plain} figureOnLabel/></TileRow>
+          <TileRow><RowText label="Savings interest you'd earn" note="before tax" figure={`−${fmt(sl.savingsForgone)}`} figureStyle={plain} figureOnLabel/></TileRow>
+          <TileRow><RowText label={<span style={{fontWeight:700}}>Lost in all, by April {clearedBy(sl)}</span>} figure={fmt(sl.overpayTotalBenefit)} figureOnLabel/></TileRow>
+        </RowGroup>
       )}
-      <TileRow><RowText inline label="Outstanding balance" note={`at ${sl.slRatePct}%`} figure={fmt(m.loanBal)}/></TileRow>
-      <TileRow>
+      <RowGroup>
+        {sl.balanceGrowing && (
+          <TileRow>
+            <div style={{...ROW.label,fontWeight:600,color:CRITICAL,display:"flex",alignItems:"center",gap:"8px"}}>
+              <AlertTriangle size={18} color={CRITICAL} aria-hidden="true" style={{flexShrink:0}}/>Why your balance is growing
+            </div>
+            <div style={{...ROW.note,marginLeft:"26px"}}>
+              Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. {sl.turningTaxYear
+                ? `With your pay rising as expected, they overtake it from April ${sl.turningTaxYear}, and your balance starts falling.`
+                : "On these figures they don't overtake it before the loan is written off."}
+            </div>
+          </TileRow>
+        )}
+        <TileRow><RowText label="Outstanding balance" note={`at ${sl.slRatePct}%`} figure={fmt(m.loanBal)} figureStyle={plain} figureOnLabel/></TileRow>
+      </RowGroup>
+      {/* The buffer is Cash's emergency fund: the row leads to its tile. */}
+      <RowGroup>
         {surplusCash > 0
-          ? <RowText inline label="Spare cash above your buffer" figure={fmt(surplusCash)}/>
-          : <p style={ROW.text}>You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>}
-      </TileRow>
-      <TileRow>
-        <RowText inline label="Loan vs savings" note={`${sl.lifeRatePct}% vs ${sl.cashRate}%`} figureStyle={{...verdictText,color:savingsColor}}
-          figure={sl.effectiveBenefit > 0 ? `Repay +${sl.effectiveBenefit}%` : sl.effectiveBenefit === 0 ? "Level" : `Savings +${Math.abs(sl.effectiveBenefit)}%`}/>
-      </TileRow>
-      <TileRow>
-        <RowText inline label="Loan vs pension" note={`${sl.lifeRatePct}% vs ${sl.pensionGrowthPct}%`} figureStyle={{...verdictText,color:sl.beatsPension ? SUCCESS : GOLD_TEXT}}
-          figure={sl.pensionGap > 0 ? `Repay +${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level" : `Pension +${Math.abs(sl.pensionGap)}%`}/>
-      </TileRow>
-      <TileRow>
-        <p style={{...ROW.note,marginTop:0}}>
-          The loan's {sl.lifeRatePct}% is its average rate over its life. Pension growth is assumed, not guaranteed; repaying is. Tax relief isn't part of the pension comparison: overpaying clears the loan sooner, and the money that frees up gets the same relief when it goes into your pension then.
-        </p>
-      </TileRow>
+          ? <TileRow><RowText label="Spare cash above your buffer" note={<>Your buffer: {bufferLink}</>} figure={fmt(surplusCash)} figureStyle={plain} figureOnLabel/></TileRow>
+          : <TileRow><p style={ROW.text}>You don't currently hold cash above your emergency buffer ({bufferLink}); the comparison still applies to any spare cash you build up.</p></TileRow>}
+        <TileRow><RowText label="Loan vs savings" note={`${sl.lifeRatePct}% vs ${sl.cashRate}%`} figureStyle={plain} figureOnLabel
+          figure={gap > 0 ? `Loan ${gap}% higher` : gap === 0 ? "Level" : `Savings ${Math.abs(gap)}% higher`}/></TileRow>
+      </RowGroup>
     </MobileTile>
   );
+}
+
+// Rows that belong together: a hairline above the group, none between its
+// rows, and more room above and below it than between them, so the groups
+// read apart (Harvey, 18 Nov 2026).
+function RowGroup({ children }) {
+  const rows = Children.toArray(children).filter(Boolean);
+  return rows.map((row, i) => cloneElement(row, {
+    first: i > 0 || row.props.first,
+    style: { ...row.props.style, padding: `${i ? 6 : 14}px 16px ${i === rows.length - 1 ? 14 : 6}px 0` },
+  }));
 }
 
 // Under its What ifs row: the return on each £1 overpaid against putting

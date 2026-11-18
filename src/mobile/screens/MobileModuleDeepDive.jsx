@@ -1,7 +1,7 @@
 import { ExplainLink } from "../ModuleScreenParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Coins, SlidersHorizontal } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SC, SUCCESS, PROGRESS_GREEN, SANS, SR_ONLY } from "../../design-tokens.js";
 import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
@@ -10,7 +10,7 @@ import { MODULE_META, isOnTrack, reviewedDone, COSTS_MISSING, CASH_REASONS } fro
 import { moduleLimits } from "../../lib/moduleLimits.js";
 import { statusLabel, statusLine } from "../statusLabel.js";
 import MobileCashDeepDive, { CashBand } from "../deepdive/MobileCashDeepDive.jsx";
-import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
+import MobileStudentLoanDeepDive, { StudentLoanBand } from "../deepdive/MobileStudentLoanDeepDive.jsx";
 import MobileInvestmentsDeepDive from "../deepdive/MobileInvestmentsDeepDive.jsx";
 import MobilePensionDeepDive from "../deepdive/MobilePensionDeepDive.jsx";
 import MobileKidsDeepDive from "../deepdive/MobileKidsDeepDive.jsx";
@@ -42,6 +42,7 @@ const CONTENT_BY_KEY = {
 // the header with the icon, title and status dot until they move over.
 const BAND_BY_KEY = {
   cash: CashBand,
+  studentLoan: StudentLoanBand,
   taxTrap: TaxTrapBand,
 };
 
@@ -75,6 +76,30 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   // otherwise plays once a session (GuidanceIntro). Read as the page opens
   // (it's keyed by module), since the tour sets cashTourDone as it starts.
   const [introShown] = useState(() => moduleKey !== "cash" || !!d.cashTourDone);
+  // Opened from another module (backLabel): a swipe in from the screen's
+  // left edge goes back to it, as a native app's back gesture.
+  // Not while a pop-out, menu or sheet is open over the page. `onBack` kept
+  // in a ref: it's a new function each render, and the listeners stay put.
+  const backRef = useRef(onBack);
+  backRef.current = onBack;
+  useEffect(() => {
+    if (!backLabel) return;
+    let start = null;
+    const down = e => {
+      const t = e.touches[0];
+      const covered = document.querySelector("[role=dialog], [role=menu]") || document.body.hasAttribute("data-sheet-open");
+      start = t.clientX < 24 && !covered ? { x: t.clientX, y: t.clientY } : null;
+    };
+    const up = e => {
+      if (!start) return;
+      const t = e.changedTouches[0];
+      if (t.clientX - start.x > 70 && Math.abs(t.clientY - start.y) < 60) backRef.current();
+      start = null;
+    };
+    window.addEventListener("touchstart", down, { passive: true });
+    window.addEventListener("touchend", up, { passive: true });
+    return () => { window.removeEventListener("touchstart", down); window.removeEventListener("touchend", up); };
+  }, [backLabel]);
 
   // Under the module's content: how the area works, Mark as reviewed, back,
   // and the guidance note.
@@ -131,7 +156,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
     // The module's own warning where it has one (the tax trap's red or
     // amber, as on its Modules card), so the two can't disagree.
     const warn = statuses[moduleKey]?.warn;
-    const tone = warn === "red" || label === "Action needed" ? "alert" : warn === "amber" || worry ? "warn" : null;
+    // Student loan's £ at stake is "Worth a look" (amberOnly), in orange.
+    const tone = warn === "red" || label === "Action needed" ? "alert" : warn === "amber" || worry || (mm.amberOnly && label === "Worth a look") ? "warn" : null;
     return (
       <div>
         {introShown && <GuidanceIntro key={moduleKey}/>}
@@ -140,7 +166,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           <Band d={d} m={m} savingsRates={savingsRates} onOpenAssist={onOpenAssist} onShowReveal={onShowReveal} onEditInputs={onEditInputs}
             status={bandStatus} statusTone={tone}/>
         </ScreenBand>
-        <ScreenSheet slick>
+        <ScreenSheet slick tight>
           {lead}
           {set && <BankConfirm d={d} set={set} moduleKey={moduleKey} title={meta?.title || moduleKey} amount={statuses[moduleKey]?.amount || 0}/>}
           <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain} onOpenAssist={onOpenAssist} onEditInputs={onEditInputs}/>

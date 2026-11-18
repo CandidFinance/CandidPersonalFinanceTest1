@@ -1,6 +1,6 @@
 import { useState, useRef, useId, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { MoreHorizontal, ChevronRight } from "lucide-react";
+import { MoreHorizontal, ChevronRight, ChevronDown } from "lucide-react";
 import { G, TEXT, MUT, WHITE, SANS, CARD, HAIRLINE, GOLD_TEXT, CRITICAL, TILE_KICKER, TILE_FIGURE, TILE_LABEL_SIZE, TILE_NOTE } from "../design-tokens.js";
 import useDialogFocus from "./useDialogFocus.js";
 
@@ -9,10 +9,12 @@ import useDialogFocus from "./useDialogFocus.js";
 // content as rows on the tile itself, never a tile inside it. Always open.
 // `menu`: [{ icon, label, onClick }], falsy entries skipped.
 // `level`: the title's heading level. `subtitle`: a line under the title, as
-// close to it as a row's note is to its label.
+// close to it as a row's note is to its label. `onToggle` (with `open`): a
+// minimisable tile, its title row a button that opens and closes it, a
+// chevron beside the title saying which.
 // Rows (TileRow) carry the hairline: it starts at the text's left edge and
 // runs to the tile's right edge, so the tile has left padding only.
-export default function MobileTile({ title, subtitle, menu = [], level = 2, badge, children, ...rest }) {
+export default function MobileTile({ title, subtitle, menu = [], level = 2, badge, open, onToggle, children, ...rest }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const items = menu.filter(Boolean);
   const Heading = `h${level}`;
@@ -20,7 +22,15 @@ export default function MobileTile({ title, subtitle, menu = [], level = 2, badg
   return (
     <section {...rest} style={{...CARD,position:"relative",paddingLeft:"16px",marginBottom:"12px",scrollMarginTop:"80px",...rest.style}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",padding:subtitle ? "16px 6px 0 0" : "16px 6px 8px 0",minHeight:"24px"}}>
-        <Heading style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3}}>{title}</Heading>
+        {onToggle ? (
+          <Heading style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3,flex:1,minWidth:0,margin:0}}>
+            <button type="button" onClick={onToggle} aria-expanded={!!open}
+              style={{display:"flex",alignItems:"center",gap:"6px",width:"100%",background:"none",border:"none",padding:"12px 0",margin:"-12px 0",font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:"inherit",textAlign:"left",cursor:"pointer"}}>
+              {title}
+              <ChevronDown size={16} color={MUT} strokeWidth={2.5} aria-hidden="true" style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
+            </button>
+          </Heading>
+        ) : <Heading style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3}}>{title}</Heading>}
         {items.length > 0 && (
           <button type="button" aria-label={`${title}: more`} aria-haspopup="menu" aria-expanded={menuOpen} aria-controls={menuOpen ? menuId : undefined}
             onClick={() => setMenuOpen(o => !o)}

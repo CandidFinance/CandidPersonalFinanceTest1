@@ -923,6 +923,10 @@ export default function AppShell() {
     // before any paywall, since that module's answer needs them.
     const fromKey = new URLSearchParams(location.search).get("from");
     const returnTo = fromKey && fromKey !== mobileActiveModule && MODULE_META.some(mm => mm.key === fromKey) ? fromKey : null;
+    // ?back=<module>: only the way back (Student loan's link to Cash's
+    // emergency fund), none of from's questions.
+    const backKey = new URLSearchParams(location.search).get("back");
+    const goBackTo = returnTo || (backKey && backKey !== mobileActiveModule && MODULE_META.some(mm => mm.key === backKey) ? backKey : null);
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
@@ -1129,8 +1133,8 @@ export default function AppShell() {
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); setRevealReplay(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
-          onBack={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")}
-          backLabel={returnTo ? `Back to ${MODULE_META.find(mm => mm.key === returnTo)?.title}` : null}
+          onBack={() => navigate(goBackTo ? `/app/module/${goBackTo}` : "/app/modules")}
+          backLabel={goBackTo ? `Back to ${MODULE_META.find(mm => mm.key === goBackTo)?.title}` : null}
           onRecordLoanOverpayment={recordLoanOverpayment}
           onRecordCrystallisedGain={recordCrystallisedGain}
           onOpenAssist={itemId => { setAssistState(s => ({ ...s, open: true, itemId, step: "overview" })); posthog.capture("assist_opened_from_tile", { module: mobileActiveModule, item: itemId }); }}

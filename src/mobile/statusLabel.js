@@ -21,7 +21,8 @@ export function statusLabel(mm) {
   if (mm.status === "unknown") return "Find out";
   // The £100k tax trap, under it but heading there (moduleStatus.js).
   if (mm.status === "edge" || mm.status === "watch") return "Approaching £100k";
-  if ((mm.amount || 0) >= ON_TRACK_FLOOR) return "Action needed";
+  // `amberOnly` (Student loan): a £ at stake, but never urgent.
+  if ((mm.amount || 0) >= ON_TRACK_FLOOR) return mm.amberOnly ? "Worth a look" : "Action needed";
   return mm.reason === COSTS_MISSING ? "Find out" : "Worth a look";
 }
 // The label, with its reason when there's no £ figure to show it

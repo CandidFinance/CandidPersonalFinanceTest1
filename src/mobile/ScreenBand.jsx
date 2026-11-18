@@ -61,6 +61,7 @@ const CSS = `
 .screen-sheet { position: relative; margin: -28px -20px 0; padding: 20px 20px 0; background: ${CREAM}; border-radius: 28px 28px 0 0; box-sizing: border-box; min-height: ${28 + BLEED}px; }
 .screen-sheet.slick { background: linear-gradient(160deg, ${BAND_STOPS.light[0]} 0%, ${BAND_STOPS.light[1]} 50%, ${BAND_STOPS.light[2]} 100%); }
 @media (max-width: 580px) { .screen-sheet.slick { margin-bottom: -120px; padding-bottom: 120px; } }
+@media (max-width: 580px) { .screen-sheet.slick.tight { padding-bottom: calc(76px + max(8px, calc(env(safe-area-inset-bottom, 0px) - 14px))); } .screen-sheet.tight .guidance-foot { padding-right: 52px; } }
 @media (min-width: 581px) {
   .screen-band { --bleed: 0px; margin: 0; padding: 22px 20px; border-radius: 28px; }
   .screen-sheet { margin: 0; padding: 20px 0 0; border-radius: 0; min-height: 0; }
@@ -98,11 +99,14 @@ export function ScreenBand({ tone = "light", children, ...rest }) {
 
 // `slick`: the sheet in the light band's pale slick, not cream (each tab's
 // landing page; the 120px past its foot runs on under the tab bar).
-export function ScreenSheet({ slick = false, children }) {
+// `tight` (module pages): on a phone, the sheet ends 16px above the tab bar
+// rather than leaving room under its last line (Harvey, 18 Nov 2026), and
+// the guidance note's lines stop short of Assist, which sits over its end.
+export function ScreenSheet({ slick = false, tight = false, children }) {
   const ref = useRef(null);
   useSheetPull(ref);
   useBandCover(ref);
-  return <div ref={ref} className={slick ? "screen-sheet slick" : "screen-sheet"}>{children}</div>;
+  return <div ref={ref} className={`screen-sheet${slick ? " slick" : ""}${tight ? " tight" : ""}`}>{children}</div>;
 }
 
 // On a phone, scrolling down, the band stays put (sticky) and the sheet

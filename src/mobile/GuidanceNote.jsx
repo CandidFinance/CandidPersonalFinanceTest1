@@ -61,7 +61,7 @@ export function GuidanceFooter({ moduleKey, limits = null }) {
   const links = SIGNPOSTS[moduleKey] || [];
   const link = { color: MUT, fontWeight: 600 };
   return (
-    <div style={{ borderTop: "1px solid rgba(22,47,36,0.1)", marginTop: "26px", paddingTop: "14px", fontSize: "11.5px", color: MUT, lineHeight: 1.55 }}>
+    <div className="guidance-foot" style={{ borderTop: "1px solid rgba(22,47,36,0.1)", marginTop: "26px", paddingTop: "14px", fontSize: "11.5px", color: MUT, lineHeight: 1.55 }}>
       {limits && <p style={{ margin: "0 0 8px" }}>{limits}</p>}
       <p style={{ margin: 0 }}>
         Guidance, not advice. Candid works out what each option is worth on the figures you provide. All decisions stay with you. <Link to={GUIDANCE_PAGE} style={link}>What Candid is and isn't</Link>

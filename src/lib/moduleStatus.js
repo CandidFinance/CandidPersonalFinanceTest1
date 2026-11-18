@@ -335,6 +335,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     amount: slAmount,
     // Its status comes from the £ alone (isOnTrack).
     amountOnly: true,
+    // At most "Worth a look", in amber, whatever the £: interest above
+    // savings rates on a loan that clears anyway isn't urgent (Harvey, 18
+    // Nov 2026; statusLabel.js).
+    amberOnly: true,
   };
 
   // Mortgage
@@ -461,7 +465,7 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
     : status === "ok" ? ON_TRACK_LINE
     : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null, reason: local.reason || null,
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, amberOnly: !!local.amberOnly, elsewhere: local.elsewhere || null, reason: local.reason || null,
     warn: local.warn || null, alertTitle: local.alertTitle || null, lead: local.lead || null };
 }
 
