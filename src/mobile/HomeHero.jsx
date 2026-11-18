@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ChevronRight, Check, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { DARK } from "./CardStack.jsx";
 import ScoreDonut from "./ScoreDonut.jsx";
 import AccountButton from "./Account.jsx";
 import PremiumButton from "./Premium.jsx";
 import { CREAM_SOFT, CREAM_FAINT } from "./ScreenBand.jsx";
 import { fmt } from "../lib/format.js";
-import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER, GAIN_ON_DARK, STRIPE_ON_DARK } from "../design-tokens.js";
+import { GOLD, SERIF, SANS, CREAM, GAIN_ON_DARK, STRIPE_ON_DARK } from "../design-tokens.js";
 
 // Home's parts, on the dark band and cream sheet the other tabs have
 // (ScreenBand.jsx; the screens draw those).
@@ -17,11 +17,8 @@ import { G, GOLD, TEXT, MUT, SERIF, SANS, WHITE, CREAM, ROW_TILE, TILE_KICKER, G
 //  - HomeHero, printed on the band: Left on the table or Saved, whichever is
 //    larger, and the score. Once anything's been saved, a bar splits what's
 //    been found into saved and still left.
-//  - HomeAreas, first on the sheet: the opportunities by £, largest first,
-//    each ticked once reviewed. No numbers, so the list doesn't read as an
-//    order to follow (src/lib/priorities.js only ranks by £).
-// The Cash row carries no rate badge: the Modules tab's is that state's one
-// indicator (CLAUDE.md rule 4).
+//  - Areas to explore is its own tile now (AreasTile.jsx), beside the £100k
+//    tax trap (HomeTilePair.jsx).
 
 // The caption over a figure on the band, as BandViewCaption has it.
 export const BAND_LABEL = { fontSize:"11px", fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", color:CREAM_SOFT };
@@ -131,42 +128,6 @@ export default function HomeHero({ totalOpp, saved, score, scoreColor, unchecked
           )}
         </div>
       )}
-    </section>
-  );
-}
-
-export function HomeAreas({ plan, stepsDone, headline, onTrack, onOpen }) {
-  return (
-    <section aria-label="Areas to explore" style={ROW_TILE}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
-        <h2 style={TILE_KICKER}>Areas to explore</h2>
-        {plan.length > 0 && <span style={{fontSize:"12px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{stepsDone} of {plan.length} reviewed</span>}
-      </div>
-      <div style={{marginTop:"6px"}}>
-        {plan.length > 0 ? plan.map((p, i) => (
-          <button key={p.key} type="button" onClick={() => onOpen(p.key)}
-            style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.08)" : "none",padding:"10px 0",minHeight:"52px",cursor:"pointer",fontFamily:"inherit"}}>
-            {/* Reviewed: a tick. Not yet: an empty ring. */}
-            <span style={{width:"18px",height:"18px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? G : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
-              {p.done && <Check size={11} strokeWidth={3}/>}
-            </span>
-            <span style={{flex:1,minWidth:0,fontSize:"12px",fontWeight:600,color:TEXT}}>{p.title}</span>
-            <span style={{whiteSpace:"nowrap",fontFamily:SANS,fontSize:"13px",fontWeight:700,color:G}}>
-              {fmt(p.amount)}<span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>{p.amountIsLumpSum ? " by 18" : "/yr"}</span>
-            </span>
-            <ChevronRight size={15} color={MUT} style={{flexShrink:0}} aria-hidden="true"/>
-          </button>
-        )) : <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{headline}</p>}
-        {onTrack.length > 0 && (
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-            <span style={{fontWeight:700,color:G}}>On track:</span> {onTrack.map(mm => mm.amount > 0 && !mm.amountIsLumpSum ? `${mm.title} (${fmt(mm.amount)}/yr)` : mm.title).join(", ")}.
-          </p>
-        )}
-        <button type="button" onClick={() => onOpen(null)}
-          style={{marginTop:"2px",background:"none",border:"none",padding:"12px 0",fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-          All modules<ChevronRight size={14} aria-hidden="true"/>
-        </button>
-      </div>
     </section>
   );
 }

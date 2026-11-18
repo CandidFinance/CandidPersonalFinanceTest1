@@ -1,4 +1,4 @@
-// The year-end record: "Your years with Candid" on Home
+// The year-end record: "Saved with Candid" on Home
 // (src/components/dashboard/YourYears.jsx). Each tax year's saved, against
 // what was still open, by module.
 //  - Saved: worked out each time from the dated changes (gainedSoFar), up

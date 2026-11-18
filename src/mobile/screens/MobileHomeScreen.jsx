@@ -5,14 +5,14 @@ import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/modu
 import MobileStartHome from "./MobileStartHome.jsx";
 import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView, worthALookShown } from "../../lib/appEntry.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
-import { whatToDoFirst, scoreHeadline } from "../../lib/priorities.js";
+import { whatToDoFirst } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
 import { PaydayCheckCard } from "../PaydayCheck.jsx";
 import { hasAccess } from "../../lib/entitlement.js";
 import { trapInView, paydayCheckDue } from "../../lib/taxTrap.js";
-import HomeHero, { HomeTopBar, HomeAreas } from "../HomeHero.jsx";
+import HomeHero, { HomeTopBar } from "../HomeHero.jsx";
 import { ScreenBand, ScreenSheet } from "../ScreenBand.jsx";
 import GettingToKnow from "../GettingToKnow.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
@@ -20,11 +20,14 @@ import OutsideEvent from "../OutsideEvent.jsx";
 import YourYears from "../../components/dashboard/YourYears.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import ComingUp from "../ComingUp.jsx";
+import HomeTilePair from "../HomeTilePair.jsx";
 import { comingUp } from "../../lib/comingUp.js";
 
 // Mobile Home screen: a dark band (ScreenBand.jsx) with the top bar and the
-// figures printed on it (HomeHero.jsx), and on the sheet the areas to explore,
-// then whatever's come up. Score labels/colors reuse scoreBand
+// figures printed on it (HomeHero.jsx), and on the sheet Coming up, the
+// £100k tax trap and To explore tiles side by side (HomeTilePair.jsx), Saved
+// with Candid (YourYears.jsx), then whatever's come up (Harvey, 17-18 Nov
+// 2026). Score labels/colors reuse scoreBand
 // (design-tokens.js), so the score reads identically everywhere in the app.
 
 // The score shows once every module picked at the entry is answered
@@ -74,15 +77,11 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   // "What to do first", the line under the score and what's on track, all
   // from the code (src/lib/priorities.js).
   const priorities = whatToDoFirst(d, m, statuses);
-  const { totalOpp, moduleList } = getModuleBreakdown(d, m, statuses, null, "amount");
-  // On track, with any £ still left (under £50 a year), which the total
-  // counts: so the areas and this line add up to it.
-  const report = { headline: scoreHeadline(priorities), priorities, onTrack: moduleList.filter(mm => mm.onTrack) };
+  const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
 
   const { color: scoreColor } = scoreBand(score);
   // The opportunities by size, each marked once its module has been reviewed.
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
-  const stepsDone = plan.filter(p => p.done).length;
   // How much of the picture the score covers: a high score from one module
   // answered mustn't read as everything being fine.
   // The £100k tax trap counts only for someone near or over £100,000.
@@ -106,8 +105,16 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           {/* The next dates that touch their money (src/lib/comingUp.js). */}
           <ComingUp items={comingUp(d)} min={!!d.comingUpMin} onMinimise={v => set("comingUpMin", v)}/>
 
-          {mock ? <Suspense fallback={null}><HomeMock/></Suspense> : <HomeAreas plan={plan} stepsDone={stepsDone} headline={report.headline} onTrack={report.onTrack}
-            onOpen={key => navigate(key ? `/app/module/${key}` : "/app/modules")}/>}
+          {/* The £100k tax trap (in it or near it) and Areas to explore, side
+              by side, each full width when alone (HomeTilePair.jsx). */}
+          {mock ? <Suspense fallback={null}><HomeMock/></Suspense> : (
+            <HomeTilePair d={d} m={m} plan={plan} set={set}
+              onOpenModule={key => navigate(`/app/module/${key}`)} onSeeAll={() => navigate("/app/modules")}/>
+          )}
+
+          {/* Each tax year's saved and still open, once anything's been saved
+              (YourYears.jsx). */}
+          <YourYears d={d}/>
 
           {/* A new tax year: is their pay still the same? */}
           {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
@@ -120,10 +127,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
           {/* What's changed since they were last here, when anything has. */}
           <SinceLastVisit d={d} m={m} rows={savingsRates} onOpenCash={() => onStartModule("cash")}/>
-
-          {/* Each tax year's saved and still open, once anything's been saved
-              (YourYears.jsx). */}
-          <YourYears d={d}/>
 
           {/* What the app can do, ticked off as it's done (Phase 6). */}
           <GettingToKnow d={d} set={set} answered={doneModules(d, propertyDone).length}/>

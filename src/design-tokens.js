@@ -219,10 +219,10 @@ export const ROW_TILE = { ...CARD, padding: "16px 18px 4px" };
 // The small line above a notice's title (what it is, when): sentence case,
 // 12.5px, MUT (5.3:1 on WHITE).
 export const NOTICE_LABEL = { fontSize: "12px", fontWeight: 600, color: MUT, lineHeight: 1.4, margin: 0 };
-// A tile's title on Home and Progress ("Your years with Candid", "Coming up"):
+// A tile's title on Home and Progress ("Saved with Candid", "Coming up"):
 // small tracked caps in MUT.
 export const TILE_KICKER = { fontSize: "11px", fontWeight: 600, color: MUT, letterSpacing: "0.09em", textTransform: "uppercase", margin: 0 };
-// The rest of a tile's text, matching "Your years with Candid". A figure is
+// The rest of a tile's text, matching "Saved with Candid". A figure is
 // 13px bold on its row; only a screen's headline £ is larger (Harvey, 9 Nov
 // 2026: Opportunity tiles at 44px, Home's hero, the £100k figures, Your years).
 export const TILE_FIGURE = { fontFamily: SANS, fontSize: "13px", fontWeight: 700 };

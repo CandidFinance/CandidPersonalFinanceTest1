@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, modulesInView, dormantModules, isNewModule, worthALookShown } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, modulesInView, dormantModules, isNewModule, worthALookShown, areasShown, areasOnHome } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -106,6 +106,25 @@ test("Worth a look, dismissed, comes back only for a module it didn't hold", () 
   assert.equal(worthALookShown({}, ["pension"]), true);
   assert.equal(worthALookShown({ worthALookDismissed: ["pension", "kids"] }, ["pension"]), false);
   assert.equal(worthALookShown({ worthALookDismissed: ["pension"] }, ["pension", "taxTrap"]), true);
+});
+
+test("Areas to explore: a reviewed area ticks once, then it's gone", () => {
+  const plan = [{ key: "cash", done: true }, { key: "pension", done: false }];
+  assert.deepEqual(areasOnHome({}, plan), { items: plan, ticking: ["cash"] });
+  assert.deepEqual(areasOnHome({ areasTicked: ["cash"] }, plan), { items: [plan[1]], ticking: [] });
+});
+
+test("Areas to explore: shown while it has areas, or closed until a new area appears", () => {
+  const plan = [{ key: "cash", done: true }, { key: "pension", done: false }];
+  assert.equal(areasShown({}, plan), true);
+  const allDone = plan.map(p => ({ ...p, done: true }));
+  // The last one reviewed still ticks off on screen; after that, no tile.
+  assert.equal(areasShown({ areasTicked: ["cash"] }, allDone), true);
+  assert.equal(areasShown({ areasTicked: ["cash", "pension"] }, allDone), false);
+  assert.equal(areasShown({ areasDismissed: ["cash", "pension"] }, plan), false);
+  assert.equal(areasShown({ areasDismissed: ["cash", "pension"] }, [...plan, { key: "taxTrap", done: false }]), true);
+  // Everything on track: no areas, no tile.
+  assert.equal(areasShown({}, []), false);
 });
 
 test("Property never locks the score: picked at the entry, or set by a shared Property link", () => {

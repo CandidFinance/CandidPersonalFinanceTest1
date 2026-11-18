@@ -10,6 +10,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, moduleOrder, isNewModule } from "../../lib/appEntry.js";
 import { moduleMeta } from "../ModuleStartRow.jsx";
+import { TILE_ART } from "../tileArt.js";
 import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews } from "../visitNews.js";
@@ -59,27 +60,6 @@ const COMING_SOON = [
   { key:"inheritance", title:"Inheritance", description:"Inheritance Tax on what you'd leave: the nil-rate bands, gifts and how they're counted, and unused pensions, which count from April 2027." },
   { key:"offshore",    title:"Offshore",    description:"Money, property or income held outside the UK: how it's taxed here, and what has to be reported." },
 ];
-// Each tile's illustration (public/tile-illustrations, 300 × 244) and the
-// colour of the panel drawn in it, which the tile carries on below the art
-// to its foot.
-const TILE_ART = {
-  cash:         ["cash", "#DDF1E4"],
-  investments:  ["investments", "#E9E4FA"],
-  pension:      ["pension", "#DFEAFA"],
-  studentLoan:  ["student-loan", "#FAEBD2"],
-  kids:         ["kids-family", "#FBE3DD"],
-  taxTrap:      ["100k-tax-trap", "#D9F0EE"],
-  property:     ["property", "#F5E2EE"],
-  mortgage:     ["mortgages", "#E4E9EF"],
-  personalLoan: ["personal-loan", "#E2E6F8"],
-  households:   ["households", "#FBE0E6"],
-  eis:          ["eis-seis", "#ECF0D6"],
-  retirement:   ["retirement", "#FCE5D3"],
-  rsus:         ["rsus", "#F1E2F7"],
-  mortgages:    ["mortgages", "#E4E9EF"],
-  inheritance:  ["inheritance", "#EEE7DE"],
-  offshore:     ["offshore", "#D8EEF5"],
-};
 // The art rides up into the space under the title (the SVG's top is clear
 // bar the art's tips), and stops ART_GAP above the foot's tab (in the tile's own colour), which is
 // cut into the panel's bottom left: FOOT_H tall, its corners rounded into

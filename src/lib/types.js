@@ -23,6 +23,8 @@
  * @property {boolean} [cashTourDone] The Cash page's tour finished or skipped.
  * @property {boolean} [appTourDone] The app's tour of Home, Progress and Modules started (AppTour.jsx).
  * @property {boolean} [comingUpMin] Home's Coming up tile minimised (ComingUp.jsx).
+ * @property {string[]} [areasTicked] Areas to explore already shown ticked off on Home, so they're gone (appEntry.js areasOnHome).
+ * @property {string[]} [areasDismissed] The areas Home's "Areas to explore" held when closed with its X (appEntry.js areasShown).
  * @property {boolean} [emergencyFundMin] Cash's Emergency fund tile minimised to its month chunks.
  * @property {Object<string, boolean>} [ownFiguresSeen] By module: "Worked out on your own figures" shown (OwnFiguresNote.jsx).
  * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.

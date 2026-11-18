@@ -387,6 +387,11 @@ export function incomePosition(d, m) {
       allowanceLost: t.allowance.lost, tax: t.allowance.tax, childcareLost: Math.round(t.childcareLost),
       needed: t.needed, fits: t.fits, aaRoom: Math.round(t.aaRoom),
       route: pension?.route ?? null, takeHome: pension?.takeHome ?? null,
+      // Each way back to £100,000 (taxTrap.js options, largest worth first)
+      // and what it costs in take-home, for Home's £100k tax trap tile: only
+      // those that get there (a 4-day week, or a pension payment past the
+      // annual allowance, can leave them over).
+      options: t.options.filter(o => o.under !== false).map(o => ({ key: o.key, route: o.route ?? null, takeHome: o.takeHome })),
     } : null,
   };
 }

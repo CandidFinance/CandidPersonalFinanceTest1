@@ -246,5 +246,22 @@ export function isNewModule(key, now = new Date()) {
 // haven't seen in it appears (`worthALookDismissed`: the keys it held).
 export const worthALookShown = (d, keys) => keys.some(k => !(d.worthALookDismissed || []).includes(k));
 
+// Home's "Areas to explore" (`plan`: its areas, largest £ first, each `done`
+// once reviewed). A reviewed area shows ticked on the first visit after its
+// review (`ticking`), then fades and joins `areasTicked`, so it's gone from
+// then on. The tile is shown while it has any areas, and once closed with its
+// X stays away until an area it didn't hold appears (`areasDismissed`: the
+// keys it held).
+export function areasOnHome(d, plan) {
+  const ticked = d.areasTicked || [];
+  const items = plan.filter(p => !p.done || !ticked.includes(p.key));
+  return { items, ticking: items.filter(p => p.done).map(p => p.key) };
+}
+export function areasShown(d, plan) {
+  const { items } = areasOnHome(d, plan);
+  if (!items.length) return false;
+  return !d.areasDismissed || items.some(p => !p.done && !d.areasDismissed.includes(p.key));
+}
+
 // The scored modules this user is offered, for "N of M areas checked".
 export const scoredInView = d => modulesInView(d, SCORED_MODULES);
