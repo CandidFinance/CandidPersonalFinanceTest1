@@ -173,9 +173,24 @@ Claude's version, then the version Harvey asked for or approved.
 
 ---
 
+## Settled decisions
+
+Choices Harvey has made. A reviewer may note that users could read these differently, but files them as "Harvey's call", never as a defect to fix.
+
+| Decision | Date |
+|---|---|
+| "What it costs you" on the £100k trap uses tick-box rows (ticked = applies to you; not applicable greyed) | 27 Oct |
+| In paired tiles, the gain comes first, then the cost | 27 Oct |
+| A £ figure that is a loss or a gap shows in red | 23 Oct |
+| Gaps are framed as loss: "left on the table", "lost to low rates" | 22 Oct |
+| "Opportunity" labels the headline £/yr on Home and module heroes | 8 Nov |
+| Page names show only under the tab bar icons; screens have no visible page title | 8 Nov |
+| "Guidance, not advice" footer on module pages; readers skipping it is fine | 12 Oct |
+
 ## Keeping this file current
 
 When Harvey changes copy or a screen after Claude's version:
 1. Add the pair to **Before and after**, with the date.
 2. If it shows a new pattern, add or extend a rule, with his words as evidence.
 3. If it involves a term, add it to the **Jargon list**. Move "Proposed" terms to "Evidence" once he confirms or corrects them.
+4. If he keeps something a reviewer flagged, add it to **Settled decisions**.
