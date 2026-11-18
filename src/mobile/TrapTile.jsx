@@ -65,14 +65,16 @@ export default function TrapTile({ income, full = false, onOpenTrap }) {
       style={{position:"relative",overflow:"hidden",background:t.bg,border:t.border,boxShadow:t.shadow,borderRadius:"14px",boxSizing:"border-box",padding:"14px 16px 16px",
         width:open || full ? "100%" : "calc(50% - 6px)",...(!open && !full && { aspectRatio:"1" }),display:"flex",flexDirection:"column",cursor:"pointer"}}>
       {/* The Tax shield's shield, large and faint behind the text: filling
-          the square, or at the top right when wide. */}
-      <svg aria-hidden="true" viewBox="3.5 1.5 17 21" preserveAspectRatio="xMaxYMin meet"
+          the square, or at the top right when wide. It, the header and the
+          details move with the tile but keep their own size ("position"),
+          so the tile's resize doesn't stretch them. */}
+      <motion.svg layout={reduce ? false : "position"} transition={{ duration: 0.25 }} aria-hidden="true" viewBox="3.5 1.5 17 21" preserveAspectRatio="xMaxYMin meet"
         style={{position:"absolute",pointerEvents:"none",...(open || full
           ? { top:"10px", right:"14px", height:"128px", width:"auto" }
           : { top:"12%", right:"-4%", width:"72%", height:"auto" })}}>
         <path d={SHIELD} fill={t.figure} opacity="0.08"/>
-      </svg>
-      <button type="button" data-trap-toggle onClick={open ? undefined : toggle} aria-expanded={open}
+      </motion.svg>
+      <motion.button layout={reduce ? false : "position"} transition={{ duration: 0.25 }} type="button" data-trap-toggle onClick={open ? undefined : toggle} aria-expanded={open}
         style={{position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"10px",flex:open ? "none" : 1,width:"100%",background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left",color:"inherit"}}>
         <span style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",width:"100%"}}>
           <span style={{...TILE_KICKER,color:t.label}}>£100k tax trap</span>
@@ -85,10 +87,10 @@ export default function TrapTile({ income, full = false, onOpenTrap }) {
             {lines[1] && <span style={{fontSize:"12px",color:t.body}}>{lines[1]}</span>}
           </span>
         </span>
-      </button>
+      </motion.button>
 
       {open && (
-        <div style={{position:"relative",marginTop:"12px",cursor:"auto"}}>
+        <motion.div layout={reduce ? false : "position"} transition={{ duration: 0.25 }} style={{position:"relative",marginTop:"12px",cursor:"auto"}}>
           {/* The answer. */}
           <p style={text}>
             {inTrap && trap ? <>
@@ -138,7 +140,7 @@ export default function TrapTile({ income, full = false, onOpenTrap }) {
             style={{marginTop:"12px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
             Open £100k tax trap<ChevronRight size={14} aria-hidden="true"/>
           </button>
-        </div>
+        </motion.div>
       )}
     </motion.section>
   );

@@ -15,7 +15,9 @@ export default function HomeTilePair({ d, m, plan, set, onOpenModule, onSeeAll }
   if (!trap && !areas) return null;
   const { items, ticking } = areasOnHome(d, plan);
   return (
-    <div style={{display:"flex",flexWrap:"wrap",gap:"12px",alignItems:"stretch"}}>
+    // Not stretched: each tile is square by its own aspect ratio. Safari
+    // kept a stretched tile at the open trap tile's height after it closed.
+    <div style={{display:"flex",flexWrap:"wrap",gap:"12px",alignItems:"flex-start"}}>
       {trap && <TrapTile income={income} full={!areas} onOpenTrap={() => onOpenModule("taxTrap")}/>}
       {areas && (
         <AreasTile items={items} ticking={ticking} full={!trap} onOpen={onOpenModule} onSeeAll={onSeeAll}

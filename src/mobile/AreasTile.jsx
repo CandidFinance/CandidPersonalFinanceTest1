@@ -66,7 +66,7 @@ export default function AreasTile({ items, ticking, full = false, onOpen, onSeeA
 
   return (
     <section aria-label="Areas to explore"
-      style={{...CARD,position:"relative",boxSizing:"border-box",padding:"14px",width:full ? "100%" : "calc(50% - 6px)",...(!full && { aspectRatio:"1" }),alignSelf:"stretch",display:"flex",flexDirection:"column",gap:"10px"}}>
+      style={{...CARD,position:"relative",boxSizing:"border-box",padding:"14px",width:full ? "100%" : "calc(50% - 6px)",...(!full && { aspectRatio:"1" }),display:"flex",flexDirection:"column",gap:"10px"}}>
       {full ? (
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px"}}>
           <h2 style={TILE_KICKER}>{title}</h2>
