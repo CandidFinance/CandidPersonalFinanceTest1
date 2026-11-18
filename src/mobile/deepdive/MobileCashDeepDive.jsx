@@ -120,13 +120,18 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   const { calc, products, opp, gain, hasIsaList, hasSavingsList, seeOptions } = useCashFigures(d, m, savingsRates, onOpenAssist);
   const {
     psaLimit, isaRateDisplay, nonIsaRateDisplay, PB_RATE,
-    currentGrossTotal, trPct, currentTaxCost,
+    currentGrossTotal, currentPbInterest, trPct, currentTaxCost,
     totalPot, step1Isa, step1IsaInterest, step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta,
     step3Pb, step3PbInterest,
     optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain, todayBlendedRate,
     isaLines, savingsLines,
   } = calc;
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
+  const bestParts = [
+    step1Isa > 0 && `${isaRateDisplay} ISA`,
+    step2Savings > 0 && `${nonIsaRateDisplay} savings`,
+    step3Pb > 0 && `${(PB_RATE*100).toFixed(2)}% Premium Bonds`,
+  ].filter(Boolean);
   const reminder = useReminder({
     id: "cash-move-surplus",
     title: buildReminderSubject(`${fmt(gain)}/yr`, "Higher rates for your savings"),
@@ -391,9 +396,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
             <TileRow>
               <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>Where your savings could sit ({fmt(keptAmount)} kept as cash)</div>
               <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — your average rate today</span><span style={TILE_FIGURE}>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(2)}% on Premium Bonds, blended</p>
+              {/* "Blended" only when there's more than one part: Premium Bonds
+                  only when they hold them (today) or the best plan uses them. */}
+              {currentPbInterest > 0 && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(2)}% on Premium Bonds, blended</p>}
               <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span style={TILE_FIGURE}>{fmt(optimisedTotal)}/yr</span></div>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(2)}% Premium Bonds, blended</p>
+              {bestParts.length > 1 && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"-2px",marginBottom:"8px"}}>= {bestParts.join(" + ")}, blended</p>}
               <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?SUCCESS:TEXT}}>
                 <span>{optimisationGain>0?"You can earn":"Difference"}</span><span style={TILE_FIGURE}>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
               </div>
