@@ -10,6 +10,11 @@
 // the screen is what a returning user sees. Nothing leaves the machine.
 // Writes <out>/<screen>-<n>.png and <out>/<screen>.txt, <screen> being the
 // route's last part.
+//
+// The DEV TOOLS button is removed from every slice and the text, so it can't
+// cover the hero. The tab bar and the floating Assist button show only in the
+// last slice: in the others they would cover content at the bottom edge that
+// the next slice doesn't repeat, which reviewers would report as overlap.
 
 import { preview } from "vite";
 import { chromium } from "playwright";
@@ -49,11 +54,22 @@ try {
     const name = route.split("/").pop();
     await page.goto(`${base}/${route}`);
     await page.waitForTimeout(2500);
+    await page.addStyleTag({ content: `
+      [data-capture-hide] { display: none !important; }
+      html[data-capture-no-chrome] nav[data-tab-bar],
+      html[data-capture-no-chrome] [data-tour="assist"] { visibility: hidden !important; }` });
+    await page.evaluate(() => {
+      for (const b of document.querySelectorAll("button")) if (b.innerText.trim() === "DEV TOOLS") b.setAttribute("data-capture-hide", "");
+    });
     writeFileSync(`${out}/${name}.txt`, await page.innerText("body"));
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    const slices = Math.min(8, Math.ceil(height / 780));
     let n = 0;
-    for (let y = 0; y < height && n < 8; y += 780, n++) {
-      await page.evaluate(y => window.scrollTo(0, y), y);
+    for (let y = 0; n < slices; y += 780, n++) {
+      await page.evaluate(([y, last]) => {
+        window.scrollTo(0, y);
+        document.documentElement.toggleAttribute("data-capture-no-chrome", !last);
+      }, [y, n === slices - 1]);
       await page.waitForTimeout(600);
       await page.screenshot({ path: `${out}/${name}-${n + 1}.png` });
     }

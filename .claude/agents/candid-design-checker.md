@@ -25,7 +25,7 @@ The task, the changed files (run `git diff -- <files>`), and a capture folder wi
 2. **Density.** Count the text styles in each tile: more than 3 is a flag. Is the answer the most prominent thing in each tile?
 3. **Consistency.** Row heights, header-to-text spacing, label and figure alignment, and type sizes match the same parts elsewhere on the screen and in other modules. Harvey notices misalignments of a few pixels; so should you.
 4. **Rules.** Serif only on headline £. One state indicator per state. No hand-built buttons, chips, switches, fields or sheets in the diff. One primary button per view. Blue only for the paywall and invites. No emoji. Cards only for things you act on.
-5. **Phone fit.** Text that wraps badly, overflows, or collides with the tab bar or the floating Assist button. Ignore a yellow "DEV TOOLS" button; it's a test-build artefact.
+5. **Phone fit.** Text that wraps badly or overflows. The tab bar and the floating Assist button are hidden in every slice but the last (the capture hides them so they don't cover content mid-scroll), so judge collisions with them only in the last slice. Ignore a yellow "DEV TOOLS" button if one ever shows; it's a test-build artefact.
 
 ## Severity
 
