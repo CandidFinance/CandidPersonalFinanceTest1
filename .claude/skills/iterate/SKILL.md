@@ -37,7 +37,7 @@ A failure here is fixed before any review. A round doesn't count until the gates
 node scripts/screen-capture.mjs --out <round folder> --profile <profile> --routes app/module/cash,app/progress
 ```
 
-Routes go without the leading slash. Open one slice per screen yourself to confirm the capture shows the right screen. A tour, a blank page or the error screen means fix the capture first. A review of the wrong screen is worse than none.
+Routes go without the leading slash. Files are named after the route without `app/` (`app/module/cash` gives `module-cash-1.png` and `module-cash.txt`). The script waits for each screen to settle and checks it itself: a screen with the error screen, a page error, near-blank content, a redirect, or a pop-up or tour on top gets no files, and the script exits 1 naming it. Fix that before any review; never send reviewers a screen it refused. A review of the wrong screen is worse than none.
 
 ## 5. Review (in parallel, one message)
 
