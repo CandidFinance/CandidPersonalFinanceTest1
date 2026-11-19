@@ -28,7 +28,7 @@ import { G, WHITE, MUT, TEXT, CTA_BLUE, CRITICAL, STUDENT_PURPLE, GOLD_TEXT, SAN
 // loan (loanPlan.js runPlan), worked out by the page. `onPlanSaved`: called
 // when a payment is added or changed, so the page can show it on the chart.
 
-export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved, expanded, onToggle }) {
+export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved, expanded, onToggle, first = false }) {
   const [used] = useState(() => featureUsed(d, "scenarioModelling"));
   const toggle = () => {
     if (!expanded && open && hasAccess() && !featureUsed(d, "scenarioModelling")) set("subscriberFeaturesUsed", withFeatureUsed(d, "scenarioModelling"));
@@ -41,7 +41,7 @@ export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSave
   );
   return (
     <>
-      <TileRow onClick={toggle} expanded={expanded}>
+      <TileRow first={first} onClick={toggle} expanded={expanded}>
         {withIcon(Layers, <>
           <div style={{...ROW.label,fontWeight:600,display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>Scenario modelling{pill}</div>
           <div style={ROW.note}>Your pay year by year, and plans of lump sums and monthly overpayments</div>

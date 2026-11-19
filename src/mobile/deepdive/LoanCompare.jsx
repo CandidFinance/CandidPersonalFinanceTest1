@@ -1,5 +1,5 @@
 import { useState, Fragment } from "react";
-import { Lock, ShieldCheck, TrendingUp } from "lucide-react";
+import { Lock, TrendingUp } from "lucide-react";
 import { loanComparison } from "../../lib/loanCompare.js";
 import { pensionAccessAge } from "../../lib/pension.js";
 import { planEvents } from "../../lib/loanPlan.js";
@@ -9,14 +9,14 @@ import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileTile, { TileRow, ROW, RowText } from "../MobileTile.jsx";
-import { G, WHITE, TEXT, SUCCESS, GOLD_TEXT } from "../../design-tokens.js";
+import { G, WHITE, TEXT, GOLD_TEXT } from "../../design-tokens.js";
 
 // The student loan page's "Where £X does most" (lib/loanCompare.js): the
-// lump sum being tried above (`amount`; a stand-in until one's picked),
-// valued in each place it could go by the date the loan would end, largest
-// first, a row each on the tile (MobileTile.jsx): its name and £, with an icon for how
-// sure the figure is (certain, or resting on assumed growth), opening to
-// say how it's worked out. For subscribers; anyone else sees the
+// lump sum picked in Model your loan (`amount`; the whole balance until
+// one's picked), valued in each place it could go by the date the loan
+// would end, largest first, a row each on the tile (MobileTile.jsx): its
+// name and £, an icon after the name when it rests on assumed growth,
+// opening to say how it's worked out. For subscribers; anyone else sees the
 // top row and the rest blurred, with the way to subscribe. A mortgage not
 // yet known is a row to tap, which asks for it here (its rate and what's
 // owed). With a repayment plan on the chart (`plan`, its run from
@@ -27,22 +27,18 @@ import { G, WHITE, TEXT, SUCCESS, GOLD_TEXT } from "../../design-tokens.js";
 const ROWS = {
   loan:         { title: "Paying it into the loan", note: (r, c) => c.cleared ? "Repayments you no longer make, kept in savings." : "Repayments you no longer make, kept in savings. Most of it would otherwise have been written off." },
   savings:      { title: "Savings", note: r => `At ${r.ratePct}%, there whenever you need it.` },
-  isa:          { title: "Stocks and Shares ISA", note: r => `Growing ${r.ratePct}% a year, tax-free. Can fall as well as rise.` },
-  pension:      { title: "Pension", note: (r, c, d) => `With ${r.reliefPct}% tax relief, growing ${r.ratePct}% a year. A quarter tax-free when drawn, the rest taxed at ${r.laterPct}%. Locked until ${pensionAccessAge(d)}.` },
+  isa:          { title: "Stocks and Shares ISA", note: r => `Growing ${r.ratePct}% a year, tax-free. Can fall as well as rise.${r.over > 0 ? ` Up to £20,000 a tax year fits, so the other ${fmt(r.over)} stays in savings at ${r.cashPct}%.` : ""}` },
+  pension:      { title: "Pension", note: (r, c, d) => `${r.over > 0 && r.over >= c.amount ? "" : `With ${r.reliefPct}% tax relief, growing ${r.ratePct}% a year. A quarter tax-free when drawn, the rest taxed at ${r.laterPct}%. Locked until ${pensionAccessAge(d)}. Not counting anything an employer adds.`}${r.over > 0 ? ` ${fmt(r.over)} is over the most that gets tax relief (your annual allowance left, and no more than your earnings), so it stays in savings at ${r.cashPct}%.` : ""}`.trim() },
   mortgage:     { title: "Paying off your mortgage", note: r => `Saves its ${r.ratePct}%. Most lenders allow 10% of the balance a year without a fee.` },
   personalLoan: { title: "Paying off your personal loan", note: r => `Saves its ${r.ratePct}%, while it has left to run.` },
 };
-// How sure each figure is: one icon each, with a key above the tiles.
-const SURE = {
-  true:  { Icon: ShieldCheck, color: SUCCESS, label: "Certain" },
-  false: { Icon: TrendingUp, color: GOLD_TEXT, label: "If growth holds" },
-};
-
-// Until a lump sum is picked above: £5,000, or the balance if it's less.
-const STAND_IN = 5000;
+// A figure resting on assumed growth: an icon after its name, explained
+// in the line under the rows. Certain figures carry none.
+const GROWTH = "If growth holds";
 
 export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, menu = [], how = null }) {
-  const lump = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
+  // Until a lump sum is picked above: the whole balance.
+  const lump = picked > 0 ? picked : Math.round(m.loanBal);
   const [asking, setAsking] = useState(false);
   const [opened, setOpened] = useState(() => new Set());
   const [mode, setMode] = useState("plan");
@@ -55,39 +51,26 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
   const valued = c.rows.filter(r => !r.ask);
   const ask = c.rows.find(r => r.ask);
 
-  // A row per place, its icon (how sure the figure is) in line with its
-  // name, opening in place to say how it's worked out.
+  // A row per place, a growth icon after the name when the figure rests on
+  // assumed growth (none when it's certain), opening in place to say how
+  // it's worked out.
   const toggle = key => setOpened(o => { const n = new Set(o); n.has(key) ? n.delete(key) : n.add(key); return n; });
   const row = r => {
-    const { Icon, color, label } = SURE[r.certain];
     const isOpen = opened.has(r.key);
+    const growth = !r.certain && <TrendingUp size={15} color={GOLD_TEXT} aria-label={GROWTH} style={{flexShrink:0}}><title>{GROWTH}</title></TrendingUp>;
     return (
       <Fragment key={r.key}>
       <TileRow onClick={() => toggle(r.key)} expanded={isOpen}>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <Icon size={18} color={color} aria-label={label} style={{flexShrink:0}}><title>{label}</title></Icon>
-          <div style={{flex:1,minWidth:0}}><RowText label={ROWS[r.key].title} figure={fmt(r.value)}/></div>
-        </div>
+        <RowText label={ROWS[r.key].title} tool={growth} figure={fmt(r.value)}/>
       </TileRow>
       {/* Outside the row's button, so it isn't read as part of its name. */}
-      {isOpen && <div style={{...ROW.note,margin:"-6px 16px 0 26px",paddingBottom:"9px"}}>{ROWS[r.key].note(r, c, d)}</div>}
+      {isOpen && <div style={{...ROW.note,margin:"-6px 16px 0 0",paddingBottom:"9px"}}>{ROWS[r.key].note(r, c, d)}</div>}
       </Fragment>
     );
   };
-  const key = (
-    <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:"12px",fontWeight:600,marginTop:"6px"}}>
-      {[true, false].map(sure => { const { Icon, color, label } = SURE[sure]; return <span key={label} style={{display:"inline-flex",alignItems:"center",gap:"5px"}}><Icon size={13} color={color} aria-hidden="true"/>{label}</span>; })}
-    </div>
-  );
-  const subtitle = (
-    <>
-      {usePlan
-        ? `${plan.name}'s payments, each from the year it's paid, and what they come to by April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}, largest first.`
-        : `What ${picked > 0 ? "the lump sum above" : "it"} comes to by April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}, largest first.`}
-      {!usePlan && !(picked > 0) && " Pick a lump sum above to try another amount."}
-      {key}
-    </>
-  );
+  const subtitle = usePlan
+    ? `${plan.name}'s payments, each valued from the year it's paid, in April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}.`
+    : `Valued in April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}.`;
 
   return (
     <MobileTile id="sl-compare" title={`Where ${usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most`} subtitle={shown ? subtitle : null} menu={[how?.[0], ...menu]}
@@ -121,8 +104,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
       {open && (ask || asking) && set && (
         !asking ? (
           <TileRow onClick={() => setAsking(true)}>
-            <div style={{...ROW.label,fontWeight:600}}>Paying off a mortgage</div>
-            <div style={{...ROW.note,color:G,fontWeight:600}}>Add your mortgage to compare it</div>
+            <div style={{...ROW.label,fontWeight:600,color:G}}>Add your mortgage to compare it</div>
           </TileRow>
         ) : (
           <TileRow>
@@ -148,7 +130,14 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
       )}
 
       <TileRow>
-        <div style={{...ROW.note,marginTop:0}}>Before inflation. Not including anything an employer adds to a pension. Guidance, not advice.</div>
+        <div style={{...ROW.note,marginTop:0}}>
+          {/* Explains the icon only where a row that can be read carries it. */}
+          {valued.slice(0, open ? valued.length : 1).some(r => !r.certain) && <>
+            <TrendingUp size={13} color={GOLD_TEXT} aria-hidden="true" style={{verticalAlign:"-2px",marginRight:"5px"}}/>
+            Rests on growth, so it could come out higher or lower.{" "}
+          </>}
+          All figures before inflation.
+        </div>
       </TileRow>
       </>}
     </MobileTile>

@@ -21,7 +21,7 @@ export default function MobileTile({ title, subtitle, menu = [], level = 2, badg
   const menuId = useId();
   return (
     <section {...rest} style={{...CARD,position:"relative",paddingLeft:"16px",marginBottom:"12px",scrollMarginTop:"80px",...rest.style}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",padding:subtitle ? "16px 6px 0 0" : "16px 6px 8px 0",minHeight:"24px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",padding:subtitle ? "14px 6px 0 0" : "14px 6px 8px 0"}}>
         {onToggle ? (
           <Heading style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3,flex:1,minWidth:0,margin:0}}>
             <button type="button" onClick={onToggle} aria-expanded={!!open}
@@ -34,7 +34,7 @@ export default function MobileTile({ title, subtitle, menu = [], level = 2, badg
         {items.length > 0 && (
           <button type="button" aria-label={`${title}: more`} aria-haspopup="menu" aria-expanded={menuOpen} aria-controls={menuOpen ? menuId : undefined}
             onClick={() => setMenuOpen(o => !o)}
-            style={{display:"flex",alignItems:"center",justifyContent:"center",width:"44px",height:"44px",margin:"-10px 0",background:"none",border:"none",padding:0,color:GOLD_TEXT,cursor:"pointer",flexShrink:0}}>
+            style={{display:"flex",alignItems:"center",justifyContent:"center",width:"44px",height:"44px",margin:"-15px 0",background:"none",border:"none",padding:0,color:GOLD_TEXT,cursor:"pointer",flexShrink:0}}>
             <MoreHorizontal size={22} strokeWidth={2.5} aria-hidden="true"/>
           </button>
         )}

@@ -95,6 +95,31 @@ test("a plan's payments, each valued from the date it's paid; one payment today 
   assert.equal(row(later, "savings").value, Math.round(5000 * Math.pow(1 + sl.cashRate / 100, later.years - 3)));
 });
 
+test("an ISA takes this tax year's allowance left; the rest stays in savings", () => {
+  const d = { ...writtenOff, isaThisYearCash: "5000" };
+  const m = calcMetrics(d), sl = calcStudentLoanScenario(d, m);
+  const c = loanComparison(d, m, sl, 40000), y = c.years, cash = sl.cashRate / 100;
+  const isa = row(c, "isa");
+  assert.equal(isa.over, 25000);
+  assert.equal(isa.value, Math.round(15000 * Math.pow(1.06, y) + 25000 * Math.pow(1 + cash, y)));
+  // A plan's payments in later tax years each get a fresh £20,000.
+  const spread = loanComparison(d, m, sl, [{ t: 0, amount: 15000 }, { t: 1, amount: 20000 }]);
+  assert.equal(row(spread, "isa").over, 0);
+  assert.equal(row(run(writtenOff, 5000), "isa").over, 0);
+});
+
+test("a pension gets relief only up to their earnings and the annual allowance left; the rest stays in savings", () => {
+  // £32,000 of earnings: no more than that gets relief, at 20%.
+  const c = run(writtenOff, 50000), y = c.years;
+  const m = calcMetrics(writtenOff), sl = calcStudentLoanScenario(writtenOff, m), cash = sl.cashRate / 100;
+  const p = row(c, "pension");
+  assert.equal(p.over, 50000 - 32000 * 0.8);
+  assert.equal(p.reliefPct, 20);
+  assert.equal(p.value, Math.round(32000 * Math.pow(1.06, y) * 0.85 + (50000 - 25600) * Math.pow(1 + cash, y)));
+  // Within the limits, nothing over.
+  assert.equal(row(run(writtenOff, 5000), "pension").over, 0);
+});
+
 test("a mortgage paid off by earlier payments takes no more at its rate", () => {
   const d = { ...writtenOff, slCompareMortgage: "yes", mortgageRate: "5", mortgageBalance: "3000" };
   const m = calcMetrics(d), sl = calcStudentLoanScenario(d, m);

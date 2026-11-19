@@ -1,8 +1,8 @@
-import { useState, Children, cloneElement } from "react";
+import { useState, useRef, Children, cloneElement } from "react";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, Check, CircleAlert, Pencil, Wrench, ChartLine, AlertTriangle, Info, ChevronUp, ChevronDown } from "lucide-react";
+import { ExternalLink, Check, CircleAlert, Pencil, Wrench, ChartLine, AlertTriangle, Info, ChevronDown } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
@@ -20,10 +20,10 @@ import { fmt, fmtK } from "../../lib/format.js";
 import { salaryGrowthOf, trajectoryNearest, payPathOf, SALARY_GROWTH_MIN_PCT, SALARY_GROWTH_MAX_PCT } from "../../lib/metrics.js";
 import { PillSlider } from "../PillSlider.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import MobileTile, { TileRow, ROW, RowText, withIcon, Nested, TilePopover, anchor } from "../MobileTile.jsx";
 import InfoButton from "../InfoButton.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT, SANS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, CRITICAL, SUCCESS, STUDENT_PURPLE, GOLD_TEXT, SANS, SERIF, TILE_KICKER } from "../../design-tokens.js";
 import ModuleBand from "../ModuleBand.jsx";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
@@ -90,9 +90,9 @@ const clearedBy = sl => sl.writeOffTaxYear - sl.writeOffYr + sl.clearYr;
 
 // A tile's explanation, from its "…" menu: the item, and the pop-out it
 // opens over the tile (Cash's "How this is worked out").
-function useHow(title, body) {
+function useHow(title, body, label = "How this is worked out") {
   const [open, setOpen] = useState(false);
-  const item = body && { icon: Info, label: open ? "Hide the explanation" : "How this is worked out", onClick: () => setOpen(o => !o) };
+  const item = body && { icon: Info, label: open ? "Hide the explanation" : label, onClick: () => setOpen(o => !o) };
   const pop = (
     <AnimatePresence>
       {open && body && (
@@ -125,11 +125,14 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // once the user types their own value into the editor, which then stops
   // tracking further slider movement (their explicit edit wins).
   const [manualBalanceInput, setManualBalanceInput] = useState(null);
-  // The return chart opens under its What ifs row: measured once it's open.
-  const [chartWrapRef, chartWidth] = useElementWidth(300, [whatIf === "return"]);
-  // Model your loan and Build repayment plans start minimised (Harvey, 18
-  // Nov 2026): large, and only for anyone who wants to model it.
+  // Model your loan and Repayment plans start as squares in Planning
+  // (Harvey, 18 and 19 Nov 2026): large, and only for anyone who wants to
+  // model it.
   const [balanceOpen, setBalanceOpen] = useState(false);
+  const [plansOpen, setPlansOpen] = useState(false);
+  // The return chart opens under its What ifs row, inside the plans square:
+  // measured again whenever either opens (a new chart element each time).
+  const [chartWrapRef, chartWidth] = useElementWidth(300, [whatIf === "return", plansOpen]);
   const [balanceChartRef, balanceChartWidth] = useElementWidth(300, [balanceOpen]);
   // The lump sum being modelled (LumpSum, in What ifs): none until one's
   // picked, so the chart starts as it is.
@@ -145,7 +148,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   useDecisionLog(d, set, m.loanBal > 0 ? studentLoanDecision(d, m) : null);
   // Where it does most: its explanation, from its menu.
   const compareHow = useHow("How this is worked out",
-    "The same money in each place, valued on the date your loan would end. Paying it into the loan is worth the repayments you'd no longer make, kept in savings. Figures resting on assumed growth can come out higher or lower.");
+    "The same money in each place, valued on the date your loan would end, largest first. It starts from your whole balance; to try another amount, set the lump sum in Model your loan. Paying it into the loan is worth the repayments you'd no longer make, kept in savings. Figures resting on assumed growth can come out higher or lower.");
 
   if (d.studentLoan === "none" || m.loanBal <= 0) {
     return null; // The band says so (StudentLoanBand).
@@ -183,10 +186,21 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const showLump = overpayOptions.length > 0 && !sl.belowThreshold;
 
   const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
+  const openBalanceEditor = () => {
+    setManualBalanceInput(null); setEditingBalance(true);
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("sl-balance-row")?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+  };
+  const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); };
+  // From Planning's menu: opens Model your loan first, once the menu has
+  // closed and handed focus back, so the pop-out keeps it.
+  const updateBalance = () => { if (!balanceOpen) setBalanceOpen(true); setTimeout(openBalanceEditor, 250); };
+  const plans = !!set && !sl.belowThreshold;
   const showPlan = () => {
     setBalanceOpen(true);
     const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    setTimeout(() => balanceChartRef.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" }), 50);
+    // After the square's 0.25s layout move, so it scrolls to where the chart ends up.
+    setTimeout(() => balanceChartRef.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" }), still ? 50 : 320);
     setPlanFlash(n => n + 1);
   };
   // 1. The answer is on the band above the page (StudentLoanBand); under
@@ -199,21 +213,27 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
       {worthOverpaying && <SpareCheck d={d} m={m} sl={sl} amount={cost.balance} menu={[editItem]}/>}
       {lump && <SpareCheck d={d} m={m} sl={sl} amount={lump.amount} menu={[editItem]}/>}
 
-      <BalanceTile open={balanceOpen} onToggle={() => setBalanceOpen(o => !o)} d={d} m={m} sl={sl} set={set} savingsRates={savingsRates} menu={[editItem]} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt}
-        overpayOptions={overpayOptions} showLump={showLump} tip={tip} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying}
-        planRun={planRun} planName={shownPlan?.name} planFlash={planFlash} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}
-        editingBalance={editingBalance} setEditingBalance={setEditingBalance} manualBalanceInput={manualBalanceInput} setManualBalanceInput={setManualBalanceInput}
-        editingStart={editingStart} setEditingStart={setEditingStart} startInput={startInput} setStartInput={setStartInput}/>
-
-      <WhatIfs d={d} m={m} sl={sl} set={set} menu={[editItem]} whatIf={whatIf} toggleWhatIf={toggleWhatIf} subscriber={compareOpen} planRun={planRun} showPlan={showPlan}
-        curve={curve} chartWrapRef={chartWrapRef}/>
-
-      {pg && <PostgradLoan pg={pg} sl={sl} menu={[editItem]}/>}
-
+      {/* The options, then the tools to model them (Planning). */}
       {!sl.belowThreshold && (compareOpen
         ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null} menu={[editItem]} how={compareHow}/>
         : verdict && pensionChecked && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]} how={compareHow}/>)}
 
+      <PlanningTile d={d} sl={sl} menu={[editItem]} onUpdateBalance={set ? updateBalance : null}
+        balanceOpen={balanceOpen} toggleBalance={() => setBalanceOpen(o => !o)} plansOpen={plansOpen} togglePlans={() => setPlansOpen(o => !o)}
+        plans={plans} curve={curve} planRun={planRun} planName={shownPlan?.name}
+        balance={
+          <BalancePanel d={d} m={m} sl={sl} set={set} savingsRates={savingsRates} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt}
+            overpayOptions={overpayOptions} showLump={showLump} tip={tip} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying}
+            planRun={planRun} planName={shownPlan?.name} planFlash={planFlash} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}
+            editingBalance={editingBalance} openBalanceEditor={openBalanceEditor} closeBalanceEditor={closeBalanceEditor} manualBalanceInput={manualBalanceInput} setManualBalanceInput={setManualBalanceInput}
+            editingStart={editingStart} setEditingStart={setEditingStart} startInput={startInput} setStartInput={setStartInput}/>
+        }
+        whatIfs={
+          <WhatIfsPanel d={d} m={m} sl={sl} set={set} plans={plans} whatIf={whatIf} toggleWhatIf={toggleWhatIf} subscriber={compareOpen} planRun={planRun} showPlan={showPlan}
+            curve={curve} chartWrapRef={chartWrapRef}/>
+        }/>
+
+      {pg && <PostgradLoan pg={pg} sl={sl} menu={[editItem]}/>}
     </div>
   );
 }
@@ -224,7 +244,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 // figures behind it, a row each on one line, the two the user can correct
 // (the balance, and when repayments started, which sets the write-off) with
 // a spanner that pops their input out from the row (TilePopover).
-function BalanceTile({ open, onToggle, d, m, sl, set, savingsRates, menu, overpayAmt, setOverpayAmt, overpayOptions, showLump, tip, selectedScenario, baseProjection, worthOverpaying, planRun, planName, planFlash, balanceChartRef, balanceChartWidth, editingBalance, setEditingBalance, manualBalanceInput, setManualBalanceInput, editingStart, setEditingStart, startInput, setStartInput }) {
+// Opened from its square in Planning (PlanningTile).
+function BalancePanel({ d, m, sl, set, savingsRates, overpayAmt, setOverpayAmt, overpayOptions, showLump, tip, selectedScenario, baseProjection, worthOverpaying, planRun, planName, planFlash, balanceChartRef, balanceChartWidth, editingBalance, openBalanceEditor, closeBalanceEditor, manualBalanceInput, setManualBalanceInput, editingStart, setEditingStart, startInput, setStartInput }) {
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment, that's almost certainly the
@@ -233,12 +254,6 @@ function BalanceTile({ open, onToggle, d, m, sl, set, savingsRates, menu, overpa
   // their own value, and re-syncs the next time the editor is opened fresh.
   const suggestedBalance = Math.max(0, Math.round(m.loanBal) - (overpayAmt || 0));
   const balanceInput = manualBalanceInput != null ? manualBalanceInput : suggestedBalance;
-  const openBalanceEditor = () => {
-    setManualBalanceInput(null); setEditingBalance(true);
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    document.getElementById("sl-balance-row")?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
-  };
-  const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); };
   // When repayments started decides when the loan is written off. Estimated
   // from age unless the user says (studentLoan.js slFirstDueYear).
   // Only a year the plan allows (studentLoan.js slFirstDueRange).
@@ -254,18 +269,8 @@ function BalanceTile({ open, onToggle, d, m, sl, set, savingsRates, menu, overpa
   const resetStart = () => { if (set) set("slFirstDueYear", ""); closeStart(); };
   const pill = { flex:1, borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit" };
   const growth = set ? growthRowOf(d, m) : null;
-  const [howItem, howPop] = useHow("How this is worked out",
-    `Year by year: interest is added at the loan's rate, and ${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}% of your pay over ${fmt(sl.threshold)} comes off, with your salary growing as set below. Whatever is left in April ${sl.writeOffTaxYear} is written off, and you don't repay it.`);
   return (
-    <MobileTile id="sl-balance" title="Model your loan" open={open} onToggle={onToggle}
-      // From the menu: once the menu has closed and handed focus back (and
-      // the tile has opened), so the pop-out keeps it.
-      menu={[collapseItem(open, onToggle, "Show the model"),
-        set && { icon: Wrench, label: "Update your balance", onClick: () => { if (!open) onToggle(); setTimeout(openBalanceEditor, 250); } }, howItem, ...menu]}>
-      {howPop}
-      {!open ? (
-        <Collapsed onOpen={onToggle}>{sl.willClear ? `Cleared by April ${clearedBy(sl)}` : `Written off April ${sl.writeOffTaxYear}`}. Your balance year by year, with your salary growth and a lump sum.</Collapsed>
-      ) : <>
+    <>
       <TileRow first><ClearOrWriteOff sl={sl}/></TileRow>
 
       <TileRow>
@@ -323,19 +328,165 @@ function BalanceTile({ open, onToggle, d, m, sl, set, savingsRates, menu, overpa
           )}
         </AnimatePresence>
       </TileRow>
-      </>}
+    </>
+  );
+}
+
+// Planning (Harvey, 19 Nov 2026): Model your loan and Repayment plans as two
+// filled squares side by side, as Home's £100k tax trap tile: the title, a
+// large faint picture behind it (the balance falling; payments as bars), and
+// one figure where there is one. Opened, a square moves to the top at the
+// full width with its calculators in it, and the other sits under it. Only
+// the square's own header opens and closes it. The menu holds both
+// explanations.
+function PlanningTile({ d, sl, menu, onUpdateBalance, balanceOpen, toggleBalance, plansOpen, togglePlans, plans, curve, planRun, planName, balance, whatIfs }) {
+  const [modelHow, modelPop] = useHow("How the model works",
+    `Year by year: interest is added at the loan's rate, and ${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}% of your pay over ${fmt(sl.threshold)} comes off, with your salary growing as set in the model. Whatever is left in April ${sl.writeOffTaxYear} is written off, and you don't repay it.`,
+    "How the model works");
+  const both = !!(plans || curve);
+  const plansLabel = plans ? "How the plans work" : "How the pension comparison works";
+  const [plansHow, plansPop] = useHow(plansLabel,
+    both && (plans
+      ? "Each works from your balance, pay and pension as they are in Candid. A repayment plan you make shows as its own line on Model your loan's chart."
+      : "What each £1 overpaid returns, against the same £1 paid into your pension, from your balance, pay and pension as they are in Candid."),
+    plansLabel);
+  // The plan on the chart's saving, as its calculator gives it
+  // (ScenarioModelling).
+  const saved = plans && planRun ? planRun.base.totalPaid - planRun.totalPaid : null;
+  return (
+    <MobileTile id="sl-planning" title="Planning"
+      subtitle={plans ? "Your balance year by year, and plans to pay it off sooner, worked out on your figures."
+        : curve ? "Your balance year by year, and overpaying against your pension, worked out on your figures."
+        : "Your balance year by year, worked out on your figures."}
+      menu={[onUpdateBalance && { icon: Wrench, label: "Update your balance", onClick: onUpdateBalance }, modelHow, plansHow, ...menu]}>
+      {modelPop}{plansPop}
+      <div style={{display:"flex",flexWrap:"wrap",gap:"16px",alignItems:"flex-start",padding:"0 16px 16px 0"}}>
+        <PlanSquare id="sl-balance" title="Model your loan" open={balanceOpen} onToggle={toggleBalance} full={!both} look={PLAN_LOOK.model} art={<FallingArt/>}
+          headline={fmt(sl.totalRepaidProjected)} line="you'll repay in all">
+          {balance}
+        </PlanSquare>
+        {both && (
+          <PlanSquare id="sl-whatifs" title={plans ? "Repayment plans" : "Vs your pension"} open={plansOpen} onToggle={togglePlans} look={PLAN_LOOK.plans} art={plans ? <BarsArt/> : <PensionArt/>}
+            headline={saved != null ? fmt(Math.abs(saved)) : null} line={saved != null ? `${saved >= 0 ? "saved" : "costs more"} with ${planName}` : null}>
+            {whatIfs}
+          </PlanSquare>
+        )}
+      </div>
     </MobileTile>
   );
 }
 
-// A minimisable tile's menu item, and its one row while minimised (as the
-// £100k tax trap's costs tile): a tap on it opens the tile.
-const collapseItem = (open, onToggle, showLabel) => ({ icon: open ? ChevronUp : ChevronDown, label: open ? "Minimise" : showLabel, onClick: onToggle });
-function Collapsed({ onOpen, children }) {
+// Each square's fill, as Home's light tiles (HERO_TILE_BG) but with no
+// warm corner (no beige, Harvey 19 Nov 2026): green for the model, a lilac
+// wash for plans, after the plan's purple line on the chart.
+const PLAN_LOOK = {
+  model: {
+    bg: [
+      "radial-gradient(120% 95% at 0% 0%, #E6F0EA 0%, rgba(230,240,234,0) 62%)",
+      "radial-gradient(90% 80% at 100% 0%, #E8F3EF 0%, rgba(232,243,239,0) 60%)",
+      "#F5F9F6",
+    ].join(", "),
+    border: "1px solid rgba(22,47,36,0.10)", art: G,
+  },
+  plans: {
+    bg: [
+      "radial-gradient(120% 95% at 0% 0%, #EEE5F4 0%, rgba(238,229,244,0) 62%)",
+      "radial-gradient(90% 80% at 100% 0%, #F2EBF7 0%, rgba(242,235,247,0) 60%)",
+      "#F9F7FB",
+    ].join(", "),
+    border: "1px solid rgba(138,79,174,0.20)", art: STUDENT_PURPLE,
+  },
+};
+
+// One of Planning's squares. Closed: a filled square, its title and chevron
+// at the top, its picture faint and centred behind, and its figure, if it
+// has one, at the foot. Open: first in the tile at the full width, in the
+// same fill, its header the way to close it.
+function PlanSquare({ id, title, open, onToggle, full = false, look, art, headline = null, line = null, children }) {
+  const reduce = useReducedMotion();
+  // As Home's trap tile (TrapTile.jsx): the square grows into place, and
+  // its header moves with it at its own size, its contents fading in.
+  // Closing runs in two steps, so a tall square
+  // (Model your loan) doesn't snap: the contents fold away first, then the
+  // square settles back (`wide` follows `open` once they've gone).
+  const move = { duration: 0.25 };
+  const [wide, setWide] = useState(open);
+  if (open && !wide) setWide(true);
+  if (reduce && !open && wide) setWide(false);
+  const ref = useRef(null);
+  const toggle = () => {
+    // Closing from further down: back up to the square as it folds.
+    const top = ref.current?.getBoundingClientRect().top ?? 0;
+    if (open && top < 80) window.scrollBy({ top: top - 80, behavior: reduce ? "auto" : "smooth" });
+    onToggle();
+  };
+  const kicker = <span style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3,color:"#585858"}}>{title}</span>;
+  const chevron = <ChevronDown size={16} color="#585858" strokeWidth={2.5} aria-hidden="true" style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>;
   return (
-    <TileRow first onClick={onOpen} expanded={false}>
-      <div style={{...ROW.note,marginTop:0}}>{children}</div>
-    </TileRow>
+    <motion.div ref={ref} id={id} layout={!reduce} transition={move}
+      style={{order:wide ? -1 : 0,position:"relative",overflow:"hidden",width:wide || full ? "100%" : "calc(50% - 8px)",...(!wide && (full ? { minHeight:"120px" } : { aspectRatio:"1" })),
+        background:look.bg,border:look.border,boxShadow:"0 4px 18px rgba(22,47,36,0.06)",borderRadius:"14px",boxSizing:"border-box",display:"flex",flexDirection:"column",scrollMarginTop:"80px"}}>
+      {/* The picture, faint and centred in the square. */}
+      {!wide && (
+        <motion.span layout={reduce ? false : "position"} aria-hidden="true"
+          initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...move, opacity: { duration: 0.2 } }}
+          style={{position:"absolute",inset:0,padding:"52px 8% 6%",boxSizing:"border-box",display:"flex",pointerEvents:"none",color:look.art}}>{art}</motion.span>
+      )}
+      <motion.button layout={reduce ? false : "position"} transition={move} type="button" onClick={toggle} aria-expanded={open}
+        style={{position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"10px",flex:wide ? "none" : 1,width:"100%",background:"none",border:"none",
+          padding:wide ? "14px 16px 10px" : "14px 16px 16px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",color:"inherit"}}>
+        <span style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"6px",width:"100%"}}>{kicker}{chevron}</span>
+        {!wide && headline != null && (
+          <span style={{display:"flex",flexDirection:"column",gap:"4px"}}>
+            <span style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.01em"}}>{headline}</span>
+            {/* Two lines at most, so a long plan name can't push the £ out of the square. */}
+            {line && <span title={line} style={{fontSize:"12px",fontWeight:700,color:G,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{line}</span>}
+          </span>
+        )}
+      </motion.button>
+      <AnimatePresence initial={false} onExitComplete={() => setWide(false)}>
+        {open && (
+          <motion.div key="contents" layout={reduce ? false : "position"}
+            // Opening, only a fade: the square's own growth carries it (an
+            // unfolding height fights that and overshoots).
+            initial={reduce ? false : { opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={reduce ? undefined : { height: 0, opacity: 0 }}
+            transition={{ height: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.2 } }}
+            style={{position:"relative",paddingLeft:"16px",overflow:"hidden"}}>
+            {/* Each panel's first row passes TileRow `first`: no rule above it. */}
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// The squares' pictures, in their square's colour (currentColor), faint.
+// A balance falling to nothing.
+function FallingArt() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet" style={{display:"block"}}>
+      <path d="M6 4 L30 14 L46 11 L72 28 L94 36 L94 76 L6 76 Z" fill="currentColor" opacity="0.045"/>
+      <path d="M6 4 L30 14 L46 11 L72 28 L94 36" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" opacity="0.11"/>
+      <circle cx="94" cy="36" r="6" fill="currentColor" opacity="0.14"/>
+    </svg>
+  );
+}
+// Payments as bars, one a year.
+function BarsArt() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet" style={{display:"block"}}>
+      {[[6, 46], [26, 34], [46, 60], [66, 24], [86, 40]].map(([x, h]) => <rect key={x} x={x} y={76 - h} width="12" height={h} rx="3" fill="currentColor" opacity="0.12"/>)}
+    </svg>
+  );
+}
+// Each £1 overpaid against the same £1 in the pension: two lines rising.
+function PensionArt() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet" style={{display:"block"}}>
+      <path d="M6 70 C 36 64, 64 44, 94 12" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" opacity="0.16"/>
+      <path d="M6 72 C 40 68, 70 58, 94 46" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeDasharray="8 8" opacity="0.12"/>
+    </svg>
   );
 }
 
@@ -354,30 +505,22 @@ function Spanner({ label, open, onClick }) {
 // What ifs: a row each, its calculator opening under it, one at a time. A
 // repayment plan moves the balance chart above; the other weighs each £1
 // overpaid against the pension.
-function WhatIfs({ d, m, sl, set, menu, whatIf, toggleWhatIf, subscriber, planRun, showPlan, curve, chartWrapRef }) {
-  const plans = set && !sl.belowThreshold;
-  const [howItem, howPop] = useHow("How this is worked out",
-    "Each calculator works from your balance, pay and pension as they are in Candid. A repayment plan you make shows on the balance chart above, as its own line.");
-  const [open, setOpen] = useState(false);
-  const toggle = () => setOpen(o => !o);
-  if (!plans && !curve) return null;
+// Opened from its square in Planning (PlanningTile).
+function WhatIfsPanel({ d, m, sl, set, plans, whatIf, toggleWhatIf, subscriber, planRun, showPlan, curve, chartWrapRef }) {
   return (
-    <MobileTile id="sl-whatifs" title="Build repayment plans" open={open} onToggle={toggle} subtitle={open ? "Calculators, worked out on your figures" : null} menu={[collapseItem(open, toggle, "Show the calculators"), howItem, ...menu]}>
-      {howPop}
-      {!open ? <Collapsed onOpen={toggle}>{[plans && "Repayment plans", curve && "overpaying against your pension"].filter(Boolean).join(", and ").replace(/^o/, "O")}, worked out on your figures.</Collapsed> : <>
+    <>
       {plans && (
-        <ScenarioModelling expanded={whatIf === "plans"} onToggle={() => toggleWhatIf("plans")} d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>
+        <ScenarioModelling first expanded={whatIf === "plans"} onToggle={() => toggleWhatIf("plans")} d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>
       )}
       {curve && (
         <>
-          <TileRow onClick={() => toggleWhatIf("return")} expanded={whatIf === "return"}>
+          <TileRow first={!plans} onClick={() => toggleWhatIf("return")} expanded={whatIf === "return"}>
             {withIcon(ChartLine, <RowText label="Overpaying vs your pension" note="What each £1 overpaid returns, against the same £1 in your pension"/>)}
           </TileRow>
           {whatIf === "return" && <Nested><ReturnChart sl={sl} curve={curve} chartWrapRef={chartWrapRef}/></Nested>}
         </>
       )}
-      </>}
-    </MobileTile>
+    </>
   );
 }
 
@@ -536,6 +679,20 @@ function PostgradLoan({ pg, sl, menu }) {
 function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, base, worthOverpaying }) {
   const full = Math.round(m.loanBal);
   const saved = scenario ? base.totalPaid - scenario.totalPaid : 0;
+  // Or typed as a £ amount, as PayGrowth's salary in 10 years; no more than
+  // the balance. Back to the chips: a typed amount that isn't one goes.
+  // Reopened with a typed amount (the square unmounts this; the amount is
+  // kept above): back in the box, not a slider with no chip picked.
+  const ownAmount = overpayAmt > 0 && !options.includes(overpayAmt);
+  const [typing, setTyping] = useState(ownAmount);
+  const [typed, setTyped] = useState(ownAmount ? overpayAmt : null);
+  const onType = v => { setTyped(v); setOverpayAmt(v > 0 ? Math.min(Math.round(v), full) : 0); };
+  const toggleTyping = () => {
+    if (typing && !options.includes(overpayAmt)) setOverpayAmt(0);
+    setTyped(typing ? null : overpayAmt > 0 ? overpayAmt : null);
+    setTyping(t => !t);
+  };
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit" };
   const stat = (label, value) => (
     <div>
       <div style={{fontSize:"11px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</div>
@@ -544,7 +701,15 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
   );
   return (
     <div>
-      <PillSlider compact label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
+      {typing
+        ? <PillMoneyInput label="Lump sum repayment" value={typed} onChange={onType}/>
+        : <PillSlider compact label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>}
+      {typing && typed > full && (
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>That's more than the {fmt(full)} you owe, so it uses {fmt(full)}.</p>
+      )}
+      <button type="button" onClick={toggleTyping} className="tap44" style={{...link,marginTop:"8px"}}>
+        {typing ? "Pick an amount instead" : "Enter your own amount"}
+      </button>
       {/* Whether it's spare: against cash above the emergency buffer. */}
       {overpayAmt > 0 && (m.expensesUnknown
         ? <p style={{fontSize:"12px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash to check you could spare this.</p>

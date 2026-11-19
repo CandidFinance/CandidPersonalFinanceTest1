@@ -13,6 +13,8 @@
 //  - Savings: the module's savings rate (sl.cashRate, the best Cash ISA rate
 //    or their own if higher), tax-free like the interest a loan payment saves.
 //  - A Stocks and Shares ISA: Candid's assumed growth, tax-free, not certain.
+//    Up to the £20,000 allowance each tax year (this year's after what's
+//    gone in already); the rest stays in savings.
 //  - A pension: tax relief added going in, at what it really saves them:
 //    the tax on the top slice of their income that the payment covers, so
 //    60% where it brings back the Personal Allowance (£100,000 to
@@ -21,6 +23,9 @@
 //    retirement: the rate on income they're on track for then
 //    (crossModule.js pensionOutlook), 40% or 60% if that's where it lands,
 //    and 20% at least. Not certain, and locked until the minimum pension age.
+//    Only as much as gets relief goes in: the annual allowance room left
+//    each tax year (this year's after top-ups), and no more than their
+//    earnings (£3,600 gross without any). The rest stays in savings.
 //  - A mortgage or personal loan: each £ paid off saves its rate, certain,
 //    up to what's owed (anything over stays in savings). The mortgage is
 //    taken to run past the end date; a personal loan only for the months it
@@ -31,12 +36,17 @@
 // module's own fields either way. Not asked yet, or without a rate, it comes
 // back as a row to ask about (`ask`), not a figure.
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
-import { calcIncomeTax } from "./tax.js";
+import { calcIncomeTax, ISA_ALLOWANCE } from "./tax.js";
 import { pensionOutlook } from "./crossModule.js";
 import { projectPlan } from "./loanPlan.js";
+import { isaUsedThisYear } from "./isa.js";
+import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
+import { allowanceLeft } from "./taxTrap.js";
 
 export const PENSION_TAX_FREE_SHARE = 0.25;
 export const PENSION_MIN_TAX_RATE = 0.2;
+// The most anyone gets relief on a year without earnings, gross.
+const PENSION_RELIEF_FLOOR = 3600;
 
 // What paying `net` from their own money into a pension puts in, gross:
 // the relief is the tax that gross amount takes off their income, found by
@@ -80,19 +90,49 @@ export function loanComparison(d, m, sl, paid) {
   const base = projectPlan(m, sl, []), after = projectPlan(m, sl, events);
   const freed = base.repayments.reduce((t, p, i) => t + (p - (after.repayments[i] || 0)) * Math.pow(1 + cash / 100, years - (i + 1)), 0);
   const over = events.reduce((t, e) => t + grow(e.amount, cash, years - e.t), 0) - after.paid.reduce((t, p) => t + grow(p.amount, cash, years - p.t), 0);
-  const each = fn => events.reduce((t, e) => t + fn(e), 0);
+  const each = fn => events.reduce((t, e, i) => t + fn(e, i), 0);
   const scottish = d.scottishTaxpayer === "yes";
   const income = m.adjustedNetIncome || m.salary || 0;
   const outlook = pensionOutlook(d, m);
   const laterRate = drawnTaxRate(outlook?.retirementIncome || 0, scottish);
-  const reliefs = events.map(e => pensionRelief(income, e.amount, scottish));
-  const gross = reliefs.reduce((t, r) => t + r.gross, 0);
+  // Each tax year's limits (a payment's year: whole years from now). This
+  // year: the ISA allowance after what's gone in, and the annual allowance
+  // room after top-ups; later years in full. Relief also only on up to
+  // their earnings (£3,600 gross without any).
+  const isaLeft = {}, reliefLeft = {};
+  const aaLater = calcAnnualAllowanceRoomBeforeTopUps(d, m).room;
+  const earnings = Math.max(PENSION_RELIEF_FLOOR, m.salary || 0);
+  const isaPart = [], pensionPart = [];
+  for (const e of events) {
+    const y = Math.floor(e.t);
+    isaLeft[y] ??= Math.max(0, ISA_ALLOWANCE - (y === 0 ? isaUsedThisYear(d) : 0));
+    reliefLeft[y] ??= Math.min(earnings, y === 0 ? allowanceLeft(d, m) : aaLater);
+    const isa = Math.min(e.amount, isaLeft[y]);
+    isaLeft[y] -= isa;
+    isaPart.push(isa);
+    // The most that fits, net: what `cap` gross costs them after relief.
+    const cap = reliefLeft[y];
+    const full = pensionRelief(income, e.amount, scottish);
+    const fits = full.gross <= cap ? { net: e.amount, gross: full.gross }
+      : cap > 0 ? { net: cap * (1 - Math.max(PENSION_MIN_TAX_RATE, (calcIncomeTax(income, scottish) - calcIncomeTax(income - cap, scottish)) / cap)), gross: cap }
+      : { net: 0, gross: 0 };
+    reliefLeft[y] -= fits.gross;
+    pensionPart.push(fits);
+  }
+  const net = pensionPart.reduce((t, p) => t + p.net, 0);
+  const gross = pensionPart.reduce((t, p) => t + p.gross, 0);
+  // What doesn't fit stays in savings, from the day it's paid.
+  const rest = parts => each((e, i) => grow(e.amount - parts[i], cash, years - e.t));
+  const isaOver = amount - isaPart.reduce((t, a) => t + a, 0);
+  const pensionOver = amount - net;
   const rows = [
     { key: "loan", value: freed + Math.max(0, over), certain: true },
     { key: "savings", value: each(e => grow(e.amount, cash, years - e.t)), certain: true, ratePct: cash },
-    { key: "isa", value: each(e => grow(e.amount, GROWTH_NOMINAL_PCT, years - e.t)), certain: false, ratePct: GROWTH_NOMINAL_PCT },
-    { key: "pension", value: events.reduce((t, e, i) => t + grow(reliefs[i].gross, GROWTH_NOMINAL_PCT, years - e.t), 0) * (1 - (1 - PENSION_TAX_FREE_SHARE) * laterRate),
-      certain: false, ratePct: GROWTH_NOMINAL_PCT, reliefPct: Math.round((1 - amount / gross) * 100), laterPct: Math.round(laterRate * 100) },
+    { key: "isa", value: each((e, i) => grow(isaPart[i], GROWTH_NOMINAL_PCT, years - e.t)) + rest(isaPart),
+      certain: false, ratePct: GROWTH_NOMINAL_PCT, over: Math.round(isaOver), cashPct: cash },
+    { key: "pension", value: each((e, i) => grow(pensionPart[i].gross, GROWTH_NOMINAL_PCT, years - e.t)) * (1 - (1 - PENSION_TAX_FREE_SHARE) * laterRate) + rest(pensionPart.map(p => p.net)),
+      certain: false, ratePct: GROWTH_NOMINAL_PCT, reliefPct: gross > 0 ? Math.round((1 - net / gross) * 100) : 0, laterPct: Math.round(laterRate * 100),
+      over: Math.round(pensionOver), cashPct: cash },
   ];
   // A debt: each payment on what's still owed after the ones before it.
   const debt = (owed, ratePct, termYears) => {
