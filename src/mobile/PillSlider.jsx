@@ -12,10 +12,12 @@ import { ESTIMATE_EDGE, HAIRLINE, FILLED, EMPTY_FILL, EMPTY_TEXT, EMPTY_CLASS, O
 // (cream, a hairline, dashed for an estimate) on a white track, the rest in
 // grey, so a slider reads as quietly as the pills round it; "empty", gold
 // with a sheen and the options in gold.
-export function PillSlider({ value, onChange, options, compact = false, label, labelledBy, state = null }) {
+// `onTint`: on a coloured surface (a tinted square or tile), the track is a
+// faint wash of green over that colour instead of the cream, which clashes.
+export function PillSlider({ value, onChange, options, compact = false, label, labelledBy, state = null, onTint = false }) {
   const picked = options.findIndex(o => o.value === value);
   const empty = state === "empty";
-  const track = !state ? { background:CDARK } : empty ? { background:EMPTY_FILL } : { background:OFF_FILL, outline:OFF_EDGE, outlineOffset:"-1px" };
+  const track = !state ? { background:onTint ? "rgba(22,47,36,0.07)" : CDARK } : empty ? { background:EMPTY_FILL } : { background:OFF_FILL, outline:OFF_EDGE, outlineOffset:"-1px" };
   const offText = !state ? MUT_ON_CDARK : empty ? EMPTY_TEXT : OFF_TEXT;
   const on = !state ? { background:G, color:WHITE, border:"none" }
     : { background:FILLED, color:TEXT, border:state === "estimate" ? ESTIMATE_EDGE : HAIRLINE };

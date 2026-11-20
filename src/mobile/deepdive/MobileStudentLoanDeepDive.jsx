@@ -68,7 +68,9 @@ export function StudentLoanBand({ d, m, status, statusTone, onShowReveal, onEdit
       : sl.effectiveBenefit > 0
         ? `The loan's ${sl.lifeRatePct}% average rate is only just above savings at ${sl.cashRate}%, so the interest saved and the savings interest given up come out level.`
         : `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`;
-    return <ModuleBand {...band} figure={fmt(0)} suffix="a year" line="No gain from paying it off early, on your figures." note={why}/>;
+    // The £ is the answer; the line names what it measures, the same measure
+    // as the non-zero band below, never a yes/no (Harvey, 19 Nov 2026).
+    return <ModuleBand {...band} figure={fmt(0)} suffix="a year" line="Lost to loan interest above what savings pay, on your figures." note={why}/>;
   }
   const line = main > 0 ? "Lost to loan interest above what savings pay"
     : lump ? `Lost to interest by not paying ${k(lump.amount)} off now`
@@ -365,6 +367,8 @@ function PlanningTile({ d, sl, menu, subscriber, onUpdateBalance, balanceOpen, t
   if (plansOpen && !plansWide) setPlansWide(true);
   if (reduce && !balanceOpen && balanceWide) setBalanceWide(false);
   if (reduce && !plansOpen && plansWide) setPlansWide(false);
+  // Both squares' open and settled states: what their layout moves follow.
+  const moves = `${both}${balanceOpen}${plansOpen}${balanceWide}${plansWide}`;
   // One fact a line, worded as the rows they repeat.
   const modelDetail = [sl.willClear ? `Cleared by April ${clearedBy(sl)}` : `${fmt(sl.writeOffBal)} written off April ${sl.writeOffTaxYear}`,
     sl.annualRep > 0 ? `${fmt(sl.annualRep)} repayments this year` : "No repayments this year"];
@@ -382,12 +386,12 @@ function PlanningTile({ d, sl, menu, subscriber, onUpdateBalance, balanceOpen, t
       menu={[onUpdateBalance && { icon: Wrench, label: "Update your balance", onClick: onUpdateBalance }, modelHow, plansHow, ...menu]}>
       {modelPop}{plansPop}
       <div style={{display:"flex",flexWrap:"wrap",gap:"16px",alignItems:"flex-start",padding:"0 16px 16px 0"}}>
-        <PlanSquare id="sl-balance" title="Model your loan" open={balanceOpen} onToggle={toggleBalance} onClosed={() => setBalanceWide(false)} full={!both || plansWide} look={PLAN_LOOK.model} art={<FallingArt/>}
+        <PlanSquare id="sl-balance" title="Model your loan" open={balanceOpen} onToggle={toggleBalance} onClosed={() => setBalanceWide(false)} moves={moves} full={!both || plansWide} look={PLAN_LOOK.model} art={<FallingArt/>}
           headline={fmt(sl.totalRepaidProjected)} line="you'll repay in all" detail={modelDetail}>
           {balance}
         </PlanSquare>
         {both && (
-          <PlanSquare id="sl-whatifs" title={plans ? "Repayment plans" : "Vs your pension"} open={plansOpen} onToggle={togglePlans} onClosed={() => setPlansWide(false)} full={balanceWide} look={PLAN_LOOK.plans} art={plans ? <BarsArt/> : <PensionArt/>} detail={plansDetail}
+          <PlanSquare id="sl-whatifs" title={plans ? "Repayment plans" : "Vs your pension"} open={plansOpen} onToggle={togglePlans} onClosed={() => setPlansWide(false)} moves={moves} full={balanceWide} look={PLAN_LOOK.plans} art={plans ? <BarsArt/> : <PensionArt/>} detail={plansDetail}
             headline={saved != null ? fmt(Math.abs(saved)) : null} line={saved != null ? `${saved >= 0 ? "saved" : "costs more"} with ${planName}` : null}>
             {whatIfs}
           </PlanSquare>
@@ -423,7 +427,7 @@ const PLAN_LOOK = {
 // at the top, its picture faint and centred behind, and its figure, if it
 // has one, at the foot. Open: first in the tile at the full width, in the
 // same fill, its header the way to close it.
-function PlanSquare({ id, title, open, onToggle, onClosed, full = false, look, art, headline = null, line = null, detail = null, children }) {
+function PlanSquare({ id, title, open, onToggle, onClosed, moves = "", full = false, look, art, headline = null, line = null, detail = null, children }) {
   const reduce = useReducedMotion();
   // As Home's trap tile (TrapTile.jsx): the square grows into place, and
   // its header moves with it at its own size, its contents fading in.
@@ -434,6 +438,11 @@ function PlanSquare({ id, title, open, onToggle, onClosed, full = false, look, a
   const [wide, setWide] = useState(open);
   if (open && !wide) setWide(true);
   if (reduce && !open && wide) setWide(false);
+  // Layout moves only when a square opens, closes or settles (this one's or
+  // its sibling's, `moves`). Without it, a figure changing inside (the salary
+  // slider flipping cleared to written off) or a line changing higher up the
+  // page played as the square leaping up and sliding back.
+  const moveKey = `${moves}|${open}|${wide}`;
   const ref = useRef(null);
   const toggle = () => {
     // Closing from further down: back up to the square as it folds.
@@ -454,16 +463,16 @@ function PlanSquare({ id, title, open, onToggle, onClosed, full = false, look, a
     </span>
   );
   return (
-    <motion.div ref={ref} id={id} layout={!reduce} transition={move}
+    <motion.div ref={ref} id={id} layout={!reduce} layoutDependency={moveKey} transition={move}
       style={{order:wide ? -1 : 0,position:"relative",overflow:"hidden",width:wide || full ? "100%" : "calc(50% - 8px)",...(!wide && (full ? { minHeight: headline == null ? "96px" : "120px" } : { aspectRatio:"1" })),
         background:look.bg,border:look.border,boxShadow:"0 4px 18px rgba(22,47,36,0.06)",borderRadius:"14px",boxSizing:"border-box",display:"flex",flexDirection:"column",scrollMarginTop:"80px"}}>
       {/* The picture, faint and centred in the square. */}
       {!wide && (
-        <motion.span layout={reduce ? false : "position"} aria-hidden="true"
+        <motion.span layout={reduce ? false : "position"} layoutDependency={moveKey} aria-hidden="true"
           initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...move, opacity: { duration: 0.2 } }}
           style={{position:"absolute",...(rect ? { top:0, right:0, bottom:0, width:"30%", padding:"40px 16px 16px 0" } : { inset:0, padding:"52px 8% 6%" }),boxSizing:"border-box",display:"flex",pointerEvents:"none",color:look.art}}>{art}</motion.span>
       )}
-      <motion.button layout={reduce ? false : "position"} transition={move} type="button" onClick={toggle} aria-expanded={open}
+      <motion.button layout={reduce ? false : "position"} layoutDependency={moveKey} transition={move} type="button" onClick={toggle} aria-expanded={open}
         style={{position:"relative",display:"flex",flexDirection:"column",justifyContent:rect && headline == null ? "flex-start" : "space-between",gap:"10px",flex:wide ? "none" : 1,width:"100%",background:"none",border:"none",
           padding:wide ? "14px 16px 10px" : "14px 16px 16px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",color:"inherit"}}>
         <span style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"6px",width:"100%"}}>{kicker}{chevron}</span>
@@ -479,7 +488,7 @@ function PlanSquare({ id, title, open, onToggle, onClosed, full = false, look, a
       </motion.button>
       <AnimatePresence initial={false} onExitComplete={() => { setWide(false); onClosed?.(); }}>
         {open && (
-          <motion.div key="contents" layout={reduce ? false : "position"}
+          <motion.div key="contents" layout={reduce ? false : "position"} layoutDependency={moveKey}
             // Opening, only a fade: the square's own growth carries it (an
             // unfolding height fights that and overshoots).
             initial={reduce ? false : { opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={reduce ? undefined : { height: 0, opacity: 0 }}
@@ -744,7 +753,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
     <div>
       {typing
         ? <PillMoneyInput label="Lump sum repayment" value={typed} onChange={onType}/>
-        : <PillSlider compact label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>}
+        : <PillSlider compact onTint label="Lump sum repayment" value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>}
       {typing && typed > full && (
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>That's more than the {fmt(full)} you owe, so it uses {fmt(full)}.</p>
       )}
@@ -823,9 +832,11 @@ function SpareCheck({ d, m, sl, amount, menu }) {
   // Each point leads with its topic, in bold, for anyone scanning.
   const items = [];
   if (m.expenses > 0) {
+    // The explanation says what the buffer is before what paying does to it.
+    const buffer = `Your cash buffer is ${m.bufferMonths} month${m.bufferMonths === 1 ? "" : "s"} of spending (${fmt(Math.round(m.emergencyBuffer))}).`;
     items.push((m.surplusCash || 0) >= amount
-      ? { topic: "Cash runway", ok: true, text: "Good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
-      : { topic: "Cash runway", ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
+      ? { topic: "Cash runway", ok: true, text: "Good", long: `${buffer} Paying it off would still leave that in cash, so your cash runway isn't affected.` }
+      : { topic: "Cash runway", ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `${buffer} Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under that, cutting your cash runway.` });
   } else items.push({ topic: "Cash runway", ok: null, text: "Not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash)." });
   if (loanIsaIn(d)) {
     items.push(m.isaHeadroom > 0
@@ -1034,7 +1045,8 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash, menu }) {
       {worthOverpaying && (
         <RowGroup>
           <TileRow><RowText label="Loan interest you'd pay" figure={fmt(sl.interestAvoided)} figureStyle={plain} figureOnLabel/></TileRow>
-          <TileRow><RowText label="Savings interest you'd earn" note="before tax" figure={`−${fmt(sl.savingsForgone)}`} figureStyle={plain} figureOnLabel/></TileRow>
+          {/* Taken off in the label, not as a negative £ (Harvey, 19 Nov 2026). */}
+          <TileRow><RowText label="Less savings interest you'd earn" note="before tax" figure={fmt(sl.savingsForgone)} figureStyle={plain} figureOnLabel/></TileRow>
           <TileRow><RowText label={<span style={{fontWeight:700}}>Lost in all, by April {clearedBy(sl)}</span>} figure={fmt(sl.overpayTotalBenefit)} figureOnLabel/></TileRow>
         </RowGroup>
       )}

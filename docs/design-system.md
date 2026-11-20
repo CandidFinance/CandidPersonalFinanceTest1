@@ -22,7 +22,7 @@ Agreed 10 Nov 2026. Screens move over a module at a time; this doc says what new
 | Close, back, more | `IconButton` | `label` required; 34px, or 28px inside a tile |
 | On/off setting | `Switch`, `SwitchRow` | `SwitchRow` in a white grouped list (Account) |
 | Pick one of 2 to 4 | `Segmented` | `size="compact"` inside a tile, `onDark` on the green band |
-| Answer to a form question, one of a few | `PillSlider` | Same look as Segmented, with field states |
+| Answer to a form question, one of a few | `PillSlider` | Same look as Segmented, with field states; `onTint` on a coloured surface (e.g. Student loan's Planning squares) |
 | Toggle filter or quick pick | `Chip` with `pressed` | Without `pressed`: a small action |
 | Status label (not tapped) | `Tag` | `color` a hex token; caps on a pale wash |
 | £ or % amount | `PillMoneyInput` | |
