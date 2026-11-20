@@ -21,6 +21,7 @@
 // they're here so the public student loan calculator reads the same figures.
 import { GROWTH_NOMINAL_PCT, INFLATION_PCT, payFactor } from "./growth.js";
 import { taxYearFor } from "./taxYear.js";
+import { projectPlan } from "./loanPlan.js";
 
 export const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
 export const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
@@ -268,18 +269,21 @@ export function calcStudentLoanScenario(d, m) {
   // where it could be got at. The pension is a caveat, not a veto (its
   // growth is assumed, not guaranteed, and the money is locked away until
   // 57): pensionCaveat. Both are weighed:
-  //  - Savings: the best rate available (m.bestSavingsRate — the live best
-  //    Cash ISA rate, tax-free like the interest overpaying saves), or the
-  //    user's own rate if that's higher. Not their own rate alone: Cash &
-  //    savings already counts the gain from moving to a better account, so a
-  //    poor current rate would count that gain twice.
+  //  - Savings: the user's own best rate (below, Harvey 20 Nov 2026).
   //  - Pension: tax relief doesn't decide it. £1 paid into a pension now gets
   //    relief now; overpay instead and the loan clears sooner, freeing up money
   //    that gets the same relief when it goes into the pension then. With the
   //    same tax rate either way the relief cancels out, leaving the pension's
   //    assumed growth against the loan's rate. A tie goes to overpaying — its
   //    return is guaranteed, the pension's isn't.
-  const cashRate = Math.round(Math.max(m.bestSavingsRate ?? 0, m.effectiveSavingsRate || 0) * 100) / 100;
+  // Harvey, 20 Nov 2026: weighed against the user's own savings rate, their
+  // best (the highest rate among their accounts that hold money, or the rate
+  // they gave), accepting that Cash also counts moving to a better account.
+  // The best rate available only when they haven't given one (cashRateOwn
+  // false), and said so.
+  const ownRate = userBestSavingsRate(d);
+  const cashRateOwn = ownRate != null;
+  const cashRate = Math.round((cashRateOwn ? ownRate : m.bestSavingsRate ?? 0) * 100) / 100;
   // Overpaying earns the loan's rate over every year it would have run, not
   // just this year's: this year's published rate, then steady-state RPI
   // (slRateIn). So it's weighed on the average rate over the loan's life,
@@ -295,15 +299,24 @@ export function calcStudentLoanScenario(d, m) {
   // A genuine £/yr figure: the rate differential applied to the current balance
   // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
   // one-off lump sum, so it stays comparable to every other module's £/yr amount.
-  // Paying it off today against letting it clear: each year it would have
-  // run, the interest on that year's balance is avoided, and the same
-  // amount, kept in savings instead, would have earned the savings rate. The
-  // gain is the gap, year by year on the balance still owed, so it shrinks
-  // as the loan does: a total, and a year on average until it would have
-  // cleared (the module's £ a year).
-  const interestAvoided = Math.round(lived.reduce((t, p) => t + p.bal * p.rate, 0));
-  const savingsForgone = Math.round(lived.reduce((t, p) => t + p.bal * cashRate / 100, 0));
-  const overpayTotalBenefit = worthOverpaying ? Math.max(0, interestAvoided - savingsForgone) : 0;
+  // Paying it off today against letting it clear, as what each leaves by
+  // the April it would have cleared, on the same basis as "Where £X does
+  // most" (loanCompare.js), so the two tally: paid off, the repayments no
+  // longer due are kept in savings, each from the year it's not paid; left,
+  // the money stays in savings throughout. The interest avoided is what the
+  // repayments would have come to over the balance; the savings interest
+  // given up is the rest of the gap: what the money would have earned,
+  // less what the repayments kept earn. A total, and a year on average
+  // until it would have cleared (the module's £ a year).
+  const base = willClear ? projectPlan(m, { schedule, writeOffYr, slInterestRate, annualRep, cashRate }, []) : null;
+  const growTo = (amount, years) => amount * Math.pow(1 + cashRate / 100, years);
+  const keptValue = base ? base.repayments.reduce((t, p, i) => t + growTo(p, clearYr - (i + 1)), 0) : 0;
+  const interestAvoided = base ? Math.round(base.totalPaid - m.loanBal) : Math.round(lived.reduce((t, p) => t + p.bal * p.rate, 0));
+  // Each side rounded first, as Where it does most's rows are, so the gap
+  // is exactly the difference between the £ shown there.
+  const overpayGap = base ? Math.round(keptValue) - Math.round(growTo(m.loanBal, clearYr)) : 0;
+  const savingsForgone = base ? interestAvoided - overpayGap : Math.round(lived.reduce((t, p) => t + p.bal * cashRate / 100, 0));
+  const overpayTotalBenefit = worthOverpaying ? Math.max(0, overpayGap) : 0;
   const overpayAnnualBenefit = worthOverpaying && clearYr ? Math.round(overpayTotalBenefit / clearYr) : 0;
 
   return {
@@ -312,10 +325,21 @@ export function calcStudentLoanScenario(d, m) {
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
     balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal, schedule,
-    cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
+    cashRate, cashRateOwn, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
     worthOverpaying, overpayAnnualBenefit, overpayTotalBenefit, interestAvoided, savingsForgone,
   };
 }
+
+// The user's best savings rate: the highest among their accounts holding
+// money with a rate given (cashTiers; a blank rate isn't 0%), else the rate they gave (0% included), else null (not
+// given). A %.
+export function userBestSavingsRate(d) {
+  const held = (Array.isArray(d.cashTiers) ? d.cashTiers : []).filter(t => +t.amount > 0 && t.rate !== "" && t.rate != null && Number.isFinite(+t.rate));
+  if (held.length) return Math.max(...held.map(t => +t.rate));
+  return d.savingsRate !== "" && d.savingsRate != null && Number.isFinite(+d.savingsRate) ? +d.savingsRate : null;
+}
+// How the module names the savings rate it weighs against.
+export const savingsRateName = sl => sl.cashRateOwn ? "your best savings rate" : "the best savings rate available";
 
 // ── A Postgraduate loan alongside a Plan 1, 2 or 5 loan. GOV.UK: both are
 // repaid at once, 6% of pay over £21,000 on top of the main plan's 9%, so

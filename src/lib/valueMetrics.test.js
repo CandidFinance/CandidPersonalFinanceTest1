@@ -46,7 +46,7 @@ test("student loan: one heading for write-off with no spare cash is 'leave', its
 });
 
 test("student loan: one that clears anyway but earns less than savings is 'leave', its gap what savings earn above the interest saved", () => {
-  const { d, m } = borrower({ salary: "58000", studentLoan: "plan1", loanBalance: "6000", studentLoanRate: undefined, cashTiers: [{ amount: "6000", rate: "1.5" }] });
+  const { d, m } = borrower({ salary: "58000", studentLoan: "plan1", loanBalance: "6000", studentLoanRate: undefined, cashTiers: [{ amount: "6000", rate: "4.5" }] });
   const decision = studentLoanDecision(d, m);
   assert.equal(decision.result, "leave");
   assert.ok(decision.gap > 0);

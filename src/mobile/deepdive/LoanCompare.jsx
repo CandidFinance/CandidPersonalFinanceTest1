@@ -36,14 +36,53 @@ const ROWS = {
 // in the line under the rows. Certain figures carry none.
 const GROWTH = "If growth holds";
 
-export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, menu = [], how = null }) {
+// What the loan row's £ is made of, under its name, so £18,500 coming to
+// £24,461 reads: the balance and the interest on it you'd no longer repay,
+// kept in savings to the end date. Heading for write-off, the repayments
+// freed come to less than what's paid in, so just those.
+// Paid over what's owed, that part stays in savings too, and is said.
+function loanMadeOf(r, c) {
+  const over = r.over > 0 ? ` + ${fmt(r.over)} paid over what's owed` : "";
+  return r.interest > 0
+    ? `${fmt(r.principal)} owed + ${fmt(r.interest)} interest you'd no longer repay${over}, kept in savings to April ${c.byTaxYear}`
+    : `${fmt(r.freedPaid)} of repayments you'd no longer make${over}, kept in savings to April ${c.byTaxYear}`;
+}
+
+// Where each place's figure would be, said after its £ on the chain's closed
+// square (LoanChain): "£35,072 in your pension by April 2031".
+// Each says what the £ is, not what's paid: the loan's is the repayments no
+// longer made, kept (ROWS.loan).
+const WHERE = {
+  loan: "from repayments you no longer make", savings: "in savings", isa: "in a Stocks and Shares ISA",
+  pension: "in your pension", mortgage: "from paying off your mortgage", personalLoan: "from paying off your personal loan",
+};
+// The closed square's figures: the amount, and the place it does most, as the
+// tile's first row gives them, on the basis it opens on: a subscriber's plan
+// when one's shown (`plan`, as the tile's), otherwise the lump sum.
+export function loanCompareSummary(d, m, sl, picked, plan = null) {
+  const events = plan ? planEvents(plan.run) : [];
+  const c = loanComparison(d, m, sl, events.length > 0 ? events : picked > 0 ? picked : Math.round(m.loanBal));
+  const top = c?.rows.find(r => !r.ask);
+  if (!top) return null;
+  // A pension's figure is after the tax on drawing it, and can't be reached
+  // until the access age: said on the square, not only in the row's note.
+  const line = top.key === "pension"
+    ? `in your pension by April ${c.byTaxYear}, after tax, locked until ${pensionAccessAge(d)}`
+    : `${WHERE[top.key] ?? ROWS[top.key]?.title} by April ${c.byTaxYear}`;
+  const title = events.length > 0 ? `Where ${plan.name}'s ${fmt(c.amount)} does most` : `Where ${fmt(c.amount)} does most`;
+  return { title, headline: fmt(top.value), line };
+}
+
+// `onToggle`, `style`: opened in the chain (LoanChain), its title row closes it.
+export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, menu = [], how = null, onToggle = null, style }) {
   // Until a lump sum is picked above: the whole balance.
   const lump = picked > 0 ? picked : Math.round(m.loanBal);
   const [asking, setAsking] = useState(false);
   const [opened, setOpened] = useState(() => new Set());
   const [mode, setMode] = useState("plan");
   // Minimised from its title row, as the tiles above it; open to start.
-  const [shown, setShown] = useState(true);
+  const [shownHere, setShown] = useState(true);
+  const shown = onToggle ? true : shownHere;
   const usePlan = open && plan && planEvents(plan.run).length > 0 && mode === "plan";
   const c = loanComparison(d, m, sl, usePlan ? planEvents(plan.run) : lump);
   if (!c) return null;
@@ -61,7 +100,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
     return (
       <Fragment key={r.key}>
       <TileRow onClick={() => toggle(r.key)} expanded={isOpen}>
-        <RowText label={ROWS[r.key].title} tool={growth} figure={fmt(r.value)}/>
+        <RowText label={ROWS[r.key].title} tool={growth} figure={fmt(r.value)} note={r.key === "loan" && !usePlan ? loanMadeOf(r, c) : null}/>
       </TileRow>
       {/* Outside the row's button, so it isn't read as part of its name. */}
       {isOpen && <div style={{...ROW.note,margin:"-6px 16px 0 0",paddingBottom:"9px"}}>{ROWS[r.key].note(r, c, d)}</div>}
@@ -74,7 +113,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked, plan = null, 
 
   return (
     <MobileTile id="sl-compare" title={`Where ${usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most`} subtitle={shown ? subtitle : null} menu={[how?.[0], ...menu]}
-      open={shown} onToggle={() => setShown(s => !s)}>
+      open={shown} onToggle={onToggle ?? (() => setShown(s => !s))} style={style}>
       {how?.[1]}
       {shown && <>
       {open && plan && planEvents(plan.run).length > 0 && (

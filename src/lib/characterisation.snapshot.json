@@ -98,10 +98,10 @@
     },
     "studentLoan": {
      "status": "attention",
-     "impact": 73,
-     "impactLabel": "£73/yr lost to loan interest above what savings pay",
+     "impact": 518,
+     "impactLabel": "£518/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 73,
+     "amount": 518,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -191,10 +191,10 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£73/yr lost to loan interest above what savings pay",
-     "impact": 73,
-     "impactLabel": "£73/yr lost to loan interest above what savings pay",
-     "amount": 73,
+     "summary": "£518/yr lost to loan interest above what savings pay",
+     "impact": 518,
+     "impactLabel": "£518/yr lost to loan interest above what savings pay",
+     "amount": 518,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -322,6 +322,27 @@
       "onTrack": false
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£518/yr lost to loan interest above what savings pay",
+      "impact": 518,
+      "impactLabel": "£518/yr lost to loan interest above what savings pay",
+      "amount": 518,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -333,27 +354,6 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "amberOnly": false,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": false
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£73/yr lost to loan interest above what savings pay",
-      "impact": 73,
-      "impactLabel": "£73/yr lost to loan interest above what savings pay",
-      "amount": 73,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
       "elsewhere": null,
       "reason": null,
       "warn": null,
@@ -374,7 +374,7 @@
     "kidsModule": null,
     "needActionCount": 4,
     "onTrackCount": 0,
-    "totalOpp": 2563,
+    "totalOpp": 3008,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -394,7 +394,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 73,
+     "amount": 518,
      "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -490,17 +490,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£438",
+      "figure": "£3,110",
       "title": "lost to interest by letting it run 6 years, against paying it off now.",
       "rows": [
        {
-        "figure": "£73/yr",
+        "figure": "£518/yr",
         "tone": "cost",
         "size": "xl",
         "note": "additional cost by not acting today."
        },
        {
-        "figure": "£438",
+        "figure": "£3,110",
         "tone": "cost",
         "size": "m",
         "note": "total additional cost"
@@ -509,7 +509,7 @@
      },
      {
       "label": "Why",
-      "title": "Paying it off avoids about £4,122 of interest. In savings at 4.72%, the same money would earn about £3,684 meanwhile.",
+      "title": "Paying it off avoids about £4,122 of interest. In savings at 1.5%, the same money would earn about £1,012 more meanwhile than the repayments kept would.",
       "aside": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match. See Pension.",
       "rows": [
        {
@@ -520,10 +520,9 @@
        },
        {
         "prefix": "vs",
-        "figure": "£3,684",
+        "figure": "£1,012",
         "size": "l",
-        "note": "earned by the same money in a savings account at today's best rate, 4.72%.",
-        "alert": "Your savings earn about 1.5% now, less than this."
+        "note": "earned by the same money in savings at your best savings rate, 1.5%."
        }
       ],
       "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
@@ -1508,18 +1507,18 @@
       "line": "£618/yr lost to low savings rates"
      },
      {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 518,
+      "amountIsLumpSum": false,
+      "line": "£518/yr lost to loan interest above what savings pay"
+     },
+     {
       "key": "investments",
       "title": "Investments",
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 73,
-      "amountIsLumpSum": false,
-      "line": "£73/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": []
@@ -2558,16 +2557,17 @@
        "repayment": 5845
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": 0.6,
+     "cashRate": 1.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 3.8,
      "pensionGrowthPct": 6,
      "pensionGap": -0.7,
      "beatsPension": false,
      "worthOverpaying": true,
-     "overpayAnnualBenefit": 73,
-     "overpayTotalBenefit": 438,
+     "overpayAnnualBenefit": 518,
+     "overpayTotalBenefit": 3110,
      "interestAvoided": 4122,
-     "savingsForgone": 3684
+     "savingsForgone": 1012
     },
     "overpay": {
      "scenarios": [
@@ -2576,7 +2576,7 @@
        "clearYr": 5,
        "writeOffBal": 0,
        "totalPaid": 24576,
-       "paidToday": 22284,
+       "paidToday": 23798,
        "newNetChange": -3070.95,
        "crossesInflection": false,
        "path": [
@@ -2611,7 +2611,7 @@
        "clearYr": 4,
        "writeOffBal": 0,
        "totalPaid": 23387,
-       "paidToday": 22180,
+       "paidToday": 22983,
        "newNetChange": -3370.95,
        "crossesInflection": false,
        "path": [
@@ -2642,7 +2642,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 22120,
-       "paidToday": 22024,
+       "paidToday": 22089,
        "newNetChange": -3970.95,
        "crossesInflection": false,
        "path": [
@@ -2661,7 +2661,7 @@
       "clearYr": 6,
       "writeOffBal": 0,
       "totalPaid": 26122,
-      "paidToday": 22404,
+      "paidToday": 24845,
       "newNetChange": -2770.95,
       "crossesInflection": false,
       "path": [
@@ -2994,7 +2994,7 @@
     },
     "report": {
      "candid_score": 58,
-     "total_opportunity_gbp": 4900,
+     "total_opportunity_gbp": 5400,
      "critical_modules": "pension"
     },
     "property": {
@@ -3147,10 +3147,10 @@
     },
     "studentLoan": {
      "status": "attention",
-     "impact": 24,
-     "impactLabel": "£24/yr lost to loan interest above what savings pay",
+     "impact": 518,
+     "impactLabel": "£518/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 24,
+     "amount": 518,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -3240,10 +3240,10 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£24/yr lost to loan interest above what savings pay",
-     "impact": 24,
-     "impactLabel": "£24/yr lost to loan interest above what savings pay",
-     "amount": 24,
+     "summary": "£518/yr lost to loan interest above what savings pay",
+     "impact": 518,
+     "impactLabel": "£518/yr lost to loan interest above what savings pay",
+     "amount": 518,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -3371,6 +3371,27 @@
       "onTrack": false
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£518/yr lost to loan interest above what savings pay",
+      "impact": 518,
+      "impactLabel": "£518/yr lost to loan interest above what savings pay",
+      "amount": 518,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -3390,27 +3411,6 @@
       "banked": 0,
       "pending": 0,
       "onTrack": false
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£24/yr lost to loan interest above what savings pay",
-      "impact": 24,
-      "impactLabel": "£24/yr lost to loan interest above what savings pay",
-      "amount": 24,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": true
      }
     ],
     "modulesWithRec": [
@@ -3423,7 +3423,7 @@
     "kidsModule": null,
     "needActionCount": 4,
     "onTrackCount": 0,
-    "totalOpp": 2519,
+    "totalOpp": 3013,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -3443,7 +3443,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 24,
+     "amount": 518,
      "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -3538,17 +3538,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£142",
+      "figure": "£3,110",
       "title": "lost to interest by letting it run 6 years, against paying it off now.",
       "rows": [
        {
-        "figure": "£24/yr",
+        "figure": "£518/yr",
         "tone": "cost",
         "size": "xl",
         "note": "additional cost by not acting today."
        },
        {
-        "figure": "£142",
+        "figure": "£3,110",
         "tone": "cost",
         "size": "m",
         "note": "total additional cost"
@@ -3557,7 +3557,7 @@
      },
      {
       "label": "Why",
-      "title": "Paying it off avoids about £4,122 of interest. In savings at 5.1%, the same money would earn about £3,980 meanwhile.",
+      "title": "Paying it off avoids about £4,122 of interest. In savings at 1.5%, the same money would earn about £1,012 more meanwhile than the repayments kept would.",
       "aside": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match. See Pension.",
       "rows": [
        {
@@ -3568,10 +3568,9 @@
        },
        {
         "prefix": "vs",
-        "figure": "£3,980",
+        "figure": "£1,012",
         "size": "l",
-        "note": "earned by the same money in a savings account at today's best rate, 5.1%.",
-        "alert": "Your savings earn about 1.5% now, less than this."
+        "note": "earned by the same money in savings at your best savings rate, 1.5%."
        }
       ],
       "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
@@ -4361,6 +4360,13 @@
       "line": "£623/yr lost to low savings rates"
      },
      {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 518,
+      "amountIsLumpSum": false,
+      "line": "£518/yr lost to loan interest above what savings pay"
+     },
+     {
       "key": "investments",
       "title": "Investments",
       "amount": 432,
@@ -4368,9 +4374,7 @@
       "line": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused"
      }
     ],
-    "onTrack": [
-     "Student loan"
-    ]
+    "onTrack": []
    },
    "drawdown": {
     "phased": {
@@ -5406,16 +5410,17 @@
        "repayment": 5845
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": 0.2,
+     "cashRate": 1.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 3.8,
      "pensionGrowthPct": 6,
      "pensionGap": -0.7,
      "beatsPension": false,
      "worthOverpaying": true,
-     "overpayAnnualBenefit": 24,
-     "overpayTotalBenefit": 142,
+     "overpayAnnualBenefit": 518,
+     "overpayTotalBenefit": 3110,
      "interestAvoided": 4122,
-     "savingsForgone": 3980
+     "savingsForgone": 1012
     },
     "overpay": {
      "scenarios": [
@@ -5424,7 +5429,7 @@
        "clearYr": 5,
        "writeOffBal": 0,
        "totalPaid": 24576,
-       "paidToday": 22118,
+       "paidToday": 23798,
        "newNetChange": -3070.95,
        "crossesInflection": false,
        "path": [
@@ -5459,7 +5464,7 @@
        "clearYr": 4,
        "writeOffBal": 0,
        "totalPaid": 23387,
-       "paidToday": 22091,
+       "paidToday": 22983,
        "newNetChange": -3370.95,
        "crossesInflection": false,
        "path": [
@@ -5490,7 +5495,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 22120,
-       "paidToday": 22017,
+       "paidToday": 22089,
        "newNetChange": -3970.95,
        "crossesInflection": false,
        "path": [
@@ -5509,7 +5514,7 @@
       "clearYr": 6,
       "writeOffBal": 0,
       "totalPaid": 26122,
-      "paidToday": 22141,
+      "paidToday": 24845,
       "newNetChange": -2770.95,
       "crossesInflection": false,
       "path": [
@@ -5784,7 +5789,7 @@
     },
     "report": {
      "candid_score": 58,
-     "total_opportunity_gbp": 4900,
+     "total_opportunity_gbp": 5400,
      "critical_modules": "pension"
     },
     "property": {
@@ -8156,12 +8161,13 @@
        "repayment": 4104
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 2.8,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -10700,12 +10706,13 @@
        "repayment": 4104
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 2.8,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -13381,12 +13388,13 @@
        "repayment": 8037
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -15960,12 +15968,13 @@
        "repayment": 8037
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -17537,12 +17546,13 @@
        "repayment": 2340
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 0,
+     "cashRateOwn": true,
+     "effectiveBenefit": 4.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -19037,12 +19047,13 @@
        "repayment": 2340
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 0,
+     "cashRateOwn": true,
+     "effectiveBenefit": 4.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -19856,7 +19867,7 @@
      },
      {
       "label": "Why",
-      "title": "Savings pay 4.72%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
+      "title": "Savings pay 4.1%, the same as your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
       "rows": [
        {
         "lead": "Your loan costs",
@@ -19867,10 +19878,10 @@
        },
        {
         "lead": "Savings pay",
-        "figure": "4.72%",
+        "figure": "4.1%",
         "tone": "repay",
         "size": "l",
-        "note": "at today's best rate, more than the loan, so overpaying doesn't come out ahead."
+        "note": "at your best savings rate, the same as the loan, so overpaying doesn't come out ahead."
        }
       ]
      },
@@ -21825,8 +21836,9 @@
        "repayment": 9009
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 4.1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 0,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -21834,7 +21846,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 246,
-     "savingsForgone": 283
+     "savingsForgone": 246
     },
     "overpay": {
      "scenarios": [
@@ -21843,7 +21855,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 6041,
-       "paidToday": 5994,
+       "paidToday": 6000,
        "newNetChange": -8968,
        "crossesInflection": false,
        "path": [
@@ -21862,7 +21874,7 @@
       "clearYr": 1,
       "writeOffBal": 0,
       "totalPaid": 6246,
-      "paidToday": 5964,
+      "paidToday": 6000,
       "newNetChange": -8763,
       "crossesInflection": false,
       "path": [
@@ -22728,7 +22740,7 @@
      },
      {
       "label": "Why",
-      "title": "Savings pay 5.1%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
+      "title": "Savings pay 4.1%, the same as your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
       "rows": [
        {
         "lead": "Your loan costs",
@@ -22739,10 +22751,10 @@
        },
        {
         "lead": "Savings pay",
-        "figure": "5.1%",
+        "figure": "4.1%",
         "tone": "repay",
         "size": "l",
-        "note": "at today's best rate, more than the loan, so overpaying doesn't come out ahead."
+        "note": "at your best savings rate, the same as the loan, so overpaying doesn't come out ahead."
        }
       ]
      },
@@ -24528,8 +24540,9 @@
        "repayment": 9009
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 4.1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 0,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -24537,7 +24550,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 246,
-     "savingsForgone": 306
+     "savingsForgone": 246
     },
     "overpay": {
      "scenarios": [
@@ -24546,7 +24559,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 6041,
-       "paidToday": 5990,
+       "paidToday": 6000,
        "newNetChange": -8968,
        "crossesInflection": false,
        "path": [
@@ -24565,7 +24578,7 @@
       "clearYr": 1,
       "writeOffBal": 0,
       "totalPaid": 6246,
-      "paidToday": 5943,
+      "paidToday": 6000,
       "newNetChange": -8763,
       "crossesInflection": false,
       "path": [
@@ -27212,8 +27225,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 3,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -29798,8 +29812,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 3,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -32468,12 +32483,13 @@
        "repayment": 5400
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 3.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -35005,12 +35021,13 @@
        "repayment": 5400
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 3.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -37930,8 +37947,9 @@
        "repayment": 2184
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -2.6,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -0.4,
      "pensionGrowthPct": 6,
      "pensionGap": -3.9,
      "beatsPension": false,
@@ -37939,7 +37957,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 15710,
-     "savingsForgone": 35539
+     "savingsForgone": 18824
     },
     "overpay": {
      "scenarios": [
@@ -37948,7 +37966,7 @@
        "clearYr": null,
        "writeOffBal": 10313,
        "totalPaid": 33026,
-       "paidToday": 18486,
+       "paidToday": 23734,
        "newNetChange": 858.55,
        "crossesInflection": false,
        "path": [
@@ -38063,7 +38081,7 @@
        "clearYr": null,
        "writeOffBal": 1941,
        "totalPaid": 38026,
-       "paidToday": 23486,
+       "paidToday": 28734,
        "newNetChange": 653.55,
        "crossesInflection": false,
        "path": [
@@ -38178,7 +38196,7 @@
        "clearYr": 18,
        "writeOffBal": 0,
        "totalPaid": 34093,
-       "paidToday": 28406,
+       "paidToday": 30627,
        "newNetChange": 243.55,
        "crossesInflection": false,
        "path": [
@@ -38265,7 +38283,7 @@
       "clearYr": null,
       "writeOffBal": 18685,
       "totalPaid": 28026,
-      "paidToday": 13486,
+      "paidToday": 18734,
       "newNetChange": 1063.55,
       "crossesInflection": false,
       "path": [
@@ -41188,8 +41206,9 @@
        "repayment": 2184
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -3,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -0.4,
      "pensionGrowthPct": 6,
      "pensionGap": -3.9,
      "beatsPension": false,
@@ -41197,7 +41216,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 15710,
-     "savingsForgone": 38400
+     "savingsForgone": 18824
     },
     "overpay": {
      "scenarios": [
@@ -41206,7 +41225,7 @@
        "clearYr": null,
        "writeOffBal": 10313,
        "totalPaid": 33026,
-       "paidToday": 17782,
+       "paidToday": 23734,
        "newNetChange": 858.55,
        "crossesInflection": false,
        "path": [
@@ -41321,7 +41340,7 @@
        "clearYr": null,
        "writeOffBal": 1941,
        "totalPaid": 38026,
-       "paidToday": 22782,
+       "paidToday": 28734,
        "newNetChange": 653.55,
        "crossesInflection": false,
        "path": [
@@ -41436,7 +41455,7 @@
        "clearYr": 18,
        "writeOffBal": 0,
        "totalPaid": 34093,
-       "paidToday": 28088,
+       "paidToday": 30627,
        "newNetChange": 243.55,
        "crossesInflection": false,
        "path": [
@@ -41523,7 +41542,7 @@
       "clearYr": null,
       "writeOffBal": 18685,
       "totalPaid": 28026,
-      "paidToday": 12782,
+      "paidToday": 18734,
       "newNetChange": 1063.55,
       "crossesInflection": false,
       "path": [
@@ -44644,8 +44663,9 @@
        "repayment": 497
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -2.7,
+     "cashRate": 3.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -1.5,
      "pensionGrowthPct": 6,
      "pensionGap": -4,
      "beatsPension": false,
@@ -44653,7 +44673,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 54158,
-     "savingsForgone": 125434
+     "savingsForgone": 93012
     },
     "overpay": {
      "scenarios": [
@@ -44662,7 +44682,7 @@
        "clearYr": null,
        "writeOffBal": 77025,
        "totalPaid": 18865,
-       "paidToday": 10494,
+       "paidToday": 11768,
        "newNetChange": 1533.5,
        "crossesInflection": false,
        "path": [
@@ -44837,7 +44857,7 @@
        "clearYr": null,
        "writeOffBal": 65757,
        "totalPaid": 23865,
-       "paidToday": 15494,
+       "paidToday": 16768,
        "newNetChange": 1328.5,
        "crossesInflection": false,
        "path": [
@@ -45012,7 +45032,7 @@
        "clearYr": null,
        "writeOffBal": 43222,
        "totalPaid": 33865,
-       "paidToday": 25494,
+       "paidToday": 26768,
        "newNetChange": 918.5,
        "crossesInflection": false,
        "path": [
@@ -45187,7 +45207,7 @@
       "clearYr": null,
       "writeOffBal": 88292,
       "totalPaid": 13865,
-      "paidToday": 5494,
+      "paidToday": 6768,
       "newNetChange": 1738.5,
       "crossesInflection": false,
       "path": [
@@ -48291,8 +48311,9 @@
        "repayment": 497
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -3.1,
+     "cashRate": 3.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -1.5,
      "pensionGrowthPct": 6,
      "pensionGap": -4,
      "beatsPension": false,
@@ -48300,7 +48321,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 54158,
-     "savingsForgone": 135532
+     "savingsForgone": 93012
     },
     "overpay": {
      "scenarios": [
@@ -48309,7 +48330,7 @@
        "clearYr": null,
        "writeOffBal": 77025,
        "totalPaid": 18865,
-       "paidToday": 10169,
+       "paidToday": 11768,
        "newNetChange": 1533.5,
        "crossesInflection": false,
        "path": [
@@ -48484,7 +48505,7 @@
        "clearYr": null,
        "writeOffBal": 65757,
        "totalPaid": 23865,
-       "paidToday": 15169,
+       "paidToday": 16768,
        "newNetChange": 1328.5,
        "crossesInflection": false,
        "path": [
@@ -48659,7 +48680,7 @@
        "clearYr": null,
        "writeOffBal": 43222,
        "totalPaid": 33865,
-       "paidToday": 25169,
+       "paidToday": 26768,
        "newNetChange": 918.5,
        "crossesInflection": false,
        "path": [
@@ -48834,7 +48855,7 @@
       "clearYr": null,
       "writeOffBal": 88292,
       "totalPaid": 13865,
-      "paidToday": 5169,
+      "paidToday": 6768,
       "newNetChange": 1738.5,
       "crossesInflection": false,
       "path": [
@@ -49390,10 +49411,10 @@
     },
     "studentLoan": {
      "status": "attention",
-     "impact": 37,
-     "impactLabel": "£37/yr lost to loan interest above what savings pay",
+     "impact": 255,
+     "impactLabel": "£255/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 37,
+     "amount": 255,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -49483,10 +49504,10 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£37/yr lost to loan interest above what savings pay",
-     "impact": 37,
-     "impactLabel": "£37/yr lost to loan interest above what savings pay",
-     "amount": 37,
+     "summary": "£255/yr lost to loan interest above what savings pay",
+     "impact": 255,
+     "impactLabel": "£255/yr lost to loan interest above what savings pay",
+     "amount": 255,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -49572,6 +49593,27 @@
    "breakdown": {
     "moduleList": [
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£255/yr lost to loan interest above what savings pay",
+      "impact": 255,
+      "impactLabel": "£255/yr lost to loan interest above what savings pay",
+      "amount": 255,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "cash",
       "icon": "<element undefined>",
       "title": "Cash",
@@ -49591,27 +49633,6 @@
       "banked": 0,
       "pending": 0,
       "onTrack": false
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£37/yr lost to loan interest above what savings pay",
-      "impact": 37,
-      "impactLabel": "£37/yr lost to loan interest above what savings pay",
-      "amount": 37,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": true
      },
      {
       "key": "investments",
@@ -49667,7 +49688,7 @@
     "kidsModule": null,
     "needActionCount": 2,
     "onTrackCount": 2,
-    "totalOpp": 259,
+    "totalOpp": 477,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -49687,7 +49708,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 37,
+     "amount": 255,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -49786,17 +49807,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£369",
+      "figure": "£2,549",
       "title": "lost to interest by letting it run 10 years, against paying it off now.",
       "rows": [
        {
-        "figure": "£37/yr",
+        "figure": "£255/yr",
         "tone": "cost",
         "size": "xl",
         "note": "additional cost by not acting today."
        },
        {
-        "figure": "£369",
+        "figure": "£2,549",
         "tone": "cost",
         "size": "m",
         "note": "total additional cost"
@@ -49805,7 +49826,7 @@
      },
      {
       "label": "Why",
-      "title": "Paying it off avoids about £4,227 of interest. In savings at 4.72%, the same money would earn about £3,858 meanwhile.",
+      "title": "Paying it off avoids about £4,227 of interest. In savings at 2.5%, the same money would earn about £1,678 more meanwhile than the repayments kept would.",
       "aside": null,
       "rows": [
        {
@@ -49816,10 +49837,9 @@
        },
        {
         "prefix": "vs",
-        "figure": "£3,858",
+        "figure": "£1,678",
         "size": "l",
-        "note": "earned by the same money in a savings account at today's best rate, 4.72%.",
-        "alert": "Your savings earn about 2.5% now, less than this."
+        "note": "earned by the same money in savings at your best savings rate, 2.5%."
        }
       ],
       "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
@@ -50717,6 +50737,13 @@
    "priorities": {
     "first": [
      {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 255,
+      "amountIsLumpSum": false,
+      "line": "£255/yr lost to loan interest above what savings pay"
+     },
+     {
       "key": "cash",
       "title": "Cash",
       "amount": 222,
@@ -50725,7 +50752,6 @@
      }
     ],
     "onTrack": [
-     "Student loan",
      "Pension"
     ]
    },
@@ -51795,16 +51821,17 @@
        "repayment": 2282
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": 0.5,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.7,
      "pensionGrowthPct": 6,
      "pensionGap": -0.8,
      "beatsPension": false,
      "worthOverpaying": true,
-     "overpayAnnualBenefit": 37,
-     "overpayTotalBenefit": 369,
+     "overpayAnnualBenefit": 255,
+     "overpayTotalBenefit": 2549,
      "interestAvoided": 4227,
-     "savingsForgone": 3858
+     "savingsForgone": 1678
     },
     "overpay": {
      "scenarios": [
@@ -51813,7 +51840,7 @@
        "clearYr": 6,
        "writeOffBal": 0,
        "totalPaid": 15747,
-       "paidToday": 14168,
+       "paidToday": 14863,
        "newNetChange": -1164,
        "crossesInflection": false,
        "path": [
@@ -51852,7 +51879,7 @@
        "clearYr": 3,
        "writeOffBal": 0,
        "totalPaid": 14412,
-       "paidToday": 14058,
+       "paidToday": 14218,
        "newNetChange": -1464,
        "crossesInflection": false,
        "path": [
@@ -51879,7 +51906,7 @@
       "clearYr": 10,
       "writeOffBal": 0,
       "totalPaid": 18227,
-      "paidToday": 14325,
+      "paidToday": 15991,
       "newNetChange": -864,
       "crossesInflection": false,
       "path": [
@@ -52204,7 +52231,7 @@
     },
     "report": {
      "candid_score": 76,
-     "total_opportunity_gbp": 300,
+     "total_opportunity_gbp": 600,
      "critical_modules": ""
     },
     "property": {
@@ -52357,10 +52384,10 @@
     },
     "studentLoan": {
      "status": "attention",
-     "impact": 6,
-     "impactLabel": "£6/yr lost to loan interest above what savings pay",
+     "impact": 255,
+     "impactLabel": "£255/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 6,
+     "amount": 255,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -52450,10 +52477,10 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£6/yr lost to loan interest above what savings pay",
-     "impact": 6,
-     "impactLabel": "£6/yr lost to loan interest above what savings pay",
-     "amount": 6,
+     "summary": "£255/yr lost to loan interest above what savings pay",
+     "impact": 255,
+     "impactLabel": "£255/yr lost to loan interest above what savings pay",
+     "amount": 255,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -52539,6 +52566,27 @@
    "breakdown": {
     "moduleList": [
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£255/yr lost to loan interest above what savings pay",
+      "impact": 255,
+      "impactLabel": "£255/yr lost to loan interest above what savings pay",
+      "amount": 255,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "cash",
       "icon": "<element undefined>",
       "title": "Cash",
@@ -52558,27 +52606,6 @@
       "banked": 0,
       "pending": 0,
       "onTrack": false
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£6/yr lost to loan interest above what savings pay",
-      "impact": 6,
-      "impactLabel": "£6/yr lost to loan interest above what savings pay",
-      "amount": 6,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": true
      },
      {
       "key": "investments",
@@ -52634,7 +52661,7 @@
     "kidsModule": null,
     "needActionCount": 2,
     "onTrackCount": 2,
-    "totalOpp": 256,
+    "totalOpp": 505,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -52654,7 +52681,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 6,
+     "amount": 255,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -52753,17 +52780,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£59",
+      "figure": "£2,549",
       "title": "lost to interest by letting it run 10 years, against paying it off now.",
       "rows": [
        {
-        "figure": "£6/yr",
+        "figure": "£255/yr",
         "tone": "cost",
         "size": "xl",
         "note": "additional cost by not acting today."
        },
        {
-        "figure": "£59",
+        "figure": "£2,549",
         "tone": "cost",
         "size": "m",
         "note": "total additional cost"
@@ -52772,7 +52799,7 @@
      },
      {
       "label": "Why",
-      "title": "Paying it off avoids about £4,227 of interest. In savings at 5.1%, the same money would earn about £4,168 meanwhile.",
+      "title": "Paying it off avoids about £4,227 of interest. In savings at 2.5%, the same money would earn about £1,678 more meanwhile than the repayments kept would.",
       "aside": null,
       "rows": [
        {
@@ -52783,10 +52810,9 @@
        },
        {
         "prefix": "vs",
-        "figure": "£4,168",
+        "figure": "£1,678",
         "size": "l",
-        "note": "earned by the same money in a savings account at today's best rate, 5.1%.",
-        "alert": "Your savings earn about 2.5% now, less than this."
+        "note": "earned by the same money in savings at your best savings rate, 2.5%."
        }
       ],
       "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
@@ -53557,6 +53583,13 @@
    "priorities": {
     "first": [
      {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 255,
+      "amountIsLumpSum": false,
+      "line": "£255/yr lost to loan interest above what savings pay"
+     },
+     {
       "key": "cash",
       "title": "Cash",
       "amount": 250,
@@ -53565,7 +53598,6 @@
      }
     ],
     "onTrack": [
-     "Student loan",
      "Pension"
     ]
    },
@@ -54635,16 +54667,17 @@
        "repayment": 2282
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": 0.1,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.7,
      "pensionGrowthPct": 6,
      "pensionGap": -0.8,
      "beatsPension": false,
      "worthOverpaying": true,
-     "overpayAnnualBenefit": 6,
-     "overpayTotalBenefit": 59,
+     "overpayAnnualBenefit": 255,
+     "overpayTotalBenefit": 2549,
      "interestAvoided": 4227,
-     "savingsForgone": 4168
+     "savingsForgone": 1678
     },
     "overpay": {
      "scenarios": [
@@ -54653,7 +54686,7 @@
        "clearYr": 6,
        "writeOffBal": 0,
        "totalPaid": 15747,
-       "paidToday": 14057,
+       "paidToday": 14863,
        "newNetChange": -1164,
        "crossesInflection": false,
        "path": [
@@ -54692,7 +54725,7 @@
        "clearYr": 3,
        "writeOffBal": 0,
        "totalPaid": 14412,
-       "paidToday": 14031,
+       "paidToday": 14218,
        "newNetChange": -1464,
        "crossesInflection": false,
        "path": [
@@ -54719,7 +54752,7 @@
       "clearYr": 10,
       "writeOffBal": 0,
       "totalPaid": 18227,
-      "paidToday": 14066,
+      "paidToday": 15991,
       "newNetChange": -864,
       "crossesInflection": false,
       "path": [
@@ -55000,7 +55033,7 @@
     },
     "report": {
      "candid_score": 76,
-     "total_opportunity_gbp": 300,
+     "total_opportunity_gbp": 600,
      "critical_modules": ""
     },
     "property": {
@@ -57460,8 +57493,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 4.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -0.4,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -60073,8 +60107,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 4.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": -0.4,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -62733,8 +62768,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -65260,8 +65296,9 @@
      "balanceFallingNow": false,
      "peakBal": 0,
      "schedule": [],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
@@ -67918,12 +67955,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 1.2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.9,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -70443,12 +70481,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 1.2,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2.9,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -71991,12 +72030,13 @@
        "repayment": 4950
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.6,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -73454,12 +73494,13 @@
        "repayment": 4950
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.6,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -76531,12 +76572,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 4,
+     "cashRateOwn": true,
+     "effectiveBenefit": 0.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -79506,12 +79548,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 4,
+     "cashRateOwn": true,
+     "effectiveBenefit": 0.1,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -79918,11 +79961,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
+     "status": "attention",
+     "impact": 506,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0,
+     "amount": 506,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -79951,7 +79994,7 @@
      "amount": 0
     }
    },
-   "score": 74,
+   "score": 66,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -80011,11 +80054,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
+     "status": "attention",
      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
-     "impact": 0,
+     "impact": 506,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
-     "amount": 0,
+     "amount": 506,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -80122,6 +80165,27 @@
       "onTrack": false
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
+      "impact": 506,
+      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
+      "amount": 506,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -80162,41 +80226,20 @@
       "banked": 0,
       "pending": 0,
       "onTrack": true
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "ok",
-      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
-      "impact": 0,
-      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
-      "amount": 0,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": true
      }
     ],
     "modulesWithRec": [
+     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 1,
-    "onTrackCount": 3,
-    "totalOpp": 1161,
+    "needActionCount": 2,
+    "onTrackCount": 2,
+    "totalOpp": 1667,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -80216,7 +80259,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 506,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -80351,8 +80394,21 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly go on debt that's written off anyway.",
-      "body": "On these assumptions, savings or a pension may earn more than overpaying."
+      "title": "Paying £38,000 now would clear it in 0 years, and cost about £506 less in all, counting what the money would earn in savings.",
+      "body": "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand.",
+      "rows": [
+       {
+        "figure": "£38,000",
+        "size": "l",
+        "note": "paid now would clear it in 0 years."
+       },
+       {
+        "figure": "£506",
+        "tone": "repay",
+        "size": "l",
+        "note": "less in all, counting what the money would earn in savings."
+       }
+      ]
      }
     ],
     "kids": null,
@@ -81580,11 +81636,17 @@
       "amount": 1161,
       "amountIsLumpSum": false,
       "line": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 506,
+      "amountIsLumpSum": false,
+      "line": "Balance growing by £222/yr, but it'll be written off before you clear it"
      }
     ],
     "onTrack": [
-     "Pension",
-     "Student loan"
+     "Pension"
     ]
    },
    "drawdown": {
@@ -82733,8 +82795,9 @@
        "repayment": 3220
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": 0.4,
+     "cashRate": 3.1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2,
      "pensionGrowthPct": 6,
      "pensionGap": -0.9,
      "beatsPension": false,
@@ -82742,7 +82805,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 31927,
-     "savingsForgone": 29780
+     "savingsForgone": 19559
     },
     "overpay": {
      "scenarios": [
@@ -82751,7 +82814,7 @@
        "clearYr": null,
        "writeOffBal": 3134,
        "totalPaid": 58399,
-       "paidToday": 37972,
+       "paidToday": 43506,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true,
        "path": [
@@ -82846,7 +82909,7 @@
        "clearYr": 17,
        "writeOffBal": 0,
        "totalPaid": 53658,
-       "paidToday": 38905,
+       "paidToday": 43044,
        "newNetChange": -377.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -82929,7 +82992,7 @@
        "clearYr": 10,
        "writeOffBal": 0,
        "totalPaid": 43755,
-       "paidToday": 38431,
+       "paidToday": 40043,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -82984,7 +83047,7 @@
       "clearYr": null,
       "writeOffBal": 16527,
       "totalPaid": 53399,
-      "paidToday": 32972,
+      "paidToday": 38506,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false,
       "path": [
@@ -83362,8 +83425,8 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 74,
-     "total_opportunity_gbp": 1500,
+     "candid_score": 66,
+     "total_opportunity_gbp": 2000,
      "critical_modules": "cash"
     },
     "property": {
@@ -83515,11 +83578,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
+     "status": "attention",
+     "impact": 506,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0,
+     "amount": 506,
      "amountOnly": true,
      "amberOnly": true
     },
@@ -83548,7 +83611,7 @@
      "amount": 0
     }
    },
-   "score": 74,
+   "score": 66,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -83608,11 +83671,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
+     "status": "attention",
      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
-     "impact": 0,
+     "impact": 506,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
-     "amount": 0,
+     "amount": 506,
      "amountIsLumpSum": false,
      "amountOnly": true,
      "amberOnly": true,
@@ -83719,6 +83782,27 @@
       "onTrack": false
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
+      "impact": 506,
+      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
+      "amount": 506,
+      "amountIsLumpSum": false,
+      "amountOnly": true,
+      "amberOnly": true,
+      "elsewhere": null,
+      "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
+      "banked": 0,
+      "pending": 0,
+      "onTrack": false
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -83759,41 +83843,20 @@
       "banked": 0,
       "pending": 0,
       "onTrack": true
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "ok",
-      "summary": "Balance growing by £222/yr, but it'll be written off before you clear it",
-      "impact": 0,
-      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
-      "amount": 0,
-      "amountIsLumpSum": false,
-      "amountOnly": true,
-      "amberOnly": true,
-      "elsewhere": null,
-      "reason": null,
-      "warn": null,
-      "alertTitle": null,
-      "lead": null,
-      "banked": 0,
-      "pending": 0,
-      "onTrack": true
      }
     ],
     "modulesWithRec": [
+     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 1,
-    "onTrackCount": 3,
-    "totalOpp": 989,
+    "needActionCount": 2,
+    "onTrackCount": 2,
+    "totalOpp": 1495,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -83813,7 +83876,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 506,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -83947,8 +84010,21 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly go on debt that's written off anyway.",
-      "body": "On these assumptions, savings or a pension may earn more than overpaying."
+      "title": "Paying £38,000 now would clear it in 0 years, and cost about £506 less in all, counting what the money would earn in savings.",
+      "body": "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand.",
+      "rows": [
+       {
+        "figure": "£38,000",
+        "size": "l",
+        "note": "paid now would clear it in 0 years."
+       },
+       {
+        "figure": "£506",
+        "tone": "repay",
+        "size": "l",
+        "note": "less in all, counting what the money would earn in savings."
+       }
+      ]
      }
     ],
     "kids": null,
@@ -85019,11 +85095,17 @@
       "amount": 989,
       "amountIsLumpSum": false,
       "line": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 506,
+      "amountIsLumpSum": false,
+      "line": "Balance growing by £222/yr, but it'll be written off before you clear it"
      }
     ],
     "onTrack": [
-     "Pension",
-     "Student loan"
+     "Pension"
     ]
    },
    "drawdown": {
@@ -86172,8 +86254,9 @@
        "repayment": 3220
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": 0,
+     "cashRate": 3.1,
+     "cashRateOwn": true,
+     "effectiveBenefit": 2,
      "pensionGrowthPct": 6,
      "pensionGap": -0.9,
      "beatsPension": false,
@@ -86181,7 +86264,7 @@
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 31927,
-     "savingsForgone": 32178
+     "savingsForgone": 19559
     },
     "overpay": {
      "scenarios": [
@@ -86190,7 +86273,7 @@
        "clearYr": null,
        "writeOffBal": 3134,
        "totalPaid": 58399,
-       "paidToday": 36841,
+       "paidToday": 43506,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true,
        "path": [
@@ -86285,7 +86368,7 @@
        "clearYr": 17,
        "writeOffBal": 0,
        "totalPaid": 53658,
-       "paidToday": 38044,
+       "paidToday": 43044,
        "newNetChange": -377.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -86368,7 +86451,7 @@
        "clearYr": 10,
        "writeOffBal": 0,
        "totalPaid": 43755,
-       "paidToday": 38080,
+       "paidToday": 40043,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -86423,7 +86506,7 @@
       "clearYr": null,
       "writeOffBal": 16527,
       "totalPaid": 53399,
-      "paidToday": 31841,
+      "paidToday": 38506,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false,
       "path": [
@@ -86743,8 +86826,8 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 74,
-     "total_opportunity_gbp": 1300,
+     "candid_score": 66,
+     "total_opportunity_gbp": 1900,
      "critical_modules": "cash"
     },
     "property": {
@@ -89052,12 +89135,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.6,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,
@@ -91533,12 +91617,13 @@
        "repayment": 4703
       }
      ],
-     "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "cashRate": 2.5,
+     "cashRateOwn": true,
+     "effectiveBenefit": 1.6,
      "pensionGrowthPct": 6,
      "pensionGap": -1.9,
      "beatsPension": false,
-     "worthOverpaying": false,
+     "worthOverpaying": true,
      "overpayAnnualBenefit": 0,
      "overpayTotalBenefit": 0,
      "interestAvoided": 0,

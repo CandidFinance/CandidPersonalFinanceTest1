@@ -89,6 +89,11 @@ export function loanComparison(d, m, sl, paid) {
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
   const base = projectPlan(m, sl, []), after = projectPlan(m, sl, events);
   const freed = base.repayments.reduce((t, p, i) => t + (p - (after.repayments[i] || 0)) * Math.pow(1 + cash / 100, years - (i + 1)), 0);
+  // The same repayments as they'd be paid, not grown: what went into the
+  // loan (principal) and the interest on it they'd have covered, for the
+  // row to say what its £ is made of.
+  const freedPaid = base.repayments.reduce((t, p, i) => t + p - (after.repayments[i] || 0), 0);
+  const principal = after.paidIn;
   const over = events.reduce((t, e) => t + grow(e.amount, cash, years - e.t), 0) - after.paid.reduce((t, p) => t + grow(p.amount, cash, years - p.t), 0);
   const each = fn => events.reduce((t, e, i) => t + fn(e, i), 0);
   const scottish = d.scottishTaxpayer === "yes";
@@ -126,7 +131,7 @@ export function loanComparison(d, m, sl, paid) {
   const isaOver = amount - isaPart.reduce((t, a) => t + a, 0);
   const pensionOver = amount - net;
   const rows = [
-    { key: "loan", value: freed + Math.max(0, over), certain: true },
+    { key: "loan", value: freed + Math.max(0, over), certain: true, freedPaid: Math.round(freedPaid), principal: Math.round(principal), interest: Math.round(freedPaid - principal), over: Math.round(Math.max(0, over)) },
     { key: "savings", value: each(e => grow(e.amount, cash, years - e.t)), certain: true, ratePct: cash },
     { key: "isa", value: each((e, i) => grow(isaPart[i], GROWTH_NOMINAL_PCT, years - e.t)) + rest(isaPart),
       certain: false, ratePct: GROWTH_NOMINAL_PCT, over: Math.round(isaOver), cashPct: cash },

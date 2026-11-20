@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS, studentLoanPlanFrom, pensionCaveat } from "./studentLoan.js";
+import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS, studentLoanPlanFrom, pensionCaveat, savingsRateName, userBestSavingsRate } from "./studentLoan.js";
+import { loanComparison } from "./loanCompare.js";
 import { calcLoanMarginalReturnCurve } from "./forecast.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
@@ -38,16 +39,39 @@ test("interest uses the 2026/27 rates: RPI 4.1%, Plan 2 ramp capped at 6%", () =
 });
 
 // A rate the user typed in holds for every year, so these weigh a flat 6%.
-test("overpaying is weighed against the best savings rate, not a poorer current one", () => {
-  const { sl } = borrower({ studentLoanRate: "6" });
-  assert.equal(sl.cashRate, 4.5);
-  assert.equal(sl.effectiveBenefit, 1.5);
-  // The gain is each year's 1.5% gap on that year's balance, so less than
-  // 1.5% of today's £45,000 every year: a total, and that a year on average
-  // until it would have cleared.
+test("a savings account with money but no rate given isn't counted as 0%", () => {
+  assert.equal(userBestSavingsRate({ cashTiers: [{ amount: "8000", rate: "" }], savingsRate: "3.2" }), 3.2);
+  assert.equal(userBestSavingsRate({ cashTiers: [{ amount: "8000", rate: "" }], savingsRate: "" }), null);
+  assert.equal(userBestSavingsRate({ cashTiers: [{ amount: "8000", rate: "0" }] }), 0);
+});
+
+test("overpaying is weighed against the user's own best savings rate, even a poor one (Harvey, 20 Nov 2026)", () => {
+  const { sl } = borrower({ studentLoanRate: "6", cashTiers: [{ amount: "30000", rate: "3.0" }, { amount: "5000", rate: "4.0" }, { amount: "0", rate: "5.5" }] });
+  // Their best account holding money, not the market's 4.5%, nor an empty one.
+  assert.equal(sl.cashRate, 4);
+  assert.equal(sl.cashRateOwn, true);
+  assert.equal(sl.effectiveBenefit, 2);
   assert.equal(sl.overpayTotalBenefit, sl.interestAvoided - sl.savingsForgone);
   assert.equal(sl.overpayAnnualBenefit, Math.round(sl.overpayTotalBenefit / sl.clearYr));
-  assert.ok(sl.overpayAnnualBenefit > 0 && sl.overpayAnnualBenefit < 675);
+  assert.ok(sl.overpayAnnualBenefit > 0 && sl.overpayAnnualBenefit < 900);
+});
+
+test("with no savings rate given, the best rate available stands in, and says so", () => {
+  const { sl } = borrower({ cashTiers: [], cashSavings: "30000", savingsRate: "" });
+  assert.equal(sl.cashRate, 4.5);
+  assert.equal(sl.cashRateOwn, false);
+  assert.equal(savingsRateName(sl), "the best savings rate available");
+});
+
+test("the overpaying total is Where it does most's loan row less its savings row, so the two tally", () => {
+  const { d, m, sl } = borrower({ studentLoanRate: "6" });
+  const c = loanComparison(d, m, sl, Math.round(m.loanBal));
+  const row = k => c.rows.find(r => r.key === k).value;
+  assert.equal(sl.overpayTotalBenefit, row("loan") - row("savings"));
+  // The loan row says what it's made of: what's owed, and the interest on it.
+  const loan = c.rows.find(r => r.key === "loan");
+  assert.equal(loan.principal + loan.interest, loan.freedPaid);
+  assert.equal(loan.interest, sl.interestAvoided);
 });
 
 test("Plan 2 is weighed on its average rate over the loan's life: 6% now, RPI at 2% after", () => {
@@ -65,8 +89,8 @@ test("the user's own rate counts when it beats the best rate on offer", () => {
   assert.equal(sl.cashRate, 5);
 });
 
-test("a loan rate below the best savings rate isn't worth overpaying, even against a poor current rate", () => {
-  const { sl } = borrower({ salary: "58000", studentLoan: "plan1", loanBalance: "6000", cashTiers: [{ amount: "6000", rate: "1.5" }] });
+test("a loan rate below the user's savings rate isn't worth overpaying", () => {
+  const { sl } = borrower({ salary: "58000", studentLoan: "plan1", loanBalance: "6000", cashTiers: [{ amount: "6000", rate: "4.5" }] });
   assert.equal(sl.willClear, true);
   assert.equal(sl.worthOverpaying, false);
   assert.equal(sl.overpayAnnualBenefit, 0);
@@ -82,7 +106,7 @@ test("a 6% loan against the pension's 6% growth is a tie, and a tie goes to over
 
 test("a loan that beats savings is worth paying off from cash, the pension's faster growth a caveat", () => {
   const { sl } = borrower(
-    { salary: "60000", studentLoan: "plan5", loanBalance: "5000", studentLoanRate: "4.1", cashTiers: [{ amount: "5000", rate: "3.0" }] },
+    { salary: "60000", studentLoan: "plan5", loanBalance: "5000", studentLoanRate: "4.1", cashTiers: [{ amount: "5000", rate: "3.5" }] },
     { isaRate: 3.5 },
   );
   assert.equal(sl.willClear, true);
