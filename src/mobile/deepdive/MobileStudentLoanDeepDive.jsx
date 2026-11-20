@@ -1,4 +1,4 @@
-import { useState, useRef, Children, cloneElement } from "react";
+import { useState, useRef, useId, Children, cloneElement } from "react";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
@@ -85,8 +85,9 @@ export function StudentLoanBand({ d, m, status, statusTone, onShowReveal, onEdit
   return <ModuleBand {...band} figure={fmt(total)} suffix="a year" line={line} note={`${inAll}${pgPart}`}/>;
 }
 
-// The April a loan that clears is cleared by (as ClearOrWriteOff says it).
-const clearedBy = sl => sl.writeOffTaxYear - sl.writeOffYr + sl.clearYr;
+// The April a loan that clears is cleared by (as ClearOrWriteOff says it),
+// or a plan's clearing year on the same scale.
+const clearedBy = (sl, clearYr = sl.clearYr) => sl.writeOffTaxYear - sl.writeOffYr + clearYr;
 
 // A tile's explanation, from its "…" menu: the item, and the pop-out it
 // opens over the tile (Cash's "How this is worked out").
@@ -218,7 +219,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
         ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null} menu={[editItem]} how={compareHow}/>
         : verdict && pensionChecked && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt} menu={[editItem]} how={compareHow}/>)}
 
-      <PlanningTile d={d} sl={sl} menu={[editItem]} onUpdateBalance={set ? updateBalance : null}
+      <PlanningTile d={d} sl={sl} menu={[editItem]} subscriber={compareOpen} onUpdateBalance={set ? updateBalance : null}
         balanceOpen={balanceOpen} toggleBalance={() => setBalanceOpen(o => !o)} plansOpen={plansOpen} togglePlans={() => setPlansOpen(o => !o)}
         plans={plans} curve={curve} planRun={planRun} planName={shownPlan?.name}
         balance={
@@ -339,7 +340,7 @@ function BalancePanel({ d, m, sl, set, savingsRates, overpayAmt, setOverpayAmt, 
 // full width with its calculators in it, and the other sits under it. Only
 // the square's own header opens and closes it. The menu holds both
 // explanations.
-function PlanningTile({ d, sl, menu, onUpdateBalance, balanceOpen, toggleBalance, plansOpen, togglePlans, plans, curve, planRun, planName, balance, whatIfs }) {
+function PlanningTile({ d, sl, menu, subscriber, onUpdateBalance, balanceOpen, toggleBalance, plansOpen, togglePlans, plans, curve, planRun, planName, balance, whatIfs }) {
   const [modelHow, modelPop] = useHow("How the model works",
     `Year by year: interest is added at the loan's rate, and ${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}% of your pay over ${fmt(sl.threshold)} comes off, with your salary growing as set in the model. Whatever is left in April ${sl.writeOffTaxYear} is written off, and you don't repay it.`,
     "How the model works");
@@ -353,6 +354,26 @@ function PlanningTile({ d, sl, menu, onUpdateBalance, balanceOpen, toggleBalance
   // The plan on the chart's saving, as its calculator gives it
   // (ScenarioModelling).
   const saved = plans && planRun ? planRun.base.totalPaid - planRun.totalPaid : null;
+  // A square on its own row (the other one open, or the only one) is a
+  // full-width rectangle with room for one more line (Harvey, 19 Nov 2026).
+  // It stays one until the other has folded away, not as soon as it starts
+  // closing (each square's own `wide`, mirrored here).
+  const reduce = useReducedMotion();
+  const [balanceWide, setBalanceWide] = useState(balanceOpen);
+  const [plansWide, setPlansWide] = useState(plansOpen);
+  if (balanceOpen && !balanceWide) setBalanceWide(true);
+  if (plansOpen && !plansWide) setPlansWide(true);
+  if (reduce && !balanceOpen && balanceWide) setBalanceWide(false);
+  if (reduce && !plansOpen && plansWide) setPlansWide(false);
+  // One fact a line, worded as the rows they repeat.
+  const modelDetail = [sl.willClear ? `Cleared by April ${clearedBy(sl)}` : `${fmt(sl.writeOffBal)} written off April ${sl.writeOffTaxYear}`,
+    sl.annualRep > 0 ? `${fmt(sl.annualRep)} repayments this year` : "No repayments this year"];
+  // A plan cleared at once (year 0) reads as ScenarioModelling's "Cleared / Today".
+  const plansDetail = !plans
+    ? ["What each £1 overpaid returns,", "against the same £1 in your pension"]
+    : planRun
+      ? [planRun.clearYr === 0 ? "Cleared today on this plan" : planRun.clearYr != null ? `Cleared by April ${clearedBy(sl, planRun.clearYr)} on this plan` : `${fmt(planRun.writeOffBal)} written off on this plan`]
+      : [subscriber ? "Scenario modelling" : "Scenario modelling, for subscribers", ...(curve ? ["Overpaying vs your pension"] : [])];
   return (
     <MobileTile id="sl-planning" title="Planning"
       subtitle={plans ? "Your balance year by year, and plans to pay it off sooner, worked out on your figures."
@@ -361,12 +382,12 @@ function PlanningTile({ d, sl, menu, onUpdateBalance, balanceOpen, toggleBalance
       menu={[onUpdateBalance && { icon: Wrench, label: "Update your balance", onClick: onUpdateBalance }, modelHow, plansHow, ...menu]}>
       {modelPop}{plansPop}
       <div style={{display:"flex",flexWrap:"wrap",gap:"16px",alignItems:"flex-start",padding:"0 16px 16px 0"}}>
-        <PlanSquare id="sl-balance" title="Model your loan" open={balanceOpen} onToggle={toggleBalance} full={!both} look={PLAN_LOOK.model} art={<FallingArt/>}
-          headline={fmt(sl.totalRepaidProjected)} line="you'll repay in all">
+        <PlanSquare id="sl-balance" title="Model your loan" open={balanceOpen} onToggle={toggleBalance} onClosed={() => setBalanceWide(false)} full={!both || plansWide} look={PLAN_LOOK.model} art={<FallingArt/>}
+          headline={fmt(sl.totalRepaidProjected)} line="you'll repay in all" detail={modelDetail}>
           {balance}
         </PlanSquare>
         {both && (
-          <PlanSquare id="sl-whatifs" title={plans ? "Repayment plans" : "Vs your pension"} open={plansOpen} onToggle={togglePlans} look={PLAN_LOOK.plans} art={plans ? <BarsArt/> : <PensionArt/>}
+          <PlanSquare id="sl-whatifs" title={plans ? "Repayment plans" : "Vs your pension"} open={plansOpen} onToggle={togglePlans} onClosed={() => setPlansWide(false)} full={balanceWide} look={PLAN_LOOK.plans} art={plans ? <BarsArt/> : <PensionArt/>} detail={plansDetail}
             headline={saved != null ? fmt(Math.abs(saved)) : null} line={saved != null ? `${saved >= 0 ? "saved" : "costs more"} with ${planName}` : null}>
             {whatIfs}
           </PlanSquare>
@@ -402,7 +423,7 @@ const PLAN_LOOK = {
 // at the top, its picture faint and centred behind, and its figure, if it
 // has one, at the foot. Open: first in the tile at the full width, in the
 // same fill, its header the way to close it.
-function PlanSquare({ id, title, open, onToggle, full = false, look, art, headline = null, line = null, children }) {
+function PlanSquare({ id, title, open, onToggle, onClosed, full = false, look, art, headline = null, line = null, detail = null, children }) {
   const reduce = useReducedMotion();
   // As Home's trap tile (TrapTile.jsx): the square grows into place, and
   // its header moves with it at its own size, its contents fading in.
@@ -422,18 +443,28 @@ function PlanSquare({ id, title, open, onToggle, full = false, look, art, headli
   };
   const kicker = <span style={{...TILE_KICKER,fontFamily:SANS,lineHeight:1.3,color:"#585858"}}>{title}</span>;
   const chevron = <ChevronDown size={16} color="#585858" strokeWidth={2.5} aria-hidden="true" style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>;
+  // Closed on its own row: a short full-width rectangle, the picture to the
+  // right, and the detail line under the £.
+  const rect = !wide && full;
+  // Muted, under the £ and its caption: secondary to both. One fact a line;
+  // on a narrow phone a long one wraps rather than being cut off.
+  const detailLines = rect && detail?.length > 0 && (
+    <span style={{display:"flex",flexDirection:"column",marginTop:headline == null ? 0 : "4px",fontSize:"12px",color:"#585858",lineHeight:1.45,maxWidth:"70%"}}>
+      {detail.map(t => <span key={t}>{t}</span>)}
+    </span>
+  );
   return (
     <motion.div ref={ref} id={id} layout={!reduce} transition={move}
-      style={{order:wide ? -1 : 0,position:"relative",overflow:"hidden",width:wide || full ? "100%" : "calc(50% - 8px)",...(!wide && (full ? { minHeight:"120px" } : { aspectRatio:"1" })),
+      style={{order:wide ? -1 : 0,position:"relative",overflow:"hidden",width:wide || full ? "100%" : "calc(50% - 8px)",...(!wide && (full ? { minHeight: headline == null ? "96px" : "120px" } : { aspectRatio:"1" })),
         background:look.bg,border:look.border,boxShadow:"0 4px 18px rgba(22,47,36,0.06)",borderRadius:"14px",boxSizing:"border-box",display:"flex",flexDirection:"column",scrollMarginTop:"80px"}}>
       {/* The picture, faint and centred in the square. */}
       {!wide && (
         <motion.span layout={reduce ? false : "position"} aria-hidden="true"
           initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...move, opacity: { duration: 0.2 } }}
-          style={{position:"absolute",inset:0,padding:"52px 8% 6%",boxSizing:"border-box",display:"flex",pointerEvents:"none",color:look.art}}>{art}</motion.span>
+          style={{position:"absolute",...(rect ? { top:0, right:0, bottom:0, width:"30%", padding:"40px 16px 16px 0" } : { inset:0, padding:"52px 8% 6%" }),boxSizing:"border-box",display:"flex",pointerEvents:"none",color:look.art}}>{art}</motion.span>
       )}
       <motion.button layout={reduce ? false : "position"} transition={move} type="button" onClick={toggle} aria-expanded={open}
-        style={{position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"10px",flex:wide ? "none" : 1,width:"100%",background:"none",border:"none",
+        style={{position:"relative",display:"flex",flexDirection:"column",justifyContent:rect && headline == null ? "flex-start" : "space-between",gap:"10px",flex:wide ? "none" : 1,width:"100%",background:"none",border:"none",
           padding:wide ? "14px 16px 10px" : "14px 16px 16px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",color:"inherit"}}>
         <span style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"6px",width:"100%"}}>{kicker}{chevron}</span>
         {!wide && headline != null && (
@@ -441,10 +472,12 @@ function PlanSquare({ id, title, open, onToggle, full = false, look, art, headli
             <span style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.01em"}}>{headline}</span>
             {/* Two lines at most, so a long plan name can't push the £ out of the square. */}
             {line && <span title={line} style={{fontSize:"12px",fontWeight:700,color:G,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{line}</span>}
+            {rect && detailLines}
           </span>
         )}
+        {headline == null && detailLines}
       </motion.button>
-      <AnimatePresence initial={false} onExitComplete={() => setWide(false)}>
+      <AnimatePresence initial={false} onExitComplete={() => { setWide(false); onClosed?.(); }}>
         {open && (
           <motion.div key="contents" layout={reduce ? false : "position"}
             // Opening, only a fade: the square's own growth carries it (an
@@ -463,10 +496,18 @@ function PlanSquare({ id, title, open, onToggle, full = false, look, art, headli
 
 // The squares' pictures, in their square's colour (currentColor), faint.
 // A balance falling to nothing.
+// The area under the line fades out, so it doesn't read as a grey block.
 function FallingArt() {
+  const fade = `fall-${useId().replace(/:/g, "")}`;
   return (
     <svg width="100%" height="100%" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet" style={{display:"block"}}>
-      <path d="M6 4 L30 14 L46 11 L72 28 L94 36 L94 76 L6 76 Z" fill="currentColor" opacity="0.045"/>
+      <defs>
+        <linearGradient id={fade} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.07"/>
+          <stop offset="1" stopColor="currentColor" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M6 4 L30 14 L46 11 L72 28 L94 36 L94 76 L6 76 Z" fill={`url(#${fade})`}/>
       <path d="M6 4 L30 14 L46 11 L72 28 L94 36" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" opacity="0.11"/>
       <circle cx="94" cy="36" r="6" fill="currentColor" opacity="0.14"/>
     </svg>
